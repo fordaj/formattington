@@ -9,12 +9,13 @@ def clang_format(
     check: bool = False,
     dry_run: bool = False,
     args: list[str] | None = None,
+    verbose: bool = False,
 ) -> int:
     """Format C/C++ files using clang-format."""
     if check and dry_run:
         raise ValueError("check and dry_run cannot both be enabled")
 
-    executable = find_tool("clang-format")
+    executable = find_tool("clang-format", verbose=verbose)
     arguments = list(args or [])
 
     # Preserve native informational commands without adding formatting flags.

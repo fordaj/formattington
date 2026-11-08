@@ -120,6 +120,32 @@ class TestUnknownWords:
             mock.assert_not_called()
 
 
+class TestVerbose:
+    def test_verbose_before_formatter_passed_through(
+        self, monkeypatch, mock_formatters
+    ):
+        _set_argv(monkeypatch, ["formattington", "--verbose", "shfmt"])
+        assert main() == 0
+        mock_formatters["shfmt"].assert_called_once_with(
+            check=False, dry_run=False, args=[], verbose=True
+        )
+
+    def test_verbose_with_check_and_all(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--check", "--verbose", "all"])
+        assert main() == 0
+        for mock in mock_formatters.values():
+            mock.assert_called_once_with(
+                check=True, dry_run=False, args=[], verbose=True
+            )
+
+    def test_help_lists_verbose(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "--help"])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        assert "--verbose" in capsys.readouterr().out
+
+
 class TestHelpAndVersion:
     def test_help_lists_options(self, monkeypatch, capsys):
         _set_argv(monkeypatch, ["formattington", "--help"])

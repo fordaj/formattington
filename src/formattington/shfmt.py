@@ -10,12 +10,13 @@ def shfmt(
     check: bool = False,
     dry_run: bool = False,
     args: list[str] | None = None,
+    verbose: bool = False,
 ) -> int:
     """Format shell scripts with shfmt."""
     if check and dry_run:
         raise ValueError("check and dry_run cannot both be enabled")
 
-    executable = find_tool("shfmt")
+    executable = find_tool("shfmt", verbose=verbose)
     extra_args = args or []
 
     # Formattington owns the mode; shfmt owns all other flags.
