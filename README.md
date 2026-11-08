@@ -123,6 +123,17 @@ Formattington separates the orchestration layer from the formatting tools themse
 
 The goal is to keep the interface simple while letting established formatter tools do what they do best.
 
+## Testing
+
+Run the test suite with:
+
+```bash
+uv sync
+uv run pytest
+```
+
+Tests live in `tests/` and cover CLI parsing, tool discovery, subprocess boundaries, and argument forwarding. They run without network access and without formatter binaries installed, using mocks and fake executable scripts in temporary directories.
+
 ## Project status
 
 Formattington is under active development. The core command-line interface and formatter integrations are being established, with additional languages, distribution options, and workflow improvements planned.
