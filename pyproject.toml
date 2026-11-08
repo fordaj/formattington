@@ -18,3 +18,12 @@ build-backend = "uv_build"
  
 [tool.black]
 line-length = 200
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+]

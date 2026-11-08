@@ -157,9 +157,18 @@ Formattington orchestrates external formatters; each formatter retains responsib
 
 ## Testing and Validation
 
+Run the test suite with:
+
+```bash
+uv sync
+uv run pytest
+```
+
+Tests live in `tests/` and are configured via `[tool.pytest.ini_options]` in `pyproject.toml`. The suite runs with no network and no formatter binaries installed: unit tests mock `platform`, `shutil.which`, and `subprocess.run`, and integration tests use fake executable scripts in temporary directories.
+
 Before considering a change complete:
 
-1. Run relevant tests using the project's configured workflow.
+1. Run `uv run pytest` using the project's configured workflow.
 2. Verify CLI argument parsing and exit behavior.
 3. Test paths containing spaces where filesystem or subprocess behavior changes.
 4. Test missing executables and formatter failures when relevant.

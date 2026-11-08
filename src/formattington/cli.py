@@ -79,11 +79,16 @@ def main() -> int:
     exit_code = 0
 
     for name in names:
-        result = FORMATTERS[name](
-            check=args.check,
-            dry_run=args.dry_run,
-            args=formatter_args,
-        )
+        try:
+            result = FORMATTERS[name](
+                check=args.check,
+                dry_run=args.dry_run,
+                args=formatter_args,
+            )
+        except (FileNotFoundError, RuntimeError) as exc:
+            print(f"formattington: {exc}", file=sys.stderr)
+            exit_code = 127
+            continue
         if result != 0:
             exit_code = result
 
