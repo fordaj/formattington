@@ -327,3 +327,43 @@ class TestRunTool:
             assert cmd == ["/fake/shfmt", "-w", "file with spaces.sh", "another file.sh"]
             # Spaces are preserved as single elements; no shell joining.
             assert mock_run.call_args[1].get("shell") is None
+
+
+class TestSharedPredicates:
+    @pytest.mark.parametrize(
+        "args",
+        [
+            ["--help"],
+            ["-help"],
+            ["--version"],
+            ["-version"],
+            ["-h"],
+            ["-V"],
+            ["file.cpp", "--help"],
+        ],
+    )
+    def test_is_informational_true(self, args):
+        assert _tools.is_informational(list(args)) is True
+
+    @pytest.mark.parametrize(
+        "args",
+        [
+            [],
+            ["file.cpp"],
+            ["--check"],
+            ["--style=file"],
+        ],
+    )
+    def test_is_informational_false(self, args):
+        assert _tools.is_informational(list(args)) is False
+
+    @pytest.mark.parametrize(
+        ("check", "dry_run"),
+        [(False, False), (True, False), (False, True)],
+    )
+    def test_ensure_valid_mode_ok(self, check, dry_run):
+        _tools.ensure_valid_mode(check=check, dry_run=dry_run)
+
+    def test_ensure_valid_mode_rejects_both(self):
+        with pytest.raises(ValueError, match="cannot both be enabled"):
+            _tools.ensure_valid_mode(check=True, dry_run=True)

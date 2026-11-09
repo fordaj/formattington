@@ -1,7 +1,7 @@
 
 from pathlib import Path
 
-from formattington._tools import find_tool, run_tool
+from formattington._tools import ensure_valid_mode, find_tool, run_tool
 
 FILE_EXTENSIONS: tuple[str, ...] = (".sh", ".bash")
 
@@ -17,8 +17,7 @@ def shfmt(
     verbose: bool = False,
 ) -> int:
     """Format shell scripts with shfmt."""
-    if check and dry_run:
-        raise ValueError("check and dry_run cannot both be enabled")
+    ensure_valid_mode(check=check, dry_run=dry_run)
 
     executable = find_tool("shfmt", verbose=verbose)
     extra_args = args or []
