@@ -78,6 +78,14 @@ Formattington preserves underlying formatter exit codes and uses a fixed scheme 
 | 2    | Usage error (for example, unknown formatter, exclusive `--check` and `--dry-run` given together, or unexpected arguments parsed by Formattington). |
 | 127  | Formatter executable not found (no bundled binary and nothing on `PATH`). |
 
+Mode semantics (Formattington owns the mode flag before the formatter
+name; arguments after the formatter are forwarded verbatim):
+
+| Formatter    | `--check` (before formatter)               | `--dry-run` (before formatter)     | Default (no flag)          |
+| ------------ | ------------------------------------------ | ---------------------------------- | -------------------------- |
+| shfmt        | `shfmt -l` — list unformatted files; exit 1 if any listed, else 0 | `shfmt -d` — print diff, do not modify | `shfmt -w` — write in place |
+| clang-format | `clang-format --dry-run --Werror` — fail if any file needs formatting, do not modify | `clang-format --dry-run` — validate without modifying | `clang-format -i` — format in place (unless `-i`/`--in-place` already given) |
+
 When a formatter executable cannot be found, Formattington does not
 raise a Python traceback. It prints a single line to stderr (for
 example `formattington: Could not find 'shfmt'. Expected a bundled
@@ -100,15 +108,34 @@ or an installation on `PATH` satisfies `find_tool()`.
 
 Formattington integrates existing tools rather than reimplementing their formatting logic.
 
-| Formatter                                                    | Typical use                                                       |
-| ------------------------------------------------------------ | ----------------------------------------------------------------- |
-| [Prettier](https://prettier.io/)                             | JavaScript, TypeScript, JSON, HTML, CSS, Markdown, YAML, and more |
-| [clang-format](https://clang.llvm.org/docs/ClangFormat.html) | C, C++, and related languages                                     |
-| [shfmt](https://github.com/mvdan/sh)                         | Shell scripts                                                     |
-| [Black](https://black.readthedocs.io/)                       | Python                                                            |
-| Markdown formatting                                          | Markdown-specific workflows                                       |
+| Formatter                                                    | Status    | Typical use                                             |
+| ------------------------------------------------------------ | --------- | ------------------------------------------------------- |
+| [clang-format](https://clang.llvm.org/docs/ClangFormat.html) | Available | C, C++, and related languages                           |
+| [shfmt](https://github.com/mvdan/sh)                         | Available | Shell scripts                                           |
+| [Prettier](https://prettier.io/)                             | Planned   | JavaScript, TypeScript, JSON, HTML, CSS, Markdown, YAML |
+| [Black](https://black.readthedocs.io/)                       | Planned   | Python                                                  |
+| Markdown formatting                                          | Planned   | Markdown-specific workflows                             |
 
-Available integrations and file-type mappings depend on the current implementation and installed tools.
+Only `shfmt`, `clang-format`, and `all` are accepted by the CLI today.
+Prettier, Black, and Markdown integrations are planned but not yet
+implemented — Formattington reports a usage error (exit 2) for those
+names until they land. The `Usage` examples above describe the intended
+public interface; the available subset is `shfmt` and `clang-format`.
+
+### Prerequisites
+
+| Formatter    | Install method (bundled)                                                                 | Install method (PATH)                                                          | How Formattington finds it                                              |
+| ------------ | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| shfmt        | Comes under `tools/shfmt/v3.14.1/<platform>/shfmt` in a fresh clone                    | `go install mvdan.cc/sh/v3/cmd/shfmt@latest` or your OS package manager        | Bundled first, then `PATH` via `find_tool("shfmt")`                     |
+| clang-format | Comes under `tools/clang-format/v23.1.3/<platform>/clang-format` in a fresh clone       | Install LLVM/clang-tools for your OS (for example `brew install clang-format` or `apt install clang-format`) | Bundled first, then `PATH` via `find_tool("clang-format")`              |
+
+Bundled versions are pinned in `tools/` for offline use; see
+[Bundled tools](#bundled-tools) for the layout and refresh process.
+If neither a bundle nor a `PATH` installation is found, the CLI prints
+`formattington: Could not find ...` to stderr and exits 127 (see
+[Exit codes](#exit-codes)). Formatter configuration files such as
+`.prettierrc` and `.clang-format` remain in your repository and are
+respected by the underlying tools.
 
 ## Installation
 
@@ -117,8 +144,8 @@ Formattington is a Python project managed with [uv](https://docs.astral.sh/uv/).
 Clone the repository:
 
 ```bash
-git clone https://github.com/<owner>/Formattington.git
-cd Formattington
+git clone https://github.com/fordaj/formattington.git
+cd formattington
 ```
 
 Install the project and its dependencies using the project's declared configuration:
@@ -127,19 +154,24 @@ Install the project and its dependencies using the project's declared configurat
 uv sync
 ```
 
-Run Formattington from the project environment:
+`uv.lock` is checked in for reproducible installs (`uv sync` installs
+exactly the locked versions). The project requires Python 3.14 or
+newer (`.python-version` pins 3.14 for development; `requires-python`
+is `>=3.14` in `pyproject.toml`).
+
+Run Formattington from the project environment (the console script
+and the module entry point are equivalent):
 
 ```bash
 uv run formattington all
+uv run python -m formattington all
+uv run formattington --version
+uv run python -m formattington --version
 ```
-
-The exact commands depend on the project's configured package entry point. If the console script is not yet registered, the application can instead be run through its Python module or entry-point script.
 
 ### Formatter dependencies
 
-Formattington orchestrates external formatters; it does not automatically make every formatter available simply by installing the Python package.
-
-Install the formatters you intend to use and ensure they are discoverable by Formattington. Formatter configuration files, such as `.prettierrc` and `.clang-format`, can remain in your repository.
+Formattington orchestrates external formatters; it does not automatically make every formatter available simply by installing the Python package. A fresh clone already contains the pinned bundled executables under `tools/`, so `uv sync` plus the clones above are sufficient for offline use. If you prefer a system installation, put the tool on `PATH` instead — `find_tool()` prefers bundled copies and falls back to `PATH`. See the [prerequisites table](#prerequisites) for per-formatter options.
 
 ## How it works
 
