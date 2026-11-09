@@ -3,6 +3,20 @@ import subprocess
 
 from formattington._tools import find_tool
 
+FILE_EXTENSIONS: tuple[str, ...] = (
+    ".c",
+    ".cc",
+    ".cpp",
+    ".cxx",
+    ".c++",
+    ".h",
+    ".hh",
+    ".hpp",
+    ".hxx",
+)
+
+__all__ = ["clang_format", "FILE_EXTENSIONS"]
+
 
 def clang_format(
     *,

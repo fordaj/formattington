@@ -3,10 +3,16 @@ import argparse
 import concurrent.futures
 import sys
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
+from formattington._tools import discover_files, iter_chunks
+from formattington.clang_format import FILE_EXTENSIONS as CLANG_FORMAT_EXTENSIONS
 from formattington.clang_format import clang_format
+from formattington.format_python import FILE_EXTENSIONS as BLACK_EXTENSIONS
 from formattington.format_python import black
+from formattington.prettier import FILE_EXTENSIONS as PRETTIER_EXTENSIONS
 from formattington.prettier import prettier
+from formattington.shfmt import FILE_EXTENSIONS as SHFMT_EXTENSIONS
 from formattington.shfmt import shfmt
 
 
@@ -16,6 +22,21 @@ FORMATTERS = {
     "black": black,
     "prettier": prettier,
 }
+
+FORMATTER_EXTENSIONS: dict[str, tuple[str, ...]] = {
+    "shfmt": SHFMT_EXTENSIONS,
+    "clang-format": CLANG_FORMAT_EXTENSIONS,
+    "black": BLACK_EXTENSIONS,
+    "prettier": PRETTIER_EXTENSIONS,
+}
+
+# Upper bound on discovered files per formatter invocation, to respect
+# operating-system command-line limits on very large repositories.
+MAX_FILES_PER_INVOCATION = 256
+
+_INFORMATIONAL_ARGS = frozenset(
+    {"--help", "-help", "--version", "-version", "-h", "-V"}
+)
 
 LANGUAGE_ALIASES = {
     "python": "black",
@@ -28,6 +49,10 @@ _EPILOG = (
     "Language aliases: python/py use black; md/markdown use prettier "
     "(Markdown formatting is provided by Prettier; ``.md`` and "
     "``.markdown`` files are covered).\n\n"
+    "With no file arguments, formattington discovers each formatter's "
+    "matching files recursively from the current directory (skipping "
+    "hidden directories and __pycache__, node_modules, vendor, venv, "
+    "dist, build, and tools/) and formats them in batches.\n\n"
     "Bundled tools live under tools/<name>/v<version>/"
     "<platform>/; use --verbose (or set "
     "FORMATTINGTON_VERBOSE=1) to show the resolved executable.\n\n"
@@ -41,6 +66,28 @@ _EPILOG = (
 )
 
 
+def _is_informational(args: list[str]) -> bool:
+    """Whether ``args`` are bare help/version passthroughs (no discovery)."""
+    return any(arg in _INFORMATIONAL_ARGS for arg in args)
+
+
+def _has_user_file_args(args: list[str], extensions: tuple[str, ...]) -> bool:
+    """Whether the user supplied explicit file arguments.
+
+    A non-flag argument counts as an explicit file when it exists on
+    disk or ends with one of the formatter's extensions.
+    """
+    wanted = {ext.lower() for ext in extensions}
+    for arg in args:
+        if arg.startswith("-"):
+            continue
+        if Path(arg).exists():
+            return True
+        if Path(arg).suffix.lower() in wanted:
+            return True
+    return False
+
+
 def _run_formatter(
     name: str,
     *,
@@ -51,22 +98,42 @@ def _run_formatter(
 ) -> tuple[str, int, str | None]:
     """Run one formatter, translating missing-tool errors to 127.
 
+    When the user passes no explicit file arguments (and the args are
+    not informational help/version passthroughs), matching files are
+    discovered recursively and appended to the invocation, in batches
+    of at most ``MAX_FILES_PER_INVOCATION`` files.
+
     Returns ``(name, returncode, error_message_or_None)`` so callers can
     report errors and aggregate exit codes in registration order regardless
     of completion order (important for the concurrent default).
     """
-    try:
-        call_kwargs: dict[str, object] = {
-            "check": check,
-            "dry_run": dry_run,
-            "args": list(args),
-        }
-        if verbose:
-            call_kwargs["verbose"] = True
-        result = FORMATTERS[name](**call_kwargs)  # type: ignore[arg-type]
-    except (FileNotFoundError, RuntimeError) as exc:
-        return (name, 127, str(exc))
-    return (name, result, None)
+    extensions = FORMATTER_EXTENSIONS[name]
+    user_args = list(args)
+    if _is_informational(user_args) or _has_user_file_args(user_args, extensions):
+        batches = [user_args]
+    else:
+        discovered = discover_files(extensions)
+        batches = [
+            user_args + chunk
+            for chunk in iter_chunks(discovered, MAX_FILES_PER_INVOCATION)
+        ] or [user_args]
+
+    exit_code = 0
+    for batch in batches:
+        try:
+            call_kwargs: dict[str, object] = {
+                "check": check,
+                "dry_run": dry_run,
+                "args": list(batch),
+            }
+            if verbose:
+                call_kwargs["verbose"] = True
+            result = FORMATTERS[name](**call_kwargs)  # type: ignore[arg-type]
+        except (FileNotFoundError, RuntimeError) as exc:
+            return (name, 127, str(exc))
+        if result != 0:
+            exit_code = result
+    return (name, exit_code, None)
 
 
 def _aggregate_exit_code(results: dict[str, int], names: list[str]) -> int:
