@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+# Bundled root, derived from ``__file__``. ``find_tool()`` resolves
+# ``tools/<name>/v<version>/<platform>/<executable>`` under ``TOOLS_DIR``.
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 TOOLS_DIR = PROJECT_ROOT / "tools"
 
@@ -174,7 +176,8 @@ def _version_key(version: str) -> tuple[int, ...]:
     """Parse a version string into a comparable numeric tuple.
 
     Sorting lexicographically fails at v9 vs v10; compare numeric
-    components instead so the newest bundle wins.
+    components instead so the newest bundle wins. Non-numeric suffixes
+    stop the digit scan; a component with no digits counts as 0.
     """
     text = version.strip().removeprefix("v").lower()
     key: list[int] = []
@@ -203,6 +206,58 @@ def _platform_candidates(platform_dir: str) -> list[str]:
     return [platform_dir]
 
 
+def _bundled_versions(tool_dir: Path) -> list[str]:
+    """Version labels (without ``v``) sorted newest-first, or ``[]`` if no dir."""
+    if not tool_dir.is_dir():
+        return []
+    # Prefer the newest version by numeric version key.
+    return sorted(
+        (
+            path.name.removeprefix("v")
+            for path in tool_dir.iterdir()
+            if path.is_dir()
+        ),
+        key=_version_key,
+        reverse=True,
+    )
+
+
+def _find_bundled_executable(
+    name: str,
+    version: str | None,
+    *,
+    executable: str,
+) -> str | None:
+    """Return the bundled path if found, else ``None`` (no PATH lookup, no raise)."""
+    tool_dir = TOOLS_DIR / name
+    if version:
+        versions = [version.removeprefix("v")]
+    else:
+        versions = _bundled_versions(tool_dir)
+
+    platform_dir = get_platform_dir()
+
+    for candidate_version in versions:
+        for candidate_platform in _platform_candidates(platform_dir):
+            bundled = (
+                tool_dir
+                / f"v{candidate_version}"
+                / candidate_platform
+                / executable
+            )
+            if bundled.is_file():
+                return str(bundled)
+    return None
+
+
+def _find_on_path(name: str, *, is_windows: bool) -> str | None:
+    """Return the PATH-resolved tool (including ``.exe`` fallback on Windows), else ``None``."""
+    system_tool = shutil.which(name)
+    if not system_tool and is_windows:
+        system_tool = shutil.which(f"{name}.exe")
+    return system_tool
+
+
 def find_tool(
     name: str, version: str | None = None, *, verbose: bool = False
 ) -> str:
@@ -218,45 +273,17 @@ def find_tool(
     is_windows = platform.system() == "Windows"
     executable = f"{name}.exe" if is_windows else name
 
-    tool_dir = TOOLS_DIR / name
-
-    if version:
-        versions = [version.removeprefix("v")]
-    else:
-        # Prefer the newest version by numeric version key.
-        versions = sorted(
-            (
-                path.name.removeprefix("v")
-                for path in tool_dir.iterdir()
-                if path.is_dir()
-            ),
-            key=_version_key,
-            reverse=True,
-        ) if tool_dir.is_dir() else []
-
-    platform_dir = get_platform_dir()
-
-    for candidate_version in versions:
-        for candidate_platform in _platform_candidates(platform_dir):
-            bundled = (
-                tool_dir
-                / f"v{candidate_version}"
-                / candidate_platform
-                / executable
+    bundled = _find_bundled_executable(name, version, executable=executable)
+    if bundled is not None:
+        if show_verbose:
+            print(
+                f"formattington: {name} resolved to {bundled} (bundled)",
+                file=sys.stderr,
             )
+        return bundled
 
-            if bundled.is_file():
-                if show_verbose:
-                    print(
-                        f"formattington: {name} resolved to {bundled} (bundled)",
-                        file=sys.stderr,
-                    )
-                return str(bundled)
-
-    system_tool = shutil.which(name)
-    if not system_tool and is_windows:
-        system_tool = shutil.which(f"{name}.exe")
-    if system_tool:
+    system_tool = _find_on_path(name, is_windows=is_windows)
+    if system_tool is not None:
         if show_verbose:
             print(
                 f"formattington: {name} resolved to {system_tool} (PATH)",
@@ -264,6 +291,8 @@ def find_tool(
             )
         return system_tool
 
+    tool_dir = TOOLS_DIR / name
+    platform_dir = get_platform_dir()
     expected = tool_dir / "<version>" / platform_dir / executable
     raise FileNotFoundError(
         f"Could not find {name!r}. "
