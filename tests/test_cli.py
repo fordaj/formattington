@@ -45,7 +45,7 @@ class TestFormatterSelection:
         _set_argv(monkeypatch, ["formattington", "shfmt"])
         assert main() == 0
         mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["clang-format"].assert_not_called()
 
@@ -53,7 +53,7 @@ class TestFormatterSelection:
         _set_argv(monkeypatch, ["formattington", "clang-format"])
         assert main() == 0
         mock_formatters["clang-format"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["shfmt"].assert_not_called()
 
@@ -61,7 +61,7 @@ class TestFormatterSelection:
         _set_argv(monkeypatch, ["formattington", "black"])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["shfmt"].assert_not_called()
 
@@ -69,7 +69,7 @@ class TestFormatterSelection:
         _set_argv(monkeypatch, ["formattington", "prettier"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["shfmt"].assert_not_called()
 
@@ -77,7 +77,7 @@ class TestFormatterSelection:
         _set_argv(monkeypatch, ["formattington", "python"])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
 
     def test_md_alias_selection(self, monkeypatch, mock_formatters):
@@ -88,7 +88,7 @@ class TestFormatterSelection:
         _set_argv(monkeypatch, ["formattington", "md"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["black"].assert_not_called()
 
@@ -100,7 +100,7 @@ class TestFormatterSelection:
         _set_argv(monkeypatch, ["formattington", "markdown"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["black"].assert_not_called()
 
@@ -109,12 +109,12 @@ class TestFormatterSelection:
         _set_argv(monkeypatch, ["formattington", "--check", "md"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=True, dry_run=False, args=[]
+            check=True, dry_run=False, args=[], verbose=False
         )
         _set_argv(monkeypatch, ["formattington", "--dry-run", "markdown"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_with(
-            check=False, dry_run=True, args=[]
+            check=False, dry_run=True, args=[], verbose=False
         )
 
     def test_markdown_alias_forwards_args(self, monkeypatch, mock_formatters):
@@ -125,12 +125,12 @@ class TestFormatterSelection:
         )
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=["--single-quote", "my file.md"]
+            check=False, dry_run=False, args=["--single-quote", "my file.md"], verbose=False
         )
         _set_argv(monkeypatch, ["formattington", "md", "--check"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_with(
-            check=False, dry_run=False, args=["--check"]
+            check=False, dry_run=False, args=["--check"], verbose=False
         )
 
     def test_markdown_alias_missing_prettier_returns_127(
@@ -152,14 +152,14 @@ class TestFormatterSelection:
         _set_argv(monkeypatch, ["formattington", "all"])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
 
     def test_all_runs_prettier_exactly_once(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "all"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
 
 
@@ -170,7 +170,7 @@ class TestPowershellSelection:
         _set_argv(monkeypatch, ["formattington", "powershell"])
         assert main() == 0
         mock_formatters["powershell"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["shfmt"].assert_not_called()
 
@@ -181,7 +181,7 @@ class TestPowershellSelection:
         _set_argv(monkeypatch, ["formattington", "ps1"])
         assert main() == 0
         mock_formatters["powershell"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["black"].assert_not_called()
 
@@ -189,12 +189,12 @@ class TestPowershellSelection:
         _set_argv(monkeypatch, ["formattington", "--check", "ps1"])
         assert main() == 0
         mock_formatters["powershell"].assert_called_once_with(
-            check=True, dry_run=False, args=[]
+            check=True, dry_run=False, args=[], verbose=False
         )
         _set_argv(monkeypatch, ["formattington", "ps1", "-Severity", "Error"])
         assert main() == 0
         mock_formatters["powershell"].assert_called_with(
-            check=False, dry_run=False, args=["-Severity", "Error"]
+            check=False, dry_run=False, args=["-Severity", "Error"], verbose=False
         )
 
     def test_powershell_missing_returns_127(self, monkeypatch, capsys):
@@ -226,7 +226,7 @@ class TestTaploSelection:
         _set_argv(monkeypatch, ["formattington", "taplo"])
         assert main() == 0
         mock_formatters["taplo"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["shfmt"].assert_not_called()
 
@@ -237,7 +237,7 @@ class TestTaploSelection:
         _set_argv(monkeypatch, ["formattington", "toml"])
         assert main() == 0
         mock_formatters["taplo"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["black"].assert_not_called()
 
@@ -245,12 +245,12 @@ class TestTaploSelection:
         _set_argv(monkeypatch, ["formattington", "--check", "toml"])
         assert main() == 0
         mock_formatters["taplo"].assert_called_once_with(
-            check=True, dry_run=False, args=[]
+            check=True, dry_run=False, args=[], verbose=False
         )
         _set_argv(monkeypatch, ["formattington", "toml", "--option", "align_comments=true"])
         assert main() == 0
         mock_formatters["taplo"].assert_called_with(
-            check=False, dry_run=False, args=["--option", "align_comments=true"]
+            check=False, dry_run=False, args=["--option", "align_comments=true"], verbose=False
         )
 
     def test_taplo_missing_returns_127(self, monkeypatch, capsys):
@@ -277,7 +277,7 @@ class TestTaploSelection:
         _set_argv(monkeypatch, ["formattington", "all"])
         assert main() == 0
         for mock in mock_formatters.values():
-            mock.assert_called_once_with(check=False, dry_run=False, args=[])
+            mock.assert_called_once_with(check=False, dry_run=False, args=[], verbose=False)
 
     def test_all_preserves_last_nonzero_exit(self, monkeypatch, mock_formatters):
         mock_formatters["shfmt"].return_value = 5
@@ -303,49 +303,49 @@ class TestModes:
         _set_argv(monkeypatch, ["formattington", "--check", "shfmt"])
         assert main() == 0
         mock_formatters["shfmt"].assert_called_once_with(
-            check=True, dry_run=False, args=[]
+            check=True, dry_run=False, args=[], verbose=False
         )
 
     def test_check_before_black(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--check", "black"])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
-            check=True, dry_run=False, args=[]
+            check=True, dry_run=False, args=[], verbose=False
         )
 
     def test_check_before_prettier(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--check", "prettier"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=True, dry_run=False, args=[]
+            check=True, dry_run=False, args=[], verbose=False
         )
 
     def test_dry_run_before_formatter(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--dry-run", "clang-format"])
         assert main() == 0
         mock_formatters["clang-format"].assert_called_once_with(
-            check=False, dry_run=True, args=[]
+            check=False, dry_run=True, args=[], verbose=False
         )
 
     def test_dry_run_before_black(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--dry-run", "black"])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
-            check=False, dry_run=True, args=[]
+            check=False, dry_run=True, args=[], verbose=False
         )
 
     def test_dry_run_before_prettier(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--dry-run", "prettier"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=True, args=[]
+            check=False, dry_run=True, args=[], verbose=False
         )
 
     def test_check_propagates_to_all(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--check", "all"])
         assert main() == 0
         for mock in mock_formatters.values():
-            mock.assert_called_once_with(check=True, dry_run=False, args=[])
+            mock.assert_called_once_with(check=True, dry_run=False, args=[], verbose=False)
 
     def test_check_and_dry_run_are_mutually_exclusive(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--check", "--dry-run", "shfmt"])
@@ -411,7 +411,7 @@ class TestLanguageAliases:
         _set_argv(monkeypatch, ["formattington", alias])
         assert main() == 0
         mock_formatters[formatter].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         for name, mock in mock_formatters.items():
             if name != formatter:
@@ -421,26 +421,26 @@ class TestLanguageAliases:
         _set_argv(monkeypatch, ["formattington", "--check", "c"])
         assert main() == 0
         mock_formatters["clang-format"].assert_called_once_with(
-            check=True, dry_run=False, args=[]
+            check=True, dry_run=False, args=[], verbose=False
         )
         _set_argv(monkeypatch, ["formattington", "--dry-run", "bash"])
         assert main() == 0
         mock_formatters["shfmt"].assert_called_with(
-            check=False, dry_run=True, args=[]
+            check=False, dry_run=True, args=[], verbose=False
         )
 
     def test_alias_forwards_args(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "cpp", "--style=file"])
         assert main() == 0
         mock_formatters["clang-format"].assert_called_once_with(
-            check=False, dry_run=False, args=["--style=file"]
+            check=False, dry_run=False, args=["--style=file"], verbose=False
         )
 
     def test_alias_forwarded_check_is_native(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "html", "--check"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=["--check"]
+            check=False, dry_run=False, args=["--check"], verbose=False
         )
 
     def test_alias_verbose(self, monkeypatch, mock_formatters):
@@ -577,28 +577,28 @@ class TestArgForwarding:
         _set_argv(monkeypatch, ["formattington", "shfmt", "--keep-padding", "-i", "2"])
         assert main() == 0
         mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=["--keep-padding", "-i", "2"]
+            check=False, dry_run=False, args=["--keep-padding", "-i", "2"], verbose=False
         )
 
     def test_forward_args_after_clang_format(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "clang-format", "--style=file"])
         assert main() == 0
         mock_formatters["clang-format"].assert_called_once_with(
-            check=False, dry_run=False, args=["--style=file"]
+            check=False, dry_run=False, args=["--style=file"], verbose=False
         )
 
     def test_forward_args_after_black(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "black", "--line-length", "88"])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
-            check=False, dry_run=False, args=["--line-length", "88"]
+            check=False, dry_run=False, args=["--line-length", "88"], verbose=False
         )
 
     def test_forward_args_after_prettier(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "prettier", "--check"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=["--check"]
+            check=False, dry_run=False, args=["--check"], verbose=False
         )
 
     def test_forward_prettier_config_arg(self, monkeypatch, mock_formatters):
@@ -607,7 +607,7 @@ class TestArgForwarding:
         )
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=["--single-quote", "my file.js"]
+            check=False, dry_run=False, args=["--single-quote", "my file.js"], verbose=False
         )
 
     def test_forward_preserves_spaces_in_args(self, monkeypatch, mock_formatters):
@@ -619,7 +619,7 @@ class TestArgForwarding:
         mock_formatters["shfmt"].assert_called_once_with(
             check=False,
             dry_run=False,
-            args=["file with spaces.sh", "-i", "2"],
+            args=["file with spaces.sh", "-i", "2"], verbose=False,
         )
 
     def test_formatter_args_are_not_parsed_by_formattington(
@@ -630,7 +630,7 @@ class TestArgForwarding:
         _set_argv(monkeypatch, ["formattington", "shfmt", "--check"])
         assert main() == 0
         mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=["--check"]
+            check=False, dry_run=False, args=["--check"], verbose=False
         )
 
 
@@ -833,13 +833,13 @@ class TestSeriesAndParallel:
         assert main() == 0
         assert calls == ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo"]
         for mock in mock_formatters.values():
-            mock.assert_called_once_with(check=False, dry_run=False, args=[])
+            mock.assert_called_once_with(check=False, dry_run=False, args=[], verbose=False)
 
     def test_series_before_all_runs_every_formatter(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--series", "all"])
         assert main() == 0
         for mock in mock_formatters.values():
-            mock.assert_called_once_with(check=False, dry_run=False, args=[])
+            mock.assert_called_once_with(check=False, dry_run=False, args=[], verbose=False)
 
     def test_series_flag_not_forwarded_to_formatters(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "all", "--series"])
@@ -851,13 +851,13 @@ class TestSeriesAndParallel:
         _set_argv(monkeypatch, ["formattington", "--check", "--series", "all"])
         assert main() == 0
         for mock in mock_formatters.values():
-            mock.assert_called_once_with(check=True, dry_run=False, args=[])
+            mock.assert_called_once_with(check=True, dry_run=False, args=[], verbose=False)
 
     def test_check_before_all_series_after(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--check", "all", "--series"])
         assert main() == 0
         for mock in mock_formatters.values():
-            mock.assert_called_once_with(check=True, dry_run=False, args=[])
+            mock.assert_called_once_with(check=True, dry_run=False, args=[], verbose=False)
 
     def test_all_series_with_extra_arg_exits_2(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "all", "--series", "extra"])
@@ -869,7 +869,7 @@ class TestSeriesAndParallel:
         _set_argv(monkeypatch, ["formattington", "--series", "shfmt"])
         assert main() == 0
         mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
 
     def test_series_after_single_formatter_is_forwarded(
@@ -880,7 +880,7 @@ class TestSeriesAndParallel:
         _set_argv(monkeypatch, ["formattington", "shfmt", "--series"])
         assert main() == 0
         mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=["--series"]
+            check=False, dry_run=False, args=["--series"], verbose=False
         )
 
     def test_series_without_formatter_is_a_noop(self, monkeypatch, mock_formatters):
@@ -957,14 +957,14 @@ class TestSeriesAndParallel:
         _set_argv(monkeypatch, ["formattington", "all"])
         assert main() == 3
         for mock in mock_formatters.values():
-            mock.assert_called_once_with(check=False, dry_run=False, args=[])
+            mock.assert_called_once_with(check=False, dry_run=False, args=[], verbose=False)
 
     def test_series_failing_does_not_swallow_others(self, monkeypatch, mock_formatters):
         mock_formatters["prettier"].return_value = 4
         _set_argv(monkeypatch, ["formattington", "all", "--series"])
         assert main() == 4
         for mock in mock_formatters.values():
-            mock.assert_called_once_with(check=False, dry_run=False, args=[])
+            mock.assert_called_once_with(check=False, dry_run=False, args=[], verbose=False)
 
     def test_parallel_missing_does_not_swallow_others(self, monkeypatch, mock_formatters, capsys):
         mock_formatters["shfmt"].side_effect = FileNotFoundError(
@@ -1005,4 +1005,4 @@ class TestSeriesAndParallel:
         _set_argv(monkeypatch, ["formattington", "--check", "all"])
         assert main() == 1
         for mock in mock_formatters.values():
-            mock.assert_called_once_with(check=True, dry_run=False, args=[])
+            mock.assert_called_once_with(check=True, dry_run=False, args=[], verbose=False)

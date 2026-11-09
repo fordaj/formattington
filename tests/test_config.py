@@ -63,7 +63,7 @@ class TestDiscoveryPrecedence:
         _set_argv(monkeypatch, ["formattington", "all", "--config", str(cfg)])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
-            check=False, dry_run=False, args=["--check"]
+            check=False, dry_run=False, args=["--check"], verbose=False
         )
         mock_formatters["shfmt"].assert_not_called()
 
@@ -73,7 +73,7 @@ class TestDiscoveryPrecedence:
         _set_argv(monkeypatch, ["formattington", "--config", str(cfg), "all"])
         assert main() == 0
         mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=[]
+            check=False, dry_run=False, args=[], verbose=False
         )
         mock_formatters["black"].assert_not_called()
 
@@ -98,7 +98,7 @@ class TestDiscoveryPrecedence:
         _set_argv(monkeypatch, ["formattington", "all"])
         assert main() == 0
         mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=["-i", "2"]
+            check=False, dry_run=False, args=["-i", "2"], verbose=False
         )
         mock_formatters["black"].assert_not_called()
 
@@ -107,7 +107,7 @@ class TestDiscoveryPrecedence:
         _set_argv(monkeypatch, ["formattington", "all"])
         assert main() == 0
         for mock in mock_formatters.values():
-            mock.assert_called_once_with(check=False, dry_run=False, args=[])
+            mock.assert_called_once_with(check=False, dry_run=False, args=[], verbose=False)
 
     def test_flag_beats_env_and_auto(self, monkeypatch, tmp_path, mock_formatters):
         _isolate(monkeypatch, tmp_path)
@@ -318,10 +318,10 @@ class TestExecution:
         _set_argv(monkeypatch, ["formattington", "all", "--config", str(cfg)])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
-            check=False, dry_run=False, args=["--check", "src"]
+            check=False, dry_run=False, args=["--check", "src"], verbose=False
         )
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=["docs/**/*.md"]
+            check=False, dry_run=False, args=["docs/**/*.md"], verbose=False
         )
         mock_formatters["shfmt"].assert_not_called()
         mock_formatters["clang-format"].assert_not_called()
@@ -350,10 +350,10 @@ class TestExecution:
         _set_argv(monkeypatch, ["formattington", "all", "--config", str(cfg)])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=["my file.md"]
+            check=False, dry_run=False, args=["my file.md"], verbose=False
         )
         mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=["-i", "2", "sub dir/my file.sh"]
+            check=False, dry_run=False, args=["-i", "2", "sub dir/my file.sh"], verbose=False
         )
 
     def test_check_propagates_to_config_commands(self, monkeypatch, tmp_path, mock_formatters):
@@ -363,7 +363,7 @@ class TestExecution:
         assert main() == 0
         for name in ("black", "shfmt"):
             mock_formatters[name].assert_called_once_with(
-                check=True, dry_run=False, args=[]
+                check=True, dry_run=False, args=[], verbose=False
             )
 
     def test_dry_run_and_verbose_propagate(self, monkeypatch, tmp_path, mock_formatters):
@@ -561,7 +561,7 @@ class TestSingleToolInteraction:
         _set_argv(monkeypatch, ["formattington", "prettier", "--config", "my.json"])
         assert main() == 0
         mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=["--config", "my.json"]
+            check=False, dry_run=False, args=["--config", "my.json"], verbose=False
         )
 
     def test_single_ignores_auto_config(self, monkeypatch, tmp_path, mock_formatters):

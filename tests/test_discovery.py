@@ -224,7 +224,7 @@ class TestCliDiscoveryWiring:
         mock.assert_called_once_with(
             check=True,
             dry_run=False,
-            args=["run.sh", "step.bash", "sub dir/my file.sh"],
+            args=["run.sh", "step.bash", "sub dir/my file.sh"], verbose=False,
         )
 
     def test_informational_args_skip_discovery(self, monkeypatch, tmp_path):
@@ -234,7 +234,7 @@ class TestCliDiscoveryWiring:
         monkeypatch.setitem(cli.FORMATTERS, "shfmt", mock)
         monkeypatch.setattr(sys, "argv", ["formattington", "shfmt", "--help"])
         assert main() == 0
-        mock.assert_called_once_with(check=False, dry_run=False, args=["--help"])
+        mock.assert_called_once_with(check=False, dry_run=False, args=["--help"], verbose=False)
 
     def test_flags_still_discover(self, monkeypatch, tmp_path):
         _mixed_fixture(tmp_path)
@@ -255,7 +255,7 @@ class TestCliDiscoveryWiring:
                 "run.sh",
                 "step.bash",
                 "sub dir/my file.sh",
-            ],
+            ], verbose=False,
         )
 
     def test_batches_respect_max_files(self, monkeypatch, tmp_path):
