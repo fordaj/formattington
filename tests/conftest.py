@@ -66,7 +66,16 @@ def mock_formatters(monkeypatch):
     """
     mocks = {
         name: MagicMock(return_value=0)
-        for name in ("shfmt", "clang-format", "black", "prettier", "powershell", "taplo")
+        for name in (
+            "shfmt",
+            "clang-format",
+            "black",
+            "prettier",
+            "powershell",
+            "taplo",
+            "gofmt",
+            "goimports",
+        )
     }
     monkeypatch.setattr(cli, "discover_files", lambda extensions, root=None: [])
     original = dict(cli.FORMATTERS)

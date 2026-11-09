@@ -9,6 +9,10 @@ import pytest
 from formattington import _tools
 from formattington.clang_format import clang_format
 from formattington.format_python import FILE_EXTENSIONS, black, format_python
+from formattington.gofmt import FILE_EXTENSIONS as GOFMT_FILE_EXTENSIONS
+from formattington.gofmt import gofmt
+from formattington.goimports import FILE_EXTENSIONS as GOIMPORTS_FILE_EXTENSIONS
+from formattington.goimports import goimports
 from formattington.powershell import powershell
 from formattington.taplo import taplo
 from formattington.prettier import FILE_EXTENSIONS as PRETTIER_FILE_EXTENSIONS
@@ -592,6 +596,160 @@ class TestTaplo:
         mock_find.assert_called_once_with("taplo", verbose=True)
 
 
+class TestGofmt:
+    """Issue #66: Go formatting via gofmt."""
+
+    def test_extensions(self):
+        assert GOFMT_FILE_EXTENSIONS == (".go",)
+
+    def test_default_mode_writes(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.gofmt.find_tool", return_value="/fake/gofmt"
+        ), patch("formattington.gofmt.subprocess.run", side_effect=fake):
+            assert gofmt() == 0
+        assert calls[0][0] == ["/fake/gofmt", "-w"]
+
+    def test_check_mode_lists_without_changes(self):
+        fake, calls = _fake_run_capture(stdout="")
+        with patch(
+            "formattington.gofmt.find_tool", return_value="/fake/gofmt"
+        ), patch("formattington.gofmt.subprocess.run", side_effect=fake):
+            assert gofmt(check=True) == 0
+        assert calls[0][0] == ["/fake/gofmt", "-l"]
+        assert calls[0][1]["capture_output"] is True
+
+    def test_check_mode_reports_changes(self):
+        fake, _ = _fake_run_capture(stdout="changed.go\n")
+        with patch(
+            "formattington.gofmt.find_tool", return_value="/fake/gofmt"
+        ), patch("formattington.gofmt.subprocess.run", side_effect=fake):
+            assert gofmt(check=True) == 1
+
+    def test_dry_run_mode_diffs(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.gofmt.find_tool", return_value="/fake/gofmt"
+        ), patch("formattington.gofmt.subprocess.run", side_effect=fake):
+            assert gofmt(dry_run=True) == 0
+        assert calls[0][0] == ["/fake/gofmt", "-d"]
+
+    def test_forwards_args_after_mode_flag_and_preserves_spaces(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.gofmt.find_tool", return_value="/fake/gofmt"
+        ), patch("formattington.gofmt.subprocess.run", side_effect=fake):
+            gofmt(check=True, args=["my file.go", "another file.go"])
+        assert calls[0][0] == [
+            "/fake/gofmt",
+            "-l",
+            "my file.go",
+            "another file.go",
+        ]
+        assert len(calls) == 1
+
+    def test_propagates_subprocess_exit_code(self):
+        fake, _ = _fake_run_capture(returncode=2)
+        with patch(
+            "formattington.gofmt.find_tool", return_value="/fake/gofmt"
+        ), patch("formattington.gofmt.subprocess.run", side_effect=fake):
+            assert gofmt() == 2
+
+    def test_forwards_verbose_to_find_tool(self):
+        fake, _ = _fake_run_capture()
+        with patch(
+            "formattington.gofmt.find_tool", return_value="/fake/gofmt"
+        ) as mock_find, patch(
+            "formattington.gofmt.subprocess.run", side_effect=fake
+        ):
+            assert gofmt(verbose=True) == 0
+        mock_find.assert_called_once_with("gofmt", verbose=True)
+
+
+class TestGoimports:
+    """Issue #66: Go formatting + import fixing via goimports."""
+
+    def test_extensions(self):
+        assert GOIMPORTS_FILE_EXTENSIONS == (".go",)
+
+    def test_default_mode_writes(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.goimports.find_tool", return_value="/fake/goimports"
+        ), patch("formattington.goimports.subprocess.run", side_effect=fake):
+            assert goimports() == 0
+        assert calls[0][0] == ["/fake/goimports", "-w"]
+
+    def test_check_mode_lists_without_changes(self):
+        fake, calls = _fake_run_capture(stdout="")
+        with patch(
+            "formattington.goimports.find_tool", return_value="/fake/goimports"
+        ), patch("formattington.goimports.subprocess.run", side_effect=fake):
+            assert goimports(check=True) == 0
+        assert calls[0][0] == ["/fake/goimports", "-l"]
+        assert calls[0][1]["capture_output"] is True
+
+    def test_check_mode_reports_changes(self):
+        fake, _ = _fake_run_capture(stdout="changed.go\n")
+        with patch(
+            "formattington.goimports.find_tool", return_value="/fake/goimports"
+        ), patch("formattington.goimports.subprocess.run", side_effect=fake):
+            assert goimports(check=True) == 1
+
+    def test_dry_run_mode_diffs(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.goimports.find_tool", return_value="/fake/goimports"
+        ), patch("formattington.goimports.subprocess.run", side_effect=fake):
+            assert goimports(dry_run=True) == 0
+        assert calls[0][0] == ["/fake/goimports", "-d"]
+
+    def test_forwards_args_after_mode_flag_and_preserves_spaces(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.goimports.find_tool", return_value="/fake/goimports"
+        ), patch("formattington.goimports.subprocess.run", side_effect=fake):
+            goimports(check=True, args=["my file.go", "another file.go"])
+        assert calls[0][0] == [
+            "/fake/goimports",
+            "-l",
+            "my file.go",
+            "another file.go",
+        ]
+        assert len(calls) == 1
+
+    def test_forwards_local_flag(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.goimports.find_tool", return_value="/fake/goimports"
+        ), patch("formattington.goimports.subprocess.run", side_effect=fake):
+            goimports(args=["-local", "example.com/foo", "file.go"])
+        assert calls[0][0] == [
+            "/fake/goimports",
+            "-w",
+            "-local",
+            "example.com/foo",
+            "file.go",
+        ]
+
+    def test_propagates_subprocess_exit_code(self):
+        fake, _ = _fake_run_capture(returncode=2)
+        with patch(
+            "formattington.goimports.find_tool", return_value="/fake/goimports"
+        ), patch("formattington.goimports.subprocess.run", side_effect=fake):
+            assert goimports() == 2
+
+    def test_forwards_verbose_to_find_tool(self):
+        fake, _ = _fake_run_capture()
+        with patch(
+            "formattington.goimports.find_tool", return_value="/fake/goimports"
+        ) as mock_find, patch(
+            "formattington.goimports.subprocess.run", side_effect=fake
+        ):
+            assert goimports(verbose=True) == 0
+        mock_find.assert_called_once_with("goimports", verbose=True)
+
+
 class TestSharedBehavior:
     """Parametrized equivalents shared across formatter integrations.
 
@@ -617,12 +775,14 @@ class TestSharedBehavior:
             powershell, "formattington.powershell.find_tool", id="powershell"
         ),
         pytest.param(taplo, "formattington.taplo.find_tool", id="taplo"),
+        pytest.param(gofmt, "formattington.gofmt.find_tool", id="gofmt"),
+        pytest.param(goimports, "formattington.goimports.find_tool", id="goimports"),
     ]
 
     # Subprocess-boundary tools only: shfmt delegates to run_tool()
     # (patched via formattington._tools.subprocess.run) while the
-    # other five patch their own module's subprocess.run. No-shell and
-    # help/version parametrizes cover those five; shfmt's boundary is
+    # other seven patch their own module's subprocess.run. No-shell and
+    # help/version parametrizes cover those seven; shfmt's boundary is
     # preserved and asserted in TestShfmt.
     SUBPROCESS_FORMATTERS = [
         pytest.param(
@@ -664,6 +824,22 @@ class TestSharedBehavior:
             "/fake/taplo",
             "file with spaces.toml",
             id="taplo",
+        ),
+        pytest.param(
+            gofmt,
+            "formattington.gofmt.find_tool",
+            "formattington.gofmt.subprocess.run",
+            "/fake/gofmt",
+            "file with spaces.go",
+            id="gofmt",
+        ),
+        pytest.param(
+            goimports,
+            "formattington.goimports.find_tool",
+            "formattington.goimports.subprocess.run",
+            "/fake/goimports",
+            "file with spaces.go",
+            id="goimports",
         ),
     ]
 
