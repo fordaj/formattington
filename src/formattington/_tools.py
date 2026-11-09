@@ -1,12 +1,73 @@
 import os
 import platform
 import shutil
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 import subprocess
 import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 TOOLS_DIR = PROJECT_ROOT / "tools"
+
+# Directory names discovery never descends into. Besides version-control
+# metadata, these are the usual places generated, vendored, minified, or
+# dependency files live (see AGENTS.md). Hidden directories (starting
+# with ".") are also skipped, along with the bundled-tools directory,
+# which holds pinned binaries rather than user source.
+IGNORED_DIR_NAMES: frozenset[str] = frozenset(
+    {
+        "__pycache__",
+        "node_modules",
+        "vendor",
+        "venv",
+        "dist",
+        "build",
+        "tools",
+    }
+)
+
+
+def _is_ignored_dirname(name: str) -> bool:
+    """Whether discovery should prune a directory by name."""
+    return name.startswith(".") or name in IGNORED_DIR_NAMES
+
+
+def discover_files(
+    extensions: Sequence[str],
+    root: Path | None = None,
+) -> list[str]:
+    """Discover matching files under ``root`` (default: current directory).
+
+    ``extensions`` are dotted suffixes such as ``".sh"``; matching is
+    case-insensitive. Hidden directories, :data:`IGNORED_DIR_NAMES`, and
+    anything under them are skipped. Results are sorted and returned as
+    strings relative to ``root`` so they can be appended to a formatter
+    argv directly (paths with spaces stay single entries).
+    """
+    base = Path(root) if root is not None else Path.cwd()
+    if not base.is_dir():
+        return []
+    wanted = {ext.lower() for ext in extensions}
+    found: list[str] = []
+    for dirpath, dirnames, filenames in os.walk(base, topdown=True):
+        dirnames[:] = [d for d in dirnames if not _is_ignored_dirname(d)]
+        for filename in filenames:
+            if Path(filename).suffix.lower() in wanted:
+                absolute = Path(dirpath) / filename
+                found.append(str(absolute.relative_to(base)))
+    return sorted(found)
+
+
+def iter_chunks(items: Sequence[str], size: int) -> Iterator[list[str]]:
+    """Split ``items`` into consecutive chunks of at most ``size`` entries.
+
+    Used to respect operating-system command-line limits when passing
+    many discovered files to a single formatter invocation.
+    """
+    if size <= 0:
+        raise ValueError("chunk size must be positive")
+    for start in range(0, len(items), size):
+        yield list(items[start : start + size])
 
 def run_tool(
     executable: str,

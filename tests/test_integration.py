@@ -176,6 +176,8 @@ class TestPathStubs:
         monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
         monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
         monkeypatch.setattr(sys, "argv", ["formattington", "--check", "shfmt"])
+        # Run from an empty directory so automatic discovery is hermetic.
+        monkeypatch.chdir(tmp_path)
         with pytest.MonkeyPatch.context() as mp:
             mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
             mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")
@@ -329,6 +331,9 @@ class TestPathStubs:
         monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
         monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
         monkeypatch.setattr(sys, "argv", ["formattington", "prettier", "--check"])
+        # Discovery is automatic when no files are forwarded, so run from
+        # an empty directory to keep the argv assertion hermetic.
+        monkeypatch.chdir(tmp_path)
         with pytest.MonkeyPatch.context() as mp:
             mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
             mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")

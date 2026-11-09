@@ -15,12 +15,18 @@ from formattington.cli import main
 def mock_formatters(monkeypatch):
     """Replace FORMATTERS with mocks and restore after.
 
+    File discovery is stubbed to return no files so the existing
+    formatter-call assertions (``args=[]`` unless the test forwards
+    arguments) observe argv construction rather than real filesystem
+    state. Discovery behavior itself is covered in test_discovery.py.
+
     Returns a dict of mocks keyed by formatter name.
     """
     mocks = {
         name: MagicMock(return_value=0)
         for name in ("shfmt", "clang-format", "black", "prettier")
     }
+    monkeypatch.setattr(cli, "discover_files", lambda extensions, root=None: [])
     original = dict(cli.FORMATTERS)
     cli.FORMATTERS.update(mocks)
     try:
