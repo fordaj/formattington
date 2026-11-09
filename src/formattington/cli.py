@@ -16,6 +16,8 @@ from formattington.powershell import powershell
 from formattington.prettier import prettier
 from formattington.shfmt import FILE_EXTENSIONS as SHFMT_EXTENSIONS
 from formattington.shfmt import shfmt
+from formattington.taplo import FILE_EXTENSIONS as TAPLO_EXTENSIONS
+from formattington.taplo import taplo
 
 
 FORMATTERS = {
@@ -24,6 +26,7 @@ FORMATTERS = {
     "black": black,
     "prettier": prettier,
     "powershell": powershell,
+    "taplo": taplo,
 }
 
 FORMATTER_EXTENSIONS: dict[str, tuple[str, ...]] = {
@@ -32,6 +35,7 @@ FORMATTER_EXTENSIONS: dict[str, tuple[str, ...]] = {
     "black": BLACK_EXTENSIONS,
     "prettier": PRETTIER_EXTENSIONS,
     "powershell": POWERSHELL_EXTENSIONS,
+    "taplo": TAPLO_EXTENSIONS,
 }
 
 # Upper bound on discovered files per formatter invocation, to respect
@@ -53,6 +57,7 @@ LANGUAGE_ALIASES = {
     "markdown": "prettier",
     "html": "prettier",
     "ps1": "powershell",
+    "toml": "taplo",
 }
 
 _EPILOG = (
@@ -61,7 +66,8 @@ _EPILOG = (
     "uses shfmt; python/py use black; md/markdown use prettier "
     "(Markdown formatting is provided by Prettier; ``.md`` and "
     "``.markdown`` files are covered); html uses prettier; ps1 uses powershell "
-    "(PSScriptAnalyzer linting of PowerShell scripts).\n\n"
+    "(PSScriptAnalyzer linting of PowerShell scripts); toml uses taplo "
+    "(TOML formatting via taplo fmt).\n\n"
     "With no file arguments, formattington discovers each formatter's "
     "matching files recursively from the current directory (skipping "
     "hidden directories and __pycache__, node_modules, vendor, venv, "
@@ -73,7 +79,7 @@ _EPILOG = (
     "use --series (before or after 'all', e.g. "
     "'formattington --series all' or 'formattington all --series') "
     "to run them sequentially in shfmt, clang-format, black, prettier, "
-    "powershell "
+    "powershell, taplo "
     "order. Exit code is the last non-zero code in that order "
     "(missing tool counts as 127, printed to stderr, and does not "
     "prevent remaining formatters from running); 0 only if all succeed."

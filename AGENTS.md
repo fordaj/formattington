@@ -120,6 +120,7 @@ Important modules include:
 - `format_python.py` — Black (Python) integration (`.py` files; PATH-only, no bundle; respects `[tool.black]` / `pyproject.toml`).
 - `prettier.py` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`, `.markdown`; PATH-only, no bundle; respects `.prettierrc`). Prettier is the sole owner of Markdown formatting; `md`/`markdown` are `LANGUAGE_ALIASES` for `prettier` in `cli.py`, and there is no `markdown_format.py`.
 - `powershell.py` — PowerShell integration (`.ps1`, `.psm1`; PATH-only, no bundle). Lints via PSScriptAnalyzer (`Invoke-ScriptAnalyzer`) through `pwsh` (PowerShell 7+, falling back to `powershell.exe` on Windows); there is no in-place formatting, so check/dry-run/default all lint and findings exit 1. The `ps1` language alias resolves to `powershell` in `cli.py`.
+- `taplo.py` — Taplo (TOML) integration (`.toml` files; bundled under `tools/taplo/<version>/<platform>/`; respects `taplo.toml`). The `toml` language alias resolves to `taplo` in `cli.py`.
 
 `cli.py` is the single canonical entry point and the sole `FORMATTERS` registry.
 

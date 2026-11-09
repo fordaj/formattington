@@ -10,6 +10,7 @@ from formattington import _tools
 from formattington.clang_format import clang_format
 from formattington.format_python import FILE_EXTENSIONS, black, format_python
 from formattington.powershell import powershell
+from formattington.taplo import taplo
 from formattington.prettier import FILE_EXTENSIONS as PRETTIER_FILE_EXTENSIONS
 from formattington.prettier import prettier
 from formattington.shfmt import shfmt
@@ -633,3 +634,133 @@ class TestPowershell:
         ):
             assert powershell(verbose=True) == 0
         mock_find.assert_called_once_with("pwsh", verbose=True)
+
+
+class TestTaplo:
+    """Issue #26: TOML formatting via taplo fmt."""
+
+    def test_extensions(self):
+        from formattington.taplo import FILE_EXTENSIONS
+
+        assert FILE_EXTENSIONS == (".toml",)
+
+    def test_default_mode_formats_in_place(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
+            assert taplo() == 0
+        assert calls[0][0] == ["/fake/taplo", "fmt", "--colors", "never"]
+
+    def test_check_mode_uses_fmt_check(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
+            assert taplo(check=True) == 0
+        assert calls[0][0] == [
+            "/fake/taplo",
+            "fmt",
+            "--colors",
+            "never",
+            "--check",
+        ]
+
+    def test_dry_run_mode_uses_fmt_diff(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
+            assert taplo(dry_run=True) == 0
+        assert calls[0][0] == ["/fake/taplo", "fmt", "--colors", "never", "--diff"]
+
+    def test_forwards_args_and_preserves_spaces(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
+            taplo(check=True, args=["my file.toml", "another file.toml"])
+        assert calls[0][0] == [
+            "/fake/taplo",
+            "fmt",
+            "--colors",
+            "never",
+            "--check",
+            "my file.toml",
+            "another file.toml",
+        ]
+        assert len(calls) == 1
+
+    def test_user_colors_are_respected(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
+            taplo(args=["--colors", "always", "file.toml"])
+        assert calls[0][0] == ["/fake/taplo", "fmt", "--colors", "always", "file.toml"]
+
+    def test_check_and_dry_run_are_exclusive(self):
+        with patch("formattington.taplo.find_tool", return_value="/fake/taplo"):
+            with pytest.raises(ValueError, match="cannot both be enabled"):
+                taplo(check=True, dry_run=True)
+
+    def test_propagates_subprocess_exit_code(self):
+        fake, _ = _fake_run_capture(returncode=1)
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
+            assert taplo(check=True) == 1
+
+    def test_missing_tool_raises(self):
+        with patch(
+            "formattington.taplo.find_tool",
+            side_effect=FileNotFoundError("Could not find 'taplo'"),
+        ):
+            with pytest.raises(FileNotFoundError):
+                taplo()
+
+    def test_help_passthrough_without_mode_flags(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
+            assert taplo(check=True, args=["--help"]) == 0
+        assert calls[0][0] == ["/fake/taplo", "--help"]
+
+    def test_version_passthrough_without_mode_flags(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
+            assert taplo(dry_run=True, args=["--version"]) == 0
+        assert calls[0][0] == ["/fake/taplo", "--version"]
+
+    def test_no_shell_used(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
+            taplo(args=["file with spaces.toml"])
+        _, kwargs = calls[0]
+        assert kwargs.get("shell") is None
+        assert kwargs["check"] is False
+
+    def test_does_not_add_config_flag(self):
+        # A project taplo.toml must be respected; Formattington adds no
+        # --config override unless the caller forwards one.
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
+            taplo(args=["file.toml"])
+        assert "--config" not in calls[0][0]
+
+    def test_forwards_verbose_to_find_tool(self):
+        fake, _ = _fake_run_capture()
+        with patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ) as mock_find, patch(
+            "formattington.taplo.subprocess.run", side_effect=fake
+        ):
+            assert taplo(verbose=True) == 0
+        mock_find.assert_called_once_with("taplo", verbose=True)
