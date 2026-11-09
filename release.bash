@@ -14,11 +14,25 @@
 #   ./release.bash --dry-run # compute + verify only, touch nothing remote
 #
 # Prerequisites: git, gh authenticated via `gh auth login` (real release),
-# python3 for _version verification, and a bundled versioner binary
-# (refresh with tools/versioner/update.bash; select with scripts/env.sh).
+# python3 for _version verification, and bundled versioner/logamuffin
+# binaries (refresh with tools/versioner/update.bash and
+# tools/logamuffin/update.bash; select with scripts/env.sh). Logging uses
+# log <level> <message> from scripts/env.sh (logamuffin, with printf
+# fallback until tools/logamuffin is populated).
 # Working tree must be clean; HEAD should be pushed.
 
 set -euo pipefail
+
+# Logging via logamuffin (log <level> <message> from scripts/env.sh,
+# with printf fallback until tools/logamuffin is populated). Source the
+# env cascade first so every later message goes through log().
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+if [[ ! -f "$SCRIPT_DIR/scripts/env.sh" ]]; then
+    printf 'release.bash: error: env cascade not found: %s/scripts/env.sh\n' "$SCRIPT_DIR" >&2
+    exit 1
+fi
+# shellcheck disable=SC1091
+. "$SCRIPT_DIR/scripts/env.sh"
 
 DRY_RUN=0
 
@@ -37,6 +51,7 @@ Flags:
 
 Env:
   VERSIONER_BIN   Path to versioner (default: via scripts/env.sh, then PATH).
+  LOGAMUFFIN_BIN  Path to logamuffin for log() (default: via scripts/env.sh, then PATH).
 EOF
 }
 
@@ -51,16 +66,15 @@ while [[ $# -gt 0 ]]; do
         exit 0
         ;;
     *)
-        echo "release.bash: unknown argument: $1" >&2
+        log ERROR "unknown argument: $1"
         usage >&2
         exit 2
         ;;
     esac
 done
 
-log() { printf 'release.bash: %s\n' "$*"; }
 die() {
-    printf 'release.bash: error: %s\n' "$*" >&2
+    log ERROR "$*" || true
     exit 1
 }
 need_cmd() {
@@ -88,19 +102,19 @@ if ! REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
     die "not inside a git repository"
 fi
 cd "$REPO_ROOT"
-log "repo: $REPO_ROOT"
+log INFO "repo: $REPO_ROOT"
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 HEAD_SHORT="$(git rev-parse --short HEAD)"
-log "branch: $BRANCH  HEAD: $HEAD_SHORT"
+log INFO "branch: $BRANCH  HEAD: $HEAD_SHORT"
 if [[ "$DRY_RUN" -eq 1 ]]; then
-    log "DRY RUN: no tag/push/release will happen"
+    log INFO "DRY RUN: no tag/push/release will happen"
 fi
 
 # --- Precondition: clean working tree ---------------------------------
 if [[ -n "$(git status --porcelain)" ]]; then
     if [[ "$DRY_RUN" -eq 1 ]]; then
-        log "warning: working tree is not clean (allowed in --dry-run)"
+        log WARNING "working tree is not clean (allowed in --dry-run)"
         git status --short | sed 's/^/release.bash:   /' >&2
     else
         die "working tree is not clean (commit or stash first):"$'\n'"$(git status --short)"
@@ -110,29 +124,30 @@ fi
 # Best-effort fetch so remote tag-existence checks are current.
 if ! git fetch origin --tags 2>/dev/null; then
     if [[ "$DRY_RUN" -eq 1 ]]; then
-        log "warning: git fetch origin --tags failed; remote tag check may be stale"
+        log WARNING "git fetch origin --tags failed; remote tag check may be stale"
     else
         die "git fetch origin --tags failed"
     fi
 fi
 
-# --- Dogfooding: select versioner via scripts/env.sh ------------------
-if [[ -z "${VERSIONER_BIN:-}" ]]; then
-    # shellcheck disable=SC1091
-    . "$REPO_ROOT/scripts/env.sh"
-fi
+# --- Dogfooding: versioner/logamuffin via scripts/env.sh (sourced above)
 # shellcheck disable=SC2154
 if [[ -z "${VERSIONER_BIN:-}" ]]; then
     die "no versioner binary found (run tools/versioner/update.bash, or set VERSIONER_BIN)"
 fi
 [[ -x "$VERSIONER_BIN" ]] || die "VERSIONER_BIN=$VERSIONER_BIN is not executable"
-log "using versioner: $VERSIONER_BIN"
+log INFO "using versioner: $VERSIONER_BIN"
+if [[ -n "${LOGAMUFFIN_BIN:-}" && -x "$LOGAMUFFIN_BIN" ]]; then
+    log INFO "using logamuffin: $LOGAMUFFIN_BIN"
+else
+    log WARNING "logamuffin not found; falling back to printf logging (run tools/logamuffin/update.bash)"
+fi
 "$VERSIONER_BIN" --version | sed 's/^/release.bash:   /'
 
 # --- Compute VERSION/TAG with versioner (dogfooding) ------------------
-log "computing version with versioner (dogfooding)..."
+log INFO "computing version with versioner (dogfooding)..."
 VERSION_OUT="$("$VERSIONER_BIN" --repo-dir "$REPO_ROOT" --quiet)"
-log "versioner output:"
+log INFO "versioner output:"
 printf '%s\n' "$VERSION_OUT" | sed 's/^/release.bash:   /'
 
 VERSION="$(printf '%s\n' "$VERSION_OUT" | sed -n 's/^VERSION=//p' | tail -1)"
@@ -142,13 +157,13 @@ TAG="$(printf '%s\n' "$VERSION_OUT" | sed -n 's/^TAG=//p' | tail -1)"
 if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     die "computed tag looks invalid: '$TAG' (expected vX.Y.Z.W.V)"
 fi
-log "VERSION=$VERSION  TAG=$TAG"
+log INFO "VERSION=$VERSION  TAG=$TAG"
 
 # --- Dynamic package version must agree with the tag ------------------
-log "verifying dynamic package version..."
+log INFO "verifying dynamic package version..."
 # shellcheck disable=SC2154
 PKG_VERSION="$(PYTHONPATH="$REPO_ROOT/src" "$PYTHON_BIN" -c 'import formattington._version as v; print(v.__version__)')"
-log "formattington._version reports: $PKG_VERSION"
+log INFO "formattington._version reports: $PKG_VERSION"
 if [[ "$PKG_VERSION" != "$VERSION" ]]; then
     die "dynamic version $PKG_VERSION does not match versioner VERSION=$VERSION"
 fi
@@ -163,31 +178,31 @@ fi
 
 # --- Tag + GitHub release (version tracking only, no assets) -----------
 if [[ "$DRY_RUN" -eq 1 ]]; then
-    log "DRY RUN: would run:"
-    log "  git tag -a $TAG -m \"formattington $TAG\""
-    log "  git push origin $TAG"
-    log "  gh release create $TAG --title \"formattington $TAG\" --generate-notes"
-    log "dry run complete: VERSION=$VERSION TAG=$TAG"
+    log INFO "DRY RUN: would run:"
+    log INFO "  git tag -a $TAG -m \"formattington $TAG\""
+    log INFO "  git push origin $TAG"
+    log INFO "  gh release create $TAG --title \"formattington $TAG\" --generate-notes"
+    log INFO "dry run complete: VERSION=$VERSION TAG=$TAG"
     exit 0
 fi
 
-log "creating annotated tag $TAG..."
+log INFO "creating annotated tag $TAG..."
 git tag -a "$TAG" -m "formattington $TAG"
 
-log "pushing tag $TAG..."
+log INFO "pushing tag $TAG..."
 git push origin "$TAG"
 
 if gh release view "$TAG" >/dev/null 2>&1; then
     die "GitHub release $TAG already exists (tag was pushed; add it manually with: gh release create $TAG --title \"formattington $TAG\" --generate-notes)"
 fi
 
-log "creating GitHub release $TAG (version tracking only, no assets)..."
+log INFO "creating GitHub release $TAG (version tracking only, no assets)..."
 gh release create "$TAG" \
     --title "formattington $TAG" \
     --generate-notes
 
 if REPO_SLUG="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)" && [[ -n "$REPO_SLUG" ]]; then
-    log "release: https://github.com/$REPO_SLUG/releases/tag/$TAG"
+    log INFO "release: https://github.com/$REPO_SLUG/releases/tag/$TAG"
 else
-    log "release $TAG created (see GitHub Releases)"
+    log INFO "release $TAG created (see GitHub Releases)"
 fi

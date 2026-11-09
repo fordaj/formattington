@@ -16,7 +16,9 @@
 #
 # Prerequisites: gh (https://cli.github.com/), 7z/7zz (p7zip), and (for the
 # real update) shasum or sha256sum for checksum verification. The script
-# resolves its own directory, so it can be run from anywhere.
+# resolves its own directory, so it can be run from anywhere. Logging uses
+# log <level> <message> from scripts/env.sh (logamuffin, with printf
+# fallback until tools/logamuffin is populated).
 #
 # Layout after a successful run (example for v0.1.2.3):
 #   tools/versioner/
@@ -33,6 +35,18 @@
 #   VERSIONER_TAG   Pinned tag (default: latest release)
 
 set -euo pipefail
+
+# Logging via logamuffin (log <level> <message> from scripts/env.sh,
+# with printf fallback until tools/logamuffin is populated). Source the
+# env cascade first so every later message goes through log().
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+REPO_ROOT_FOR_ENV=$(cd -- "$SCRIPT_DIR/../.." &>/dev/null && pwd)
+if [[ ! -f "$REPO_ROOT_FOR_ENV/scripts/env.sh" ]]; then
+    printf 'update.bash: error: env cascade not found: %s/scripts/env.sh\n' "$REPO_ROOT_FOR_ENV" >&2
+    exit 1
+fi
+# shellcheck disable=SC1091
+. "$REPO_ROOT_FOR_ENV/scripts/env.sh"
 
 DRY_RUN=0
 TAG="${VERSIONER_TAG:-}"
@@ -71,7 +85,7 @@ while [[ $# -gt 0 ]]; do
         ;;
     --tag)
         [[ $# -ge 2 ]] || {
-            echo "update.bash: --tag requires a value" >&2
+            log ERROR "--tag requires a value"
             usage >&2
             exit 2
         }
@@ -84,7 +98,7 @@ while [[ $# -gt 0 ]]; do
         ;;
     --repo)
         [[ $# -ge 2 ]] || {
-            echo "update.bash: --repo requires a value" >&2
+            log ERROR "--repo requires a value"
             usage >&2
             exit 2
         }
@@ -96,7 +110,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     *)
-        echo "update.bash: unknown argument: $1" >&2
+        log ERROR "unknown argument: $1"
         usage >&2
         exit 2
         ;;
@@ -104,13 +118,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -n "$REPO" ]] || {
-    echo "update.bash: repository must not be empty" >&2
+    log ERROR "repository must not be empty"
     exit 2
 }
 
-log() { printf 'update.bash: %s\n' "$*"; }
 die() {
-    printf 'update.bash: error: %s\n' "$*" >&2
+    log ERROR "$*" || true
     exit 1
 }
 need_cmd() {
@@ -129,11 +142,10 @@ if [[ "$DRY_RUN" -ne 1 ]]; then
     fi
 fi
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 VERSIONER_ROOT="$SCRIPT_DIR"
 [[ -d "$VERSIONER_ROOT" ]] || die "versioner bundle directory not found: $VERSIONER_ROOT"
-log "versioner bundle directory: $VERSIONER_ROOT"
-log "repository: $REPO"
+log INFO "versioner bundle directory: $VERSIONER_ROOT"
+log INFO "repository: $REPO"
 
 if [[ -z "$TAG" ]]; then
     TAG="$(gh release view --repo "$REPO" --json tagName -q .tagName)" ||
@@ -143,33 +155,30 @@ fi
 if ! [[ "$TAG" =~ ^v[0-9]+(\.[0-9]+)+$ ]]; then
     die "invalid tag '$TAG' (expected vX.Y.Z...)"
 fi
-log "release tag: $TAG"
+log INFO "release tag: $TAG"
 
-# map_upstream_to_platform <os-arch> sets PLATFORM (e.g. darwin-arm64 -> macos-arm64)
-# or returns 1 for unknown values. Sets globals to avoid subshell-die pitfalls.
-map_upstream_to_platform() {
-    local os_arch="$1"
-    local upstream_os="${os_arch%-*}"
-    local upstream_arch="${os_arch##*-}"
-    local mapped_os=""
-    local mapped_arch=""
-    case "$upstream_os" in
-    darwin) mapped_os="macos" ;;
-    linux) mapped_os="linux" ;;
-    windows) mapped_os="windows" ;;
+# parse_stem_to_platform <stem> sets PLATFORM (e.g.
+# Versioner_v0.0.3.0.5_darwin-arm64 -> macos-arm64) or returns 1 for
+# unknown values. Sets globals to avoid subshell-die pitfalls. Asset
+# names append _<os>-<arch> after the tag, and arch may itself contain
+# "_" (x86_64), so the suffix is matched as a whole instead of splitting
+# on the last "_" (which would yield "x86_64" alone).
+parse_stem_to_platform() {
+    local stem="$1"
+    case "$stem" in
+    *_macos-x86_64 | *_darwin-amd64) PLATFORM="macos-x86_64" ;;
+    *_macos-arm64 | *_darwin-arm64) PLATFORM="macos-arm64" ;;
+    *_linux-x86_64 | *_linux-amd64) PLATFORM="linux-x86_64" ;;
+    *_linux-arm64) PLATFORM="linux-arm64" ;;
+    *_windows-x86_64 | *_windows-amd64) PLATFORM="windows-x86_64" ;;
+    *_windows-arm64) PLATFORM="windows-arm64" ;;
     *) return 1 ;;
     esac
-    case "$upstream_arch" in
-    amd64 | x86_64) mapped_arch="x86_64" ;;
-    arm64 | aarch64) mapped_arch="arm64" ;;
-    *) return 1 ;;
-    esac
-    PLATFORM="$mapped_os-$mapped_arch"
 }
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
-    log "DRY RUN: no download, extraction, or deletion will happen"
-    log "release $TAG assets:"
+    log INFO "DRY RUN: no download, extraction, or deletion will happen"
+    log INFO "release $TAG assets:"
     assets_list=$(gh release view "$TAG" --repo "$REPO" --json assets -q '.assets[].name' ||
         die "could not list assets for $TAG in $REPO")
     [[ -n "$assets_list" ]] || die "no assets found for $TAG in $REPO"
@@ -180,18 +189,17 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
         *.7z)
             asset_count=$((asset_count + 1))
             stem="${asset%.7z}"
-            os_arch="${stem##*_}"
-            if map_upstream_to_platform "$os_arch"; then
-                log "  $asset -> $TAG/$PLATFORM"
+            if parse_stem_to_platform "$stem"; then
+                log INFO "  $asset -> $TAG/$PLATFORM"
             else
-                log "  $asset -> unknown platform (would fail)"
+                log INFO "  $asset -> unknown platform (would fail)"
             fi
             ;;
         checksums.txt)
-            log "  $asset (checksums)"
+            log INFO "  $asset (checksums)"
             ;;
         *)
-            log "  $asset (ignored)"
+            log INFO "  $asset (ignored)"
             ;;
         esac
     done <<<"$assets_list"
@@ -202,14 +210,14 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
         [[ -d "$dir" ]] || continue
         dir_name="$(basename "$dir")"
         if [[ "$dir_name" != "$TAG" ]]; then
-            log "would remove old $dir_name"
+            log INFO "would remove old $dir_name"
             old_found=1
         fi
     done
     if [[ "$old_found" -eq 0 ]]; then
-        log "no old version folders to remove"
+        log INFO "no old version folders to remove"
     fi
-    log "dry run complete: would update $VERSIONER_ROOT/$TAG"
+    log INFO "dry run complete: would update $VERSIONER_ROOT/$TAG"
     exit 0
 fi
 
@@ -229,16 +237,16 @@ trap cleanup EXIT
 TMP_DIR="$(mktemp -d)"
 STAGE_DIR="$(mktemp -d "$VERSIONER_ROOT/.tmp.XXXXXX")"
 
-log "downloading $TAG assets from $REPO..."
+log INFO "downloading $TAG assets from $REPO..."
 gh release download "$TAG" --repo "$REPO" --dir "$TMP_DIR" --pattern '*.7z' --pattern 'checksums.txt' --clobber
 
 shopt -s nullglob
 archives=("$TMP_DIR"/*.7z)
 ((${#archives[@]} > 0)) || die "no .7z assets downloaded from $REPO $TAG"
-log "downloaded ${#archives[@]} .7z archives"
+log INFO "downloaded ${#archives[@]} .7z archives"
 
 if [[ -f "$TMP_DIR/checksums.txt" ]]; then
-    log "verifying checksums..."
+    log INFO "verifying checksums..."
     if command -v shasum >/dev/null 2>&1; then
         (cd "$TMP_DIR" && shasum -a 256 -c checksums.txt) || die "checksum verification failed for $TAG"
     elif command -v sha256sum >/dev/null 2>&1; then
@@ -246,22 +254,21 @@ if [[ -f "$TMP_DIR/checksums.txt" ]]; then
     else
         die "checksums.txt present but neither shasum nor sha256sum found"
     fi
-    log "checksums verified"
+    log INFO "checksums verified"
 else
-    log "warning: no checksums.txt in $TAG release; skipping verification"
+    log WARNING "no checksums.txt in $TAG release; skipping verification"
 fi
 
 for archive in "${archives[@]}"; do
     base="$(basename "$archive")"
     stem="${base%.7z}"
-    os_arch="${stem##*_}"
-    if ! map_upstream_to_platform "$os_arch"; then
+    if ! parse_stem_to_platform "$stem"; then
         die "unknown platform in asset '$base' (expected <os>-<arch> such as darwin-arm64)"
     fi
     if [[ -e "$STAGE_DIR/$PLATFORM" ]]; then
         die "duplicate asset for platform $PLATFORM (from $base)"
     fi
-    log "extracting $base -> $TAG/$PLATFORM"
+    log INFO "extracting $base -> $TAG/$PLATFORM"
     extract_dir="$TMP_DIR/extract-$PLATFORM"
     mkdir -p "$extract_dir"
     "$SEVENZIP" x -y "$archive" -o"$extract_dir" >/dev/null
@@ -278,7 +285,7 @@ for archive in "${archives[@]}"; do
     cp -p "$bin_src" "$target_dir/$bin_name"
     chmod +x "$target_dir/$bin_name"
     [[ -s "$target_dir/$bin_name" ]] || die "installed binary is empty: $target_dir/$bin_name"
-    log "installed $PLATFORM/$bin_name (from $base)"
+    log INFO "installed $PLATFORM/$bin_name (from $base)"
     rm -rf -- "$extract_dir"
 done
 
@@ -292,7 +299,7 @@ for dir in "$VERSIONER_ROOT"/v*/; do
     [[ -d "$dir" ]] || continue
     dir_name="$(basename "$dir")"
     if [[ "$dir_name" != "$TAG" ]]; then
-        log "removing old $dir_name"
+        log INFO "removing old $dir_name"
         rm -rf -- "$dir"
     fi
 done
@@ -320,17 +327,17 @@ for cand in "$TAG_DIR/$host_platform/versioner" "$TAG_DIR/$host_platform/version
 done
 if [[ -n "$host_bin" ]]; then
     host_ver="$("$host_bin" --version 2>&1 || true)"
-    log "host binary $host_platform reports: $host_ver"
+    log INFO "host binary $host_platform reports: $host_ver"
     case "$host_ver" in
     *"$TAG"*) ;;
-    *) log "warning: host binary version '$host_ver' does not contain $TAG" ;;
+    *) log WARNING "host binary version '$host_ver' does not contain $TAG" ;;
     esac
 else
-    log "warning: host platform $host_platform not in bundle; skipped version check"
+    log WARNING "host platform $host_platform not in bundle; skipped version check"
 fi
 
-log "done: $TAG_DIR now contains:"
+log INFO "done: $TAG_DIR now contains:"
 for dir in "$TAG_DIR"/*/; do
     [[ -d "$dir" ]] || continue
-    log "  $(basename "$dir")"
+    log INFO "  $(basename "$dir")"
 done
