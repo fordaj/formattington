@@ -129,6 +129,7 @@ Formattington owns the mode flag before the formatter name; arguments after the 
 | black        | `black --check` — fail if any file needs formatting                   | `black --diff` — show diff, do not modify                                                      | `black` in place (no flag)                                                                                            |
 | prettier     | `prettier --check` — fail if any file needs formatting                | `prettier --list-different` — list files that differ, do not modify (Prettier has no `--diff`) | `prettier --write` — write in place (unless `--write`/`-w`, `--check`/`-c`, or `--list-different`/`-l` already given) |
 | powershell   | PSScriptAnalyzer lint (no in-place formatting); findings exit 1       | Same PSScriptAnalyzer lint invocation (check/dry-run are accepted for CLI uniformity)            | Same PSScriptAnalyzer lint invocation (findings exit 1)                                                                                    |
+| taplo        | `taplo fmt --check` — fail if any file needs formatting               | `taplo fmt --diff` — print diff, do not modify                         | `taplo fmt` in place (no flag)                                                                                   |
 
 These mode mappings are integration-specific. Future tools may support different operations or native flags, and their integrations should preserve those differences.
 
@@ -142,11 +143,11 @@ formattington: Could not find 'shfmt'. Expected a bundled executable under tools
 
 ) and exits `127`.
 
-This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, and `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
+This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), and `taplo`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
 
 ### Exit-code aggregation with `all`
 
-The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
+The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
 
 The rule is deterministic regardless of completion order in the concurrent default.
 
@@ -165,6 +166,7 @@ Use `--verbose` to see which executable was resolved when a tool is present.
 - `black` is installed via pip (`pip install black` or `uv tool install black`).
 - `prettier` is installed via npm (`npm install -g prettier`).
 - `powershell` lints with [PSScriptAnalyzer](https://github.com/microsoft/PSScriptAnalyzer) through PowerShell 7+ (`pwsh`); install the module with `Install-Module PSScriptAnalyzer` inside `pwsh` (Windows PowerShell 5.1, `powershell.exe`, is tried as a fallback).
+- `taplo` (`taplo fmt`) formats TOML; a pinned copy is bundled under `tools/taplo/v0.10.0/<platform>/` for offline use (download the release binary and put it on `PATH` if you prefer a system install).
 
 Either a bundled copy under `tools/` (see [Bundled tools](#bundled-tools)) or an installation on `PATH` satisfies `find_tool()`. `black` and `prettier` are PATH-only (not bundled) and are found via `PATH`.
 
@@ -179,9 +181,10 @@ Formattington integrates existing tools rather than reimplementing their functio
 | [Black](https://black.readthedocs.io/)                       | Formatter | Available | Python (`.py`)                                          |
 | [Prettier](https://prettier.io/)                             | Formatter | Available | JavaScript, TypeScript, JSON, HTML, CSS, Markdown, YAML |
 | [PSScriptAnalyzer](https://github.com/microsoft/PSScriptAnalyzer) | Linter | Available | PowerShell scripts (`.ps1`, `.psm1`) via `pwsh` |
+| [Taplo](https://taplo.tamasfe.dev/)                            | Formatter | Available | TOML (`.toml`) via `taplo fmt`                          |
 | [markdownlint](https://github.com/DavidAnson/markdownlint)   | Linter    | Planned   | Markdown style and consistency                          |
 
-Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), and `all` are accepted by the CLI.
+Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), and `all` are accepted by the CLI.
 
 Prettier is the sole owner of Markdown formatting. There is no dedicated `markdown_format.py` or separate Markdown formatter; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown-specific linting (for example `markdownlint`) is a distinct operation and is out of scope for this change; it can be integrated separately in the future if needed. Unrecognized names still report a usage error (exit 2).
 
@@ -196,6 +199,7 @@ Additional tools may provide other capabilities, such as checking, linting, and 
 | black        | Not bundled (PATH-only)                                                           | `pip install black` or `uv tool install black`                                                               | `PATH` via `find_tool("black")`                            |
 | prettier     | Not bundled (PATH-only)                                                           | `npm install -g prettier`                                                                                    | `PATH` via `find_tool("prettier")`                         |
 | powershell   | Not bundled (PATH-only; PSScriptAnalyzer is a module)                             | PowerShell 7+ (`pwsh`) on `PATH` plus `Install-Module PSScriptAnalyzer` in `pwsh`                            | `PATH` via `find_tool("pwsh")`, then `find_tool("powershell")` |
+| taplo        | Comes under `tools/taplo/v0.10.0/<platform>/taplo` in a fresh clone               | Download taplo from https://github.com/tamasfe/taplo releases and put `taplo` on `PATH`                     | Bundled first, then `PATH` via `find_tool("taplo")`        |
 
 Bundled versions are pinned in `tools/` for offline use; see [Bundled tools](#bundled-tools) for the layout and refresh process.
 
@@ -304,12 +308,13 @@ Pinned upstream versions (recorded in `tools/README.md`):
 
 - `shfmt` `v3.14.1` from [mvdan/sh](https://github.com/mvdan/sh).
 - `clang-format` `v23.1.3` (plus a retained legacy `v22.1.8` macOS bundle) from the LLVM project.
+- `taplo` `v0.10.0` from [tamasfe/taplo](https://github.com/tamasfe/taplo) (taplo-cli).
 
 Keep these exact versions in sync with the docs when refreshing.
 
-To refresh, download the new upstream release for each platform, extract with `tools/clang-format/unzip.sh` where applicable, preserve the `tools/<name>/v<version>/<platform>/` layout, and verify with `formattington --verbose shfmt` (or `FORMATTINGTON_VERBOSE=1`).
+To refresh, download the new upstream release for each platform, extract with `tools/clang-format/unzip.sh` where applicable (taplo ships per-platform gzipped binaries; gunzip to `taplo`/`taplo.exe`), preserve the `tools/<name>/v<version>/<platform>/` layout, and verify with `formattington --verbose shfmt` (or `FORMATTINGTON_VERBOSE=1`).
 
-There is no automatic fetch on first run; this keeps offline use reliable at the cost of a large clone (about 45 MB for `tools/`).
+There is no automatic fetch on first run; this keeps offline use reliable at the cost of a large clone (about 120 MB for `tools/`).
 
 See `tools/README.md` for the full layout and version table.
 

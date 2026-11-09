@@ -24,7 +24,7 @@ def mock_formatters(monkeypatch):
     """
     mocks = {
         name: MagicMock(return_value=0)
-        for name in ("shfmt", "clang-format", "black", "prettier", "powershell")
+        for name in ("shfmt", "clang-format", "black", "prettier", "powershell", "taplo")
     }
     monkeypatch.setattr(cli, "discover_files", lambda extensions, root=None: [])
     original = dict(cli.FORMATTERS)
@@ -217,6 +217,61 @@ class TestPowershellSelection:
         assert "ps1" in out
         assert "powershell" in out
         assert "PSScriptAnalyzer" in out
+
+
+class TestTaploSelection:
+    """Issue #26: `taplo` tool and `toml` alias."""
+
+    def test_taplo_selection(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "taplo"])
+        assert main() == 0
+        mock_formatters["taplo"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+        mock_formatters["shfmt"].assert_not_called()
+
+    def test_toml_alias_selection(self, monkeypatch, mock_formatters):
+        from formattington.cli import LANGUAGE_ALIASES
+
+        assert LANGUAGE_ALIASES["toml"] == "taplo"
+        _set_argv(monkeypatch, ["formattington", "toml"])
+        assert main() == 0
+        mock_formatters["taplo"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+        mock_formatters["black"].assert_not_called()
+
+    def test_toml_alias_modes_and_forwarding(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--check", "toml"])
+        assert main() == 0
+        mock_formatters["taplo"].assert_called_once_with(
+            check=True, dry_run=False, args=[]
+        )
+        _set_argv(monkeypatch, ["formattington", "toml", "--option", "align_comments=true"])
+        assert main() == 0
+        mock_formatters["taplo"].assert_called_with(
+            check=False, dry_run=False, args=["--option", "align_comments=true"]
+        )
+
+    def test_taplo_missing_returns_127(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "taplo"])
+        with patch(
+            "formattington.taplo.find_tool",
+            side_effect=FileNotFoundError("Could not find 'taplo'"),
+        ):
+            assert main() == 127
+        err = capsys.readouterr().err
+        assert err.startswith("formattington:")
+        assert "Traceback" not in err
+
+    def test_help_mentions_toml_alias(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "--help"])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        out = capsys.readouterr().out
+        assert "toml" in out
+        assert "taplo" in out
 
     def test_all_runs_every_formatter(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "all"])
@@ -614,11 +669,11 @@ class TestMissingToolExit127:
             assert main() == 127
 
     def test_all_returns_127_when_any_missing(self, monkeypatch):
-        # shfmt missing, clang-format, black and prettier present: still runs the
-        # present ones, final exit is 127.
+        # shfmt missing, clang-format, black, prettier, powershell, and taplo
+        # present: still runs the present ones, final exit is 127.
         _set_argv(monkeypatch, ["formattington", "all"])
-        # shfmt raises via find_tool; clang-format, black and prettier succeed via
-        # mocked subprocess.run so no real binary is needed.
+        # shfmt raises via find_tool; the rest succeed via mocked
+        # subprocess.run so no real binary is needed.
         def _fake_run(cmd, **kwargs):
             result = MagicMock()
             result.returncode = 0
@@ -639,6 +694,14 @@ class TestMissingToolExit127:
             "formattington.prettier.find_tool", return_value="/fake/prettier"
         ), patch(
             "formattington.prettier.subprocess.run", side_effect=_fake_run
+        ), patch(
+            "formattington.powershell.find_tool", return_value="/fake/pwsh"
+        ), patch(
+            "formattington.powershell.subprocess.run", side_effect=_fake_run
+        ), patch(
+            "formattington.taplo.find_tool", return_value="/fake/taplo"
+        ), patch(
+            "formattington.taplo.subprocess.run", side_effect=_fake_run
         ):
             assert main() == 127
 
@@ -657,7 +720,7 @@ class TestMissingToolExit127:
     )
     @pytest.mark.parametrize(
         "formatter",
-        ["shfmt", "clang-format", "black", "prettier", "powershell"],
+        ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo"],
     )
     def test_missing_tool_returns_127_in_every_mode(
         self, monkeypatch, capsys, mode_args, formatter
@@ -672,6 +735,7 @@ class TestMissingToolExit127:
             "black": "formattington.format_python.find_tool",
             "prettier": "formattington.prettier.find_tool",
             "powershell": "formattington.powershell.find_tool",
+            "taplo": "formattington.taplo.find_tool",
         }[formatter]
         with patch(
             patch_target,
@@ -739,10 +803,13 @@ class TestMissingToolExit127:
         ), patch(
             "formattington.powershell.find_tool",
             side_effect=FileNotFoundError("Could not find 'pwsh' or 'powershell'"),
+        ), patch(
+            "formattington.taplo.find_tool",
+            side_effect=FileNotFoundError("Could not find 'taplo'"),
         ):
             assert main() == 127
         err = capsys.readouterr().err
-        assert err.count("formattington:") == 5
+        assert err.count("formattington:") == 6
 
 
 class TestSeriesAndParallel:
@@ -764,7 +831,7 @@ class TestSeriesAndParallel:
             mock.side_effect = make_side_effect(name)
         _set_argv(monkeypatch, ["formattington", "all", "--series"])
         assert main() == 0
-        assert calls == ["shfmt", "clang-format", "black", "prettier", "powershell"]
+        assert calls == ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo"]
         for mock in mock_formatters.values():
             mock.assert_called_once_with(check=False, dry_run=False, args=[])
 
