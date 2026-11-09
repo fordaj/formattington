@@ -2,27 +2,54 @@
 
 ## Project Overview
 
-Formattington is a cross-platform, multi-language formatting orchestrator. It provides a unified command-line interface for invoking existing formatters across multidisciplinary projects.
+Formattington is a cross-platform, multi-language formatting and code-quality tool orchestrator. It provides a unified command-line interface for invoking existing tools across multidisciplinary projects.
 
-The goal is to bring all project formatting under one interface without reimplementing the formatters themselves.
+The goal is to bring project formatting and automated quality checks under one interface without reimplementing the underlying tools.
 
 Formattington is written in Python and managed with `uv`.
 
 ## Core Principles
 
-- **Reuse existing tools.** Delegate formatting to established formatters rather than implementing language-specific formatting logic.
-- **Provide a consistent interface.** Users should not need to remember every formatter's command-line syntax.
+- **Reuse existing tools.** Delegate formatting, linting, and analysis to established tools rather than implementing language-specific logic.
+- **Provide a consistent interface.** Users should not need to remember every tool's command-line syntax.
 - **Support multidisciplinary projects.** A single repository may contain many languages and file types.
 - **Keep orchestration lightweight.** Avoid unnecessary work, subprocess launches, and dependencies.
-- **Preserve native configuration.** Respect formatter-specific configuration files and repository conventions.
+- **Preserve native configuration.** Respect tool-specific configuration files and repository conventions.
 - **Remain cross-platform.** Account for Windows, macOS, and Linux differences in paths, executable discovery, and subprocess behavior.
-- **Make failures visible.** Preserve meaningful exit statuses and diagnostics from underlying formatters.
+- **Make failures visible.** Preserve meaningful exit statuses and diagnostics from underlying tools.
+- **Respect tool capabilities.** Do not assume every integration supports the same operations or behavior.
+
+## Core Terminology
+
+Formattington orchestrates external tools that may provide different operations.
+
+- **Tool:** An external executable or application integrated into Formattington.
+- **Integration:** The code responsible for invoking and managing a particular tool.
+- **Operation:** An action supported by a tool, such as formatting, checking, linting, or fixing.
+- **File mapping:** The relationship between file types and the tools that can process them.
+
+Common operations include:
+
+| Operation | Purpose                                                          |
+| --------- | ---------------------------------------------------------------- |
+| Format    | Rewrite files into a consistent representation.                  |
+| Check     | Identify formatting or style violations without modifying files. |
+| Lint      | Analyze files for rule violations and report findings.           |
+| Fix       | Automatically resolve issues supported by the underlying tool.   |
+
+Not every tool supports every operation.
+
+For example, `markdownlint --fix` can automatically correct certain Markdown violations but cannot resolve every linting issue.
+
+Formatting and linting are complementary. A file can be correctly formatted while still containing lint violations.
+
+Do not force tools into a common feature set when their native capabilities differ.
 
 ## Command-Line Interface
 
-The intended public interface supports three selection modes.
+The established public interface supports three selection modes.
 
-### All formatters
+### All configured tools
 
 ```bash
 formattington all
@@ -30,15 +57,14 @@ formattington all --series
 ```
 
 - `all` runs all configured formatter integrations against their matching files.
-  By default (`formattington all`) they run concurrently via
-  `concurrent.futures.ThreadPoolExecutor`; `--series` (before or after `all`,
-  e.g. `formattington all --series`) requests sequential execution in
-  registration order. Exit code is the last non-zero code in
-  `shfmt`, `clang-format`, `black`, `prettier` order (missing tool = 127);
-  `0` only if all succeed. A missing/failing formatter never prevents the
-  others from running.
+- By default, formatters run concurrently via `concurrent.futures.ThreadPoolExecutor`.
+- `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier` order (missing tool = 127); `0` only if all succeed.
+- A missing or failing formatter never prevents the others from running.
 
-### Specific formatter
+Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
+
+### Specific tool
 
 ```bash
 formattington prettier
@@ -46,7 +72,7 @@ formattington clang-format
 formattington shfmt
 ```
 
-Arguments following a formatter selection should be forwarded to that formatter where supported.
+Arguments following a tool selection should be forwarded to that tool where supported.
 
 Examples:
 
@@ -55,6 +81,10 @@ formattington prettier --check
 formattington clang-format --dry-run
 formattington shfmt -d
 ```
+
+Formattington should preserve native tool arguments and behavior rather than unnecessarily recreating their options.
+
+Future integrations may expose additional tools and operations without requiring every integration to support the same command-line arguments.
 
 ### Language or file type
 
@@ -68,7 +98,9 @@ formattington markdown
 formattington html
 ```
 
-Language aliases should resolve to the appropriate formatter integration and matching file types.
+Language aliases should resolve to the appropriate tool integration and matching file types.
+
+When multiple tools support the same file type, selection should respect configured tool choices rather than arbitrarily invoking conflicting tools.
 
 When modifying CLI behavior, preserve these public command patterns unless the change explicitly updates the interface.
 
@@ -83,16 +115,20 @@ Important modules include:
 - `_tools.py` — shared tool discovery (`find_tool`) and subprocess helpers.
 - `shfmt.py` — shfmt integration.
 - `clang_format.py` — clang-format integration.
-- `format_python.py` — Black (Python) integration (`.py` files; `PATH`-only, no bundle; respects `[tool.black]`/`pyproject.toml`).
-- `prettier.py` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`; `PATH`-only, no bundle; respects `.prettierrc`).
-- `.prettierrc` — Prettier configuration.
-- `.clang-format` — clang-format configuration.
+- `format_python.py` — Black (Python) integration (`.py` files; PATH-only, no bundle; respects `[tool.black]` / `pyproject.toml`).
+- `prettier.py` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`; PATH-only, no bundle; respects `.prettierrc`).
 
-`cli.py` is the single canonical entry point and the sole `FORMATTERS` registry. Bash and Markdown formatter modules (`format_bash.py`, `markdown_format.py`) are planned but not yet present; do not reference them as existing files. (`format_python.py` and `prettier.py` now exist and are not part of the planned set.)
+`cli.py` is the single canonical entry point and the sole `FORMATTERS` registry.
 
-Before modifying a module, inspect its current implementation and callers. Keep responsibilities separated and avoid duplicating formatter-specific logic across the orchestration layer.
+Bash and Markdown formatter modules (`format_bash.py`, `markdown_format.py`) are planned but not yet present. Do not reference them as existing files. `format_python.py` and `prettier.py` exist and are not part of the planned set.
 
-New formatter integrations should follow the established patterns in existing modules.
+Before modifying a module, inspect its current implementation and callers. Keep responsibilities separated and avoid duplicating tool-specific logic across the orchestration layer.
+
+New integrations should follow established patterns where appropriate, while allowing for differences in tool capabilities and behavior.
+
+The orchestration layer owns tool selection, file discovery, execution strategy, and common reporting. Individual integrations own tool-specific invocation details and behavior.
+
+Do not introduce unnecessary abstractions or a generalized plugin architecture without a demonstrated need.
 
 ## Development Environment
 
@@ -108,12 +144,11 @@ uv run python -m formattington
 uv run formattington
 ```
 
-Both `uv run python -m formattington` (via `src/formattington/__main__.py`,
-which re-exports `cli.main`) and the `uv run formattington` console script
-work. `uv.lock` is checked in for reproducible installs; `uv sync` installs
-exactly the locked versions. Python 3.14 or newer is required
-(`requires-python = ">=3.14"` in `pyproject.toml`; `.python-version` pins
-3.14).
+Both `uv run python -m formattington` (via `src/formattington/__main__.py`, which re-exports `cli.main`) and the `uv run formattington` console script work.
+
+`uv.lock` is checked in for reproducible installs; `uv sync` installs exactly the locked versions.
+
+Python 3.14 or newer is required (`requires-python = ">=3.14"` in `pyproject.toml`; `.python-version` pins 3.14).
 
 When adding dependencies, update the project configuration and lockfile using `uv` rather than manually editing resolved dependency versions.
 
@@ -134,17 +169,18 @@ When adding dependencies, update the project configuration and lockfile using `u
 
 ### File Discovery
 
-- Match files by supported language and formatter mappings.
+- Match files by supported language and tool mappings.
 - Respect project ignore rules where appropriate.
-- Avoid formatting generated, vendored, minified, or dependency files unintentionally.
+- Avoid processing generated, vendored, minified, or dependency files unintentionally.
 - Handle spaces and special characters in file paths safely.
 - Avoid passing an excessive number of arguments to a single process; account for operating-system command-line limits.
+- Avoid discovering or processing the same file unnecessarily when multiple integrations are involved.
 
 ### Subprocesses and Performance
 
-- Batch files for a formatter when the formatter supports multiple input paths.
-- Avoid launching a separate formatter process for every file unnecessarily.
-- Keep independent formatter execution efficient.
+- Batch files for a tool when the tool supports multiple input paths.
+- Avoid launching a separate process for every file unnecessarily.
+- Keep independent tool execution efficient.
 - Support sequential execution when requested.
 - Do not introduce concurrency or caching complexity without a clear need.
 - Measure performance changes against realistic mixed-language projects.
@@ -159,14 +195,28 @@ When adding dependencies, update the project configuration and lockfile using `u
 
 ## Configuration and External Tools
 
-Formattington orchestrates external formatters; each formatter retains responsibility for its own formatting rules.
+Formattington orchestrates external tools; each tool retains responsibility for its own rules and specialized functionality.
 
-- Respect formatter configuration files found in the relevant project context.
-- Do not silently override a project's established formatting configuration.
-- Do not assume all formatters are installed.
+- Respect native configuration files found in the relevant project context.
+- Do not silently override a project's established configuration.
+- Do not assume all tools are installed.
 - Report missing tools clearly.
-- Keep formatter-specific arguments and behavior within the corresponding integration where practical.
-- Bundled formatter binaries under `tools/` are pinned and tracked by design (see `tools/README.md` and the README bundled-tools policy); `find_tool()` prefers bundled copies then falls back to `PATH`. Do not bundle additional binaries without updating the version table and README.
+- Keep tool-specific arguments and behavior within the corresponding integration where practical.
+- Allow users to choose between compatible tools that support the same file types.
+- Avoid automatically running multiple conflicting tools against the same files.
+- Do not impose a universal configuration format when native configurations are sufficient.
+- Do not bundle additional binaries without updating the version table and README.
+
+Examples of native configuration files include:
+
+- `.prettierrc`
+- `.clang-format`
+- `.markdownlint.json`
+- `pyproject.toml`
+
+Bundled formatter binaries under `tools/` are pinned and tracked by design (see `tools/README.md` and the README bundled-tools policy).
+
+`find_tool()` prefers bundled copies, then falls back to `PATH`.
 
 ## Testing and Validation
 
@@ -177,17 +227,24 @@ uv sync
 uv run pytest
 ```
 
-Tests live in `tests/` and are configured via `[tool.pytest.ini_options]` in `pyproject.toml`. The suite runs with no network and no formatter binaries installed: unit tests mock `platform`, `shutil.which`, and `subprocess.run`, and integration tests use fake executable scripts in temporary directories.
+Tests live in `tests/` and are configured via `[tool.pytest.ini_options]` in `pyproject.toml`.
+
+The suite runs without network access or installed formatter binaries:
+
+- Unit tests mock `platform`, `shutil.which`, and `subprocess.run`.
+- Integration tests use fake executable scripts in temporary directories.
 
 Before considering a change complete:
 
 1. Run `uv run pytest` using the project's configured workflow.
 2. Verify CLI argument parsing and exit behavior.
 3. Test paths containing spaces where filesystem or subprocess behavior changes.
-4. Test missing executables and formatter failures when relevant.
-5. Check that formatter arguments are forwarded correctly.
+4. Test missing executables and tool failures when relevant.
+5. Check that native tool arguments are forwarded correctly.
 6. Validate sequential and default execution behavior when orchestration changes.
-7. Avoid modifying unrelated files during formatting tests.
+7. Verify non-modifying operations do not modify files.
+8. Test automatic fixes against representative inputs when adding fix support.
+9. Avoid modifying unrelated files during formatting and linting tests.
 
 Use the project's existing linting, formatting, and test tools where available. Do not invent commands for tools that are not configured.
 
@@ -198,8 +255,10 @@ Use the project's existing linting, formatting, and test tools where available. 
 - Do not add dependencies without justification.
 - Update documentation when public CLI behavior changes.
 - Keep README examples consistent with the actual implementation.
-- Do not claim a feature is supported unless it has been implemented and validated.
+- Do not claim a feature or operation is supported unless it has been implemented and validated.
 - When behavior is ambiguous, inspect the existing code and tests before changing the interface.
+- Prefer extending existing integrations over introducing parallel implementations of the same functionality.
+- Preserve existing behavior unless a change explicitly requires otherwise.
 
 ## Definition of Done
 
@@ -207,6 +266,7 @@ A change is complete when it:
 
 - Implements the requested behavior.
 - Preserves the established CLI contract unless intentionally changed.
+- Respects the capabilities and native behavior of the underlying tools.
 - Handles errors and subprocess execution appropriately.
 - Remains compatible with the project's supported platforms.
 - Includes or updates tests where appropriate.
