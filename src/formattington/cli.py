@@ -467,68 +467,14 @@ def _run_parallel(
     return _aggregate_exit_code(results, names)
 
 
-def main() -> int:
-    argv = sys.argv[1:]
+def _build_parser() -> argparse.ArgumentParser:
+    """Build Formattington's shared ``ArgumentParser``.
 
-    # Formattington owns global options before the formatter name.
-    # ``--config`` values are skipped during the scan so a path that
-    # happens to equal a formatter name is not mistaken for the selector.
-    formatter_index = _find_formatter_index(argv)
-
-    # Only Formattington's arguments count here.
-    formattington_args = (
-        argv if formatter_index is None else argv[:formatter_index]
-    )
-
-    if "--version" in formattington_args:
-        print(formattington_version())
-        return 0
-
-    if formatter_index is None:
-        parser = argparse.ArgumentParser(
-            prog="formattington",
-            description="One formatter interface for your entire project.",
-            epilog=_EPILOG,
-        )
-        parser.add_argument(
-            "--version",
-            action="version",
-            version=formattington_version(),
-        )
-        parser.add_argument("--check", action="store_true")
-        parser.add_argument("--dry-run", action="store_true")
-        parser.add_argument(
-            "--series",
-            action="store_true",
-            help=(
-                "with 'all', run formatters sequentially instead of "
-                "concurrently (no effect without 'all')"
-            ),
-        )
-        parser.add_argument(
-            "--verbose",
-            action="store_true",
-            help=(
-                "show which formatter executable was resolved "
-                "(also via FORMATTINGTON_VERBOSE=1)"
-            ),
-        )
-        parser.add_argument(
-            "--config",
-            metavar="PATH",
-            default=None,
-            help=(
-                "with 'all', run commands from this JSON config file "
-                "(also via FORMATTINGTON_CONFIG_PATH or ./.formattington.json)"
-            ),
-        )
-        parser.parse_args(argv)
-        return 0
-
-    formattington_args = argv[:formatter_index]
-    formatter_name = argv[formatter_index]
-    formatter_args = argv[formatter_index + 1:]
-
+    Both the no-formatter and with-formatter paths use this single
+    parser so shared flags (``--check``/``--dry-run``, ``--series``,
+    ``--verbose``, ``--config``, ``--version``) are defined once and
+    cannot drift.
+    """
     parser = argparse.ArgumentParser(
         prog="formattington",
         description="One formatter interface for your entire project.",
@@ -547,7 +493,7 @@ def main() -> int:
         action="store_true",
         help=(
             "with 'all', run formatters sequentially instead of "
-            "concurrently (no effect on single-formatter runs)"
+            "concurrently (no effect without 'all')"
         ),
     )
     parser.add_argument(
@@ -567,10 +513,83 @@ def main() -> int:
             "(also via FORMATTINGTON_CONFIG_PATH or ./.formattington.json)"
         ),
     )
+    return parser
+
+
+def _parse_all_trailing(
+    formatter_args: list[str],
+    parser: argparse.ArgumentParser,
+) -> tuple[bool, str | None]:
+    """Parse trailing options after ``all``.
+
+    ``--series`` may appear after ``all`` (``formattington all --series``)
+    and ``--config PATH`` is honored after ``all`` (including the
+    ``--config=PATH`` spelling). Any other trailing argument is a usage
+    error. Returns ``(series_seen, after_config)`` where ``series_seen``
+    records whether ``--series`` appeared after ``all`` and
+    ``after_config`` is the trailing ``--config`` value (or ``None``).
+    Errors exit via ``parser.error`` (exit 2).
+    """
+    series_seen = False
+    after_config: str | None = None
+    remaining: list[str] = []
+    pos = 0
+    while pos < len(formatter_args):
+        arg = formatter_args[pos]
+        if arg == "--series":
+            series_seen = True
+            pos += 1
+        elif arg == "--config":
+            if pos + 1 >= len(formatter_args):
+                parser.error("--config requires a path")
+            if after_config is not None:
+                parser.error("--config may only be given once")
+            after_config = formatter_args[pos + 1]
+            pos += 2
+        elif arg.startswith("--config="):
+            if after_config is not None:
+                parser.error("--config may only be given once")
+            after_config = arg[len("--config=") :]
+            pos += 1
+        else:
+            remaining.append(arg)
+            pos += 1
+    if remaining:
+        parser.error("extra arguments are not supported with 'all'")
+    return (series_seen, after_config)
+
+
+def main() -> int:
+    argv = sys.argv[1:]
+
+    # Formattington owns global options before the formatter name.
+    # ``--config`` values are skipped during the scan so a path that
+    # happens to equal a formatter name is not mistaken for the selector.
+    formatter_index = _find_formatter_index(argv)
+
+    # Only Formattington's arguments count here.
+    formattington_args = (
+        argv if formatter_index is None else argv[:formatter_index]
+    )
+
+    if "--version" in formattington_args:
+        print(formattington_version())
+        return 0
+
+    # Global flags: one shared parser for every path.
+    parser = _build_parser()
+
+    if formatter_index is None:
+        parser.parse_args(argv)
+        return 0
+
+    formatter_name = argv[formatter_index]
+    formatter_args = argv[formatter_index + 1:]
     args = parser.parse_args(formattington_args)
 
-    series = getattr(args, "series", False)
-    explicit_config: str | None = getattr(args, "config", None)
+    series = args.series
+    explicit_config: str | None = args.config
+    verbose = args.verbose
 
     if formatter_name == "all":
         # ``formattington all --series`` is the documented spelling: --series
@@ -578,38 +597,17 @@ def main() -> int:
         # also before 'all' via the global parser above). ``--config PATH``
         # is likewise honored after 'all'. Any other trailing argument is
         # still an error.
-        remaining: list[str] = []
-        after_config: str | None = None
-        pos = 0
-        while pos < len(formatter_args):
-            arg = formatter_args[pos]
-            if arg == "--series":
-                series = True
-                pos += 1
-            elif arg == "--config":
-                if pos + 1 >= len(formatter_args):
-                    parser.error("--config requires a path")
-                if after_config is not None:
-                    parser.error("--config may only be given once")
-                after_config = formatter_args[pos + 1]
-                pos += 2
-            elif arg.startswith("--config="):
-                if after_config is not None:
-                    parser.error("--config may only be given once")
-                after_config = arg[len("--config=") :]
-                pos += 1
-            else:
-                remaining.append(arg)
-                pos += 1
-        if remaining:
-            parser.error("extra arguments are not supported with 'all'")
+        series_after_all, after_config = _parse_all_trailing(
+            formatter_args, parser
+        )
+        if series_after_all:
+            series = True
         if explicit_config is not None and after_config is not None:
             parser.error("--config may only be given once")
         if explicit_config is None:
             explicit_config = after_config
         formatter_args = []
 
-        verbose = getattr(args, "verbose", False)
         commands, config_error = _load_config(explicit_config)
         if config_error is not None:
             print(f"formattington: {config_error}", file=sys.stderr)
@@ -641,8 +639,6 @@ def main() -> int:
             # fail loudly, never silently succeed.
             parser.error(f"'{formatter_name}' is not yet supported")
         names = [target]
-
-    verbose = getattr(args, "verbose", False)
 
     if formatter_name != "all" or len(names) == 1:
         # Single-formatter runs have no concurrency to order; run directly
