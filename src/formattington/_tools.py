@@ -192,20 +192,6 @@ def _version_key(version: str) -> tuple[int, ...]:
     return tuple(key)
 
 
-def _platform_candidates(platform_dir: str) -> list[str]:
-    """Hyphenated platform dir first, then the legacy underscored form.
-
-    Bundled dirs use the hyphenated convention (for example
-    ``linux-x86_64``). Underscored names (for example ``linux_x86_64``)
-    are a migration fallback so older layouts still resolve.
-    """
-    if "-" in platform_dir:
-        system, arch = platform_dir.split("-", 1)
-        legacy = f"{system}_{arch}"
-        return [platform_dir, legacy]
-    return [platform_dir]
-
-
 def _bundled_versions(tool_dir: Path) -> list[str]:
     """Version labels (without ``v``) sorted newest-first, or ``[]`` if no dir."""
     if not tool_dir.is_dir():
@@ -238,15 +224,14 @@ def _find_bundled_executable(
     platform_dir = get_platform_dir()
 
     for candidate_version in versions:
-        for candidate_platform in _platform_candidates(platform_dir):
-            bundled = (
-                tool_dir
-                / f"v{candidate_version}"
-                / candidate_platform
-                / executable
-            )
-            if bundled.is_file():
-                return str(bundled)
+        bundled = (
+            tool_dir
+            / f"v{candidate_version}"
+            / platform_dir
+            / executable
+        )
+        if bundled.is_file():
+            return str(bundled)
     return None
 
 
