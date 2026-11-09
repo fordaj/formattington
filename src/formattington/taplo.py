@@ -1,6 +1,6 @@
 import subprocess
 
-from formattington._tools import find_tool
+from formattington._tools import ensure_valid_mode, find_tool, is_informational
 
 FILE_EXTENSIONS: tuple[str, ...] = (".toml",)
 
@@ -34,14 +34,13 @@ def taplo(
     passthroughs) so diff/log output is deterministic in captured
     output on every platform.
     """
-    if check and dry_run:
-        raise ValueError("check and dry_run cannot both be enabled")
+    ensure_valid_mode(check=check, dry_run=dry_run)
 
     executable = find_tool("taplo", verbose=verbose)
     forwarded = list(args or [])
 
     # Preserve native informational commands without adding format flags.
-    if any(arg in {"--help", "-help", "--version", "-version", "-h", "-V"} for arg in forwarded):
+    if is_informational(forwarded):
         return subprocess.run(
             [executable, *forwarded],
             check=False,

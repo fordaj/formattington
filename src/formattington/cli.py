@@ -7,7 +7,7 @@ import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-from formattington._tools import discover_files, iter_chunks
+from formattington._tools import discover_files, is_informational, iter_chunks
 from formattington.clang_format import FILE_EXTENSIONS as CLANG_FORMAT_EXTENSIONS
 from formattington.clang_format import clang_format
 from formattington.format_python import FILE_EXTENSIONS as BLACK_EXTENSIONS
@@ -43,10 +43,6 @@ FORMATTER_EXTENSIONS: dict[str, tuple[str, ...]] = {
 # Upper bound on discovered files per formatter invocation, to respect
 # operating-system command-line limits on very large repositories.
 MAX_FILES_PER_INVOCATION = 256
-
-_INFORMATIONAL_ARGS = frozenset(
-    {"--help", "-help", "--version", "-version", "-h", "-V"}
-)
 
 LANGUAGE_ALIASES = {
     "c": "clang-format",
@@ -111,11 +107,6 @@ _EPILOG = (
 )
 
 
-def _is_informational(args: list[str]) -> bool:
-    """Whether ``args`` are bare help/version passthroughs (no discovery)."""
-    return any(arg in _INFORMATIONAL_ARGS for arg in args)
-
-
 def _has_user_file_args(args: list[str], extensions: tuple[str, ...]) -> bool:
     """Whether the user supplied explicit file arguments.
 
@@ -154,7 +145,7 @@ def _run_formatter(
     """
     extensions = FORMATTER_EXTENSIONS[name]
     user_args = list(args)
-    if _is_informational(user_args) or _has_user_file_args(user_args, extensions):
+    if is_informational(user_args) or _has_user_file_args(user_args, extensions):
         batches = [user_args]
     else:
         discovered = discover_files(extensions)

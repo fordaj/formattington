@@ -27,6 +27,23 @@ IGNORED_DIR_NAMES: frozenset[str] = frozenset(
 )
 
 
+# Bare help/version tokens that pass through without formatting flags.
+INFORMATIONAL_ARGS: frozenset[str] = frozenset(
+    {"--help", "-help", "--version", "-version", "-h", "-V"}
+)
+
+
+def is_informational(args: list[str]) -> bool:
+    """Whether ``args`` are bare help/version passthroughs (no formatting flags)."""
+    return any(arg in INFORMATIONAL_ARGS for arg in args)
+
+
+def ensure_valid_mode(*, check: bool, dry_run: bool) -> None:
+    """Raise ``ValueError`` if ``check`` and ``dry_run`` are both set."""
+    if check and dry_run:
+        raise ValueError("check and dry_run cannot both be enabled")
+
+
 def _is_ignored_dirname(name: str) -> bool:
     """Whether discovery should prune a directory by name."""
     return name.startswith(".") or name in IGNORED_DIR_NAMES

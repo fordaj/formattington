@@ -166,6 +166,22 @@ class TestClangFormat:
             assert clang_format(args=["--version"]) == 0
         assert calls[0][0] == ["/fake/clang-format", "--version"]
 
+    def test_short_help_passthrough_without_mode_flags(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.clang_format.find_tool", return_value="/fake/clang-format"
+        ), patch("formattington.clang_format.subprocess.run", side_effect=fake):
+            assert clang_format(args=["-h"]) == 0
+        assert calls[0][0] == ["/fake/clang-format", "-h"]
+
+    def test_short_version_passthrough_without_mode_flags(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.clang_format.find_tool", return_value="/fake/clang-format"
+        ), patch("formattington.clang_format.subprocess.run", side_effect=fake):
+            assert clang_format(args=["-V"]) == 0
+        assert calls[0][0] == ["/fake/clang-format", "-V"]
+
     def test_forwards_args_and_preserves_spaces(self):
         fake, calls = _fake_run_capture()
         with patch(

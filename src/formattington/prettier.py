@@ -1,6 +1,6 @@
 import subprocess
 
-from formattington._tools import find_tool
+from formattington._tools import ensure_valid_mode, find_tool, is_informational
 
 FILE_EXTENSIONS: tuple[str, ...] = (
     ".js",
@@ -57,14 +57,13 @@ def prettier(
     Prettier's native configuration (for example ``.prettierrc``) is
     respected.
     """
-    if check and dry_run:
-        raise ValueError("check and dry_run cannot both be enabled")
+    ensure_valid_mode(check=check, dry_run=dry_run)
 
     executable = find_tool("prettier", verbose=verbose)
     arguments = list(args or [])
 
     # Preserve native informational commands without adding formatting flags.
-    if any(arg in {"--help", "-help", "--version", "-version", "-h", "-V"} for arg in arguments):
+    if is_informational(arguments):
         return subprocess.run(
             [executable, *arguments],
             check=False,

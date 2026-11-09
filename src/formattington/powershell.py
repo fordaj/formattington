@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from formattington._tools import find_tool
+from formattington._tools import ensure_valid_mode, find_tool, is_informational
 
 FILE_EXTENSIONS: tuple[str, ...] = (".ps1", ".psm1")
 
@@ -75,17 +75,13 @@ def powershell(
     ``PSScriptAnalyzerSettings.psd1``) are honored via the forwarded
     ``-Settings`` parameter.
     """
-    if check and dry_run:
-        raise ValueError("check and dry_run cannot both be enabled")
+    ensure_valid_mode(check=check, dry_run=dry_run)
 
     executable = _find_shell(verbose=verbose)
     forwarded = list(args or [])
 
     # Preserve native informational commands without invoking the analyzer.
-    if any(
-        arg in {"--help", "-help", "--version", "-version", "-h", "-V"}
-        for arg in forwarded
-    ):
+    if is_informational(forwarded):
         return subprocess.run(
             [executable, *forwarded],
             check=False,
