@@ -72,14 +72,14 @@ The package currently lives in `src/formattington/`.
 
 Important modules include:
 
-- `main.py` — command-line entry point and orchestration.
-- `prettier.py` — Prettier integration.
+- `cli.py` — command-line entry point and orchestration (sole `FORMATTERS` registry; `pyproject.toml` points here).
+- `_tools.py` — shared tool discovery (`find_tool`) and subprocess helpers.
+- `shfmt.py` — shfmt integration.
 - `clang_format.py` — clang-format integration.
-- `format_bash.py` — shell formatting integration.
-- `format_python.py` — Python formatting integration.
-- `markdown_format.py` — Markdown formatting integration.
 - `.prettierrc` — Prettier configuration.
 - `.clang-format` — clang-format configuration.
+
+`cli.py` is the single canonical entry point and the sole `FORMATTERS` registry. Prettier, Python (Black), and Markdown formatter modules are planned but not yet present; do not reference them as existing files.
 
 Before modifying a module, inspect its current implementation and callers. Keep responsibilities separated and avoid duplicating formatter-specific logic across the orchestration layer.
 

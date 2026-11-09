@@ -211,66 +211,6 @@ class TestClangFormat:
             assert clang_format(verbose=True) == 0
         mock_find.assert_called_once_with("clang-format", verbose=True)
 
-
-class TestMainLegacyShfmt:
-    """Cover the legacy main.run_shfmt boundary used by AGENTS.md references."""
-
-    def test_missing_tool_returns_127(self, capsys):
-        with patch(
-            "formattington.main.find_tool",
-            side_effect=FileNotFoundError("Could not find 'shfmt'"),
-        ):
-            from formattington.main import run_shfmt
-
-            assert run_shfmt(None) == 127
-        assert "Could not find" in capsys.readouterr().err
-
-    def test_check_clean_and_dirty(self):
-        from formattington.main import run_shfmt
-
-        with patch("formattington.main.find_tool", return_value="/fake/shfmt"):
-            with patch("formattington.main.subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
-                assert run_shfmt("check") == 0
-                assert mock_run.call_args[0][0] == ["/fake/shfmt", "-l", "."]
-
-            with patch("formattington.main.subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(
-                    returncode=0, stdout="changed.sh\n", stderr=""
-                )
-                assert run_shfmt("check") == 1
-
-    def test_unknown_formatter_returns_2(self, capsys):
-        from formattington.main import run_formatter
-
-        assert run_formatter("nope", None) == 2
-        assert "unknown formatter" in capsys.readouterr().err
-
-
-class TestLegacyPlatformDir:
-    def test_main_get_platform_dir_matches_tools(self):
-        from formattington.main import get_platform_dir as main_get_platform_dir
-
-        with (
-            patch("formattington.main.platform.system", return_value="Darwin"),
-            patch("formattington.main.platform.machine", return_value="arm64"),
-        ):
-            assert main_get_platform_dir() == "macos-arm64"
-
-    def test_main_find_tool_prefers_bundled(self, monkeypatch, tmp_path):
-        """main.find_tool uses PROJECT_ROOT/tools/<platform>/<exe> (no version)."""
-        import formattington.main as main_mod
-
-        bundled = tmp_path / "tools" / "macos-x86_64" / "shfmt"
-        bundled.parent.mkdir(parents=True)
-        bundled.touch()
-        monkeypatch.setattr(main_mod, "PROJECT_ROOT", tmp_path)
-        with (
-            patch("formattington.main.platform.system", return_value="Darwin"),
-            patch("formattington.main.platform.machine", return_value="x86_64"),
-        ):
-            assert main_mod.find_tool("shfmt") == str(bundled)
-
     def test_run_tool_is_imported_by_shfmt(self):
         # Guards the documented subprocess boundary: shfmt delegates to run_tool.
         assert _tools.run_tool is not None
