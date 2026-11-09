@@ -72,14 +72,15 @@ The package currently lives in `src/formattington/`.
 
 Important modules include:
 
-- `cli.py` — command-line entry point and orchestration (sole `FORMATTERS` registry; `pyproject.toml` points here).
+- `cli.py` — canonical command-line entry point and orchestration (sole `FORMATTERS` registry; `pyproject.toml` declares `formattington.cli:main`).
+- `__main__.py` — `python -m formattington` entry point (re-exports `cli.main`).
 - `_tools.py` — shared tool discovery (`find_tool`) and subprocess helpers.
 - `shfmt.py` — shfmt integration.
 - `clang_format.py` — clang-format integration.
 - `.prettierrc` — Prettier configuration.
 - `.clang-format` — clang-format configuration.
 
-`cli.py` is the single canonical entry point and the sole `FORMATTERS` registry. Prettier, Python (Black), and Markdown formatter modules are planned but not yet present; do not reference them as existing files.
+`cli.py` is the single canonical entry point and the sole `FORMATTERS` registry. Prettier, Python (Black), and Markdown formatter modules (`prettier.py`, `format_bash.py`, `format_python.py`, `markdown_format.py`) are planned but not yet present; do not reference them as existing files.
 
 Before modifying a module, inspect its current implementation and callers. Keep responsibilities separated and avoid duplicating formatter-specific logic across the orchestration layer.
 
@@ -96,11 +97,15 @@ Typical development commands:
 ```bash
 uv sync
 uv run python -m formattington
+uv run formattington
 ```
 
-The module invocation above assumes the package exposes the corresponding `__main__` entry point. Otherwise, use the project's configured entry point or script.
-
-If a console script is configured, prefer using it through `uv run`.
+Both `uv run python -m formattington` (via `src/formattington/__main__.py`,
+which re-exports `cli.main`) and the `uv run formattington` console script
+work. `uv.lock` is checked in for reproducible installs; `uv sync` installs
+exactly the locked versions. Python 3.14 or newer is required
+(`requires-python = ">=3.14"` in `pyproject.toml`; `.python-version` pins
+3.14).
 
 When adding dependencies, update the project configuration and lockfile using `uv` rather than manually editing resolved dependency versions.
 
