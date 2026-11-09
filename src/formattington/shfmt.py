@@ -27,7 +27,7 @@ def shfmt(
         return run_tool(
             executable,
             ["-l", *extra_args],
-            check_output=True,
+            capture_output=True,
         )
 
     if dry_run:

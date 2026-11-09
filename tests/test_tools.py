@@ -292,29 +292,29 @@ class TestRunTool:
                 check=False,
             )
 
-    def test_check_output_reports_changes(self, capsys):
+    def test_capture_output_reports_changes(self, capsys):
         with patch(
             "formattington._tools.subprocess.run",
             return_value=self._fake_result(stdout="changed.sh\n", returncode=0),
         ):
-            assert _tools.run_tool("/fake/shfmt", ["-l"], check_output=True) == 1
+            assert _tools.run_tool("/fake/shfmt", ["-l"], capture_output=True) == 1
             captured = capsys.readouterr()
             assert "changed.sh" in captured.out
             assert "formatting changes required" in captured.err
 
-    def test_check_output_clean(self):
+    def test_capture_output_clean(self):
         with patch(
             "formattington._tools.subprocess.run",
             return_value=self._fake_result(stdout="", returncode=0),
         ):
-            assert _tools.run_tool("/fake/shfmt", ["-l"], check_output=True) == 0
+            assert _tools.run_tool("/fake/shfmt", ["-l"], capture_output=True) == 0
 
-    def test_check_output_propagates_nonzero(self):
+    def test_capture_output_propagates_nonzero(self):
         with patch(
             "formattington._tools.subprocess.run",
             return_value=self._fake_result(stdout="", stderr="boom", returncode=2),
         ):
-            assert _tools.run_tool("/fake/shfmt", ["-l"], check_output=True) == 2
+            assert _tools.run_tool("/fake/shfmt", ["-l"], capture_output=True) == 2
 
     def test_passes_args_as_list_not_shell_string(self):
         with patch(

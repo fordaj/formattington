@@ -359,7 +359,7 @@ class TestFileDiscoveryContract:
         paths = [f"dir/file {i}.sh" for i in range(5)]
         calls = []
 
-        def fake_run_tool(executable, arguments, *, check_output=False):
+        def fake_run_tool(executable, arguments, *, capture_output=False):
             calls.append((executable, list(arguments)))
             return 0
 
