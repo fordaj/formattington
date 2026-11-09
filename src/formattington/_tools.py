@@ -32,6 +32,14 @@ INFORMATIONAL_ARGS: frozenset[str] = frozenset(
     {"--help", "-help", "--version", "-version", "-h", "-V"}
 )
 
+# Exit codes (see README "Exit codes"): named policy constants so
+# success / formatting-required / usage-error / tool-not-found
+# decisions read by purpose instead of bare literals.
+EXIT_OK = 0
+EXIT_FORMAT_REQUIRED = 1
+EXIT_USAGE = 2
+EXIT_NOT_FOUND = 127
+
 
 def is_informational(args: list[str]) -> bool:
     """Whether ``args`` are bare help/version passthroughs (no formatting flags)."""
@@ -86,21 +94,31 @@ def iter_chunks(items: Sequence[str], size: int) -> Iterator[list[str]]:
     for start in range(0, len(items), size):
         yield list(items[start : start + size])
 
+def _formatting_required(stdout: str) -> bool:
+    """Whether captured ``shfmt -l`` output means files need formatting."""
+    return bool(stdout.strip())
+
+
 def run_tool(
     executable: str,
     arguments: list[str],
     *,
-    check_output: bool = False,
+    capture_output: bool = False,
 ) -> int:
-    """Run a formatter and return its exit code."""
+    """Run a formatter and return its exit code.
+
+    When ``capture_output`` is set, stdout/stderr are printed and
+    non-empty ``shfmt -l`` stdout is reported as
+    ``EXIT_FORMAT_REQUIRED`` (formatting changes required).
+    """
     result = subprocess.run(
         [executable, *arguments],
-        capture_output=check_output,
+        capture_output=capture_output,
         text=True,
         check=False,
     )
 
-    if check_output:
+    if capture_output:
         if result.stdout:
             print(result.stdout, end="")
         if result.stderr:
@@ -110,12 +128,12 @@ def run_tool(
             return result.returncode
 
         # For shfmt -l, output means files need formatting.
-        if result.stdout.strip():
+        if _formatting_required(result.stdout):
             print(
                 "formattington: formatting changes required.",
                 file=sys.stderr,
             )
-            return 1
+            return EXIT_FORMAT_REQUIRED
 
     return result.returncode
 

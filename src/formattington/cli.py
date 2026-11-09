@@ -7,7 +7,14 @@ import sys
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-from formattington._tools import discover_files, is_informational, iter_chunks
+from formattington._tools import (
+    EXIT_NOT_FOUND,
+    EXIT_OK,
+    EXIT_USAGE,
+    discover_files,
+    is_informational,
+    iter_chunks,
+)
 from formattington.clang_format import FILE_EXTENSIONS as CLANG_FORMAT_EXTENSIONS
 from formattington.clang_format import clang_format
 from formattington.format_python import FILE_EXTENSIONS as BLACK_EXTENSIONS
@@ -154,7 +161,7 @@ def _run_formatter(
             for chunk in iter_chunks(discovered, MAX_FILES_PER_INVOCATION)
         ] or [user_args]
 
-    exit_code = 0
+    exit_code = EXIT_OK
     for batch in batches:
         try:
             call_kwargs: dict[str, object] = {
@@ -166,26 +173,26 @@ def _run_formatter(
                 call_kwargs["verbose"] = True
             result = FORMATTERS[name](**call_kwargs)  # type: ignore[arg-type]
         except (FileNotFoundError, RuntimeError) as exc:
-            return (name, 127, str(exc))
-        if result != 0:
+            return (name, EXIT_NOT_FOUND, str(exc))
+        if result != EXIT_OK:
             exit_code = result
     return (name, exit_code, None)
 
 
 def _aggregate_exit_code(results: dict[str, int], names: list[str]) -> int:
     """Last non-zero code in ``names`` order wins; 0 only if all succeed."""
-    exit_code = 0
+    exit_code = EXIT_OK
     for name in names:
-        if results[name] != 0:
+        if results[name] != EXIT_OK:
             exit_code = results[name]
     return exit_code
 
 
 def _aggregate_codes(codes: list[int]) -> int:
     """Last non-zero code in command order wins; 0 only if all succeed."""
-    exit_code = 0
+    exit_code = EXIT_OK
     for code in codes:
-        if code != 0:
+        if code != EXIT_OK:
             exit_code = code
     return exit_code
 
@@ -391,7 +398,7 @@ def _run_config_parallel(
     nothing and exits 0.
     """
     if not commands:
-        return 0
+        return EXIT_OK
     results: dict[int, int] = {}
     errors: dict[int, str] = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(commands) or 1) as executor:
@@ -613,14 +620,14 @@ def main() -> int:
 
     if "--version" in formattington_args:
         print(formattington_version())
-        return 0
+        return EXIT_OK
 
     # Global flags: one shared parser for every path.
     parser = _build_parser()
 
     if formatter_index is None:
         parser.parse_args(argv)
-        return 0
+        return EXIT_OK
 
     formatter_name = argv[formatter_index]
     formatter_args = argv[formatter_index + 1:]
@@ -650,7 +657,7 @@ def main() -> int:
         commands, config_error = _load_config(explicit_config)
         if config_error is not None:
             print(f"formattington: {config_error}", file=sys.stderr)
-            return 2
+            return EXIT_USAGE
         if commands is not None:
             if series:
                 return _run_config_series(
