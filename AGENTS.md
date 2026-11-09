@@ -153,7 +153,7 @@ Formattington orchestrates external formatters; each formatter retains responsib
 - Do not assume all formatters are installed.
 - Report missing tools clearly.
 - Keep formatter-specific arguments and behavior within the corresponding integration where practical.
-- Do not bundle external formatter binaries unless explicitly required by the project design.
+- Bundled formatter binaries under `tools/` are pinned and tracked by design (see `tools/README.md` and the README bundled-tools policy); `find_tool()` prefers bundled copies then falls back to `PATH`. Do not bundle additional binaries without updating the version table and README.
 
 ## Testing and Validation
 
