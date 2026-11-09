@@ -174,17 +174,12 @@ def _run_formatter(
     return (name, exit_code, None)
 
 
-def _aggregate_exit_code(results: dict[str, int], names: list[str]) -> int:
-    """Last non-zero code in ``names`` order wins; 0 only if all succeed."""
-    exit_code = EXIT_OK
-    for name in names:
-        if results[name] != EXIT_OK:
-            exit_code = results[name]
-    return exit_code
-
-
 def _aggregate_codes(codes: list[int]) -> int:
-    """Last non-zero code in command order wins; 0 only if all succeed."""
+    """Last non-zero code in order wins; 0 only if all succeed.
+
+    Callers pass codes already ordered by registration/file order
+    (e.g. ``[results[n] for n in names]`` or sorted-index lists).
+    """
     exit_code = EXIT_OK
     for code in codes:
         if code != EXIT_OK:
@@ -462,7 +457,7 @@ def _run_series(
         if error is not None:
             print(f"formattington: {error}", file=sys.stderr)
         results[name] = code
-    return _aggregate_exit_code(results, names)
+    return _aggregate_codes([results[name] for name in names])
 
 
 def _run_parallel(
@@ -505,7 +500,7 @@ def _run_parallel(
     for name in names:
         if name in errors:
             print(f"formattington: {errors[name]}", file=sys.stderr)
-    return _aggregate_exit_code(results, names)
+    return _aggregate_codes([results[name] for name in names])
 
 
 def _build_parser() -> argparse.ArgumentParser:
