@@ -78,10 +78,11 @@ Important modules include:
 - `shfmt.py` — shfmt integration.
 - `clang_format.py` — clang-format integration.
 - `format_python.py` — Black (Python) integration (`.py` files; `PATH`-only, no bundle; respects `[tool.black]`/`pyproject.toml`).
+- `prettier.py` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`; `PATH`-only, no bundle; respects `.prettierrc`).
 - `.prettierrc` — Prettier configuration.
 - `.clang-format` — clang-format configuration.
 
-`cli.py` is the single canonical entry point and the sole `FORMATTERS` registry. Prettier, Bash, and Markdown formatter modules (`prettier.py`, `format_bash.py`, `markdown_format.py`) are planned but not yet present; do not reference them as existing files. (`format_python.py` now exists and is not part of the planned set.)
+`cli.py` is the single canonical entry point and the sole `FORMATTERS` registry. Bash and Markdown formatter modules (`format_bash.py`, `markdown_format.py`) are planned but not yet present; do not reference them as existing files. (`format_python.py` and `prettier.py` now exist and are not part of the planned set.)
 
 Before modifying a module, inspect its current implementation and callers. Keep responsibilities separated and avoid duplicating formatter-specific logic across the orchestration layer.
 

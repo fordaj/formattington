@@ -23,6 +23,7 @@ import formattington._tools as tools
 from formattington import _tools as tools_module
 from formattington.clang_format import clang_format
 from formattington.format_python import black
+from formattington.prettier import prettier
 from formattington.shfmt import shfmt
 from tests.conftest import make_fake_executable
 
@@ -249,6 +250,94 @@ class TestPathStubs:
             assert main() == 0
         assert _read_recorded(fake_argv_file) == ["--check", "my file.py"]
 
+    def test_prettier_batches_paths_with_spaces(
+        self, monkeypatch, tmp_path, fake_argv_file
+    ):
+        empty_tools = tmp_path / "empty-tools"
+        empty_tools.mkdir()
+        monkeypatch.setattr(tools, "TOOLS_DIR", empty_tools)
+
+        bin_dir = tmp_path / "bin"
+        make_fake_executable(bin_dir, "prettier")
+        monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+        monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
+            mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")
+            assert prettier(args=["my file.js", "another file.json"]) == 0
+        assert _read_recorded(fake_argv_file) == [
+            "--write",
+            "my file.js",
+            "another file.json",
+        ]
+
+    def test_prettier_check_mode(self, monkeypatch, tmp_path, fake_argv_file):
+        empty_tools = tmp_path / "empty-tools"
+        empty_tools.mkdir()
+        monkeypatch.setattr(tools, "TOOLS_DIR", empty_tools)
+
+        bin_dir = tmp_path / "bin"
+        make_fake_executable(bin_dir, "prettier")
+        monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+        monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
+            mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")
+            assert prettier(check=True, args=["file with spaces.js"]) == 0
+        assert _read_recorded(fake_argv_file) == ["--check", "file with spaces.js"]
+
+    def test_prettier_dry_run_mode(self, monkeypatch, tmp_path, fake_argv_file):
+        empty_tools = tmp_path / "empty-tools"
+        empty_tools.mkdir()
+        monkeypatch.setattr(tools, "TOOLS_DIR", empty_tools)
+
+        bin_dir = tmp_path / "bin"
+        make_fake_executable(bin_dir, "prettier")
+        monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+        monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
+            mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")
+            assert prettier(dry_run=True, args=["file.js"]) == 0
+        assert _read_recorded(fake_argv_file) == ["--list-different", "file.js"]
+
+    def test_prettier_via_cli_end_to_end(self, monkeypatch, tmp_path, fake_argv_file):
+        empty_tools = tmp_path / "empty-tools"
+        empty_tools.mkdir()
+        monkeypatch.setattr(tools, "TOOLS_DIR", empty_tools)
+
+        bin_dir = tmp_path / "bin"
+        make_fake_executable(bin_dir, "prettier")
+        monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+        monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
+        monkeypatch.setattr(sys, "argv", ["formattington", "--check", "prettier", "my file.js"])
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
+            mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")
+            from formattington.cli import main
+
+            assert main() == 0
+        assert _read_recorded(fake_argv_file) == ["--check", "my file.js"]
+
+    def test_prettier_forwarded_check_via_cli(self, monkeypatch, tmp_path, fake_argv_file):
+        empty_tools = tmp_path / "empty-tools"
+        empty_tools.mkdir()
+        monkeypatch.setattr(tools, "TOOLS_DIR", empty_tools)
+
+        bin_dir = tmp_path / "bin"
+        make_fake_executable(bin_dir, "prettier")
+        monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+        monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
+        monkeypatch.setattr(sys, "argv", ["formattington", "prettier", "--check"])
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
+            mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")
+            from formattington.cli import main
+
+            assert main() == 0
+        # Forwarded --check omits the default --write.
+        assert _read_recorded(fake_argv_file) == ["--check"]
+
 
 class TestFileDiscoveryContract:
     """Discovery-agnostic checks that hold on every platform.
@@ -312,3 +401,21 @@ class TestFileDiscoveryContract:
             assert black(args=paths) == 0
         assert len(calls) == 1
         assert calls[0] == ["/fake/black", *paths]
+
+    def test_prettier_single_call_for_many_paths(self):
+        from unittest.mock import patch
+
+        paths = [f"dir/file {i}.js" for i in range(5)]
+        calls = []
+
+        def fake_run(cmd, **kwargs):
+            calls.append(list(cmd))
+            m = type("R", (), {"returncode": 0})()
+            return m
+
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake_run):
+            assert prettier(args=paths) == 0
+        assert len(calls) == 1
+        assert calls[0] == ["/fake/prettier", "--write", *paths]

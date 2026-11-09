@@ -18,7 +18,8 @@ def mock_formatters(monkeypatch):
     Returns a dict of mocks keyed by formatter name.
     """
     mocks = {
-        name: MagicMock(return_value=0) for name in ("shfmt", "clang-format", "black")
+        name: MagicMock(return_value=0)
+        for name in ("shfmt", "clang-format", "black", "prettier")
     }
     original = dict(cli.FORMATTERS)
     cli.FORMATTERS.update(mocks)
@@ -58,6 +59,14 @@ class TestFormatterSelection:
         )
         mock_formatters["shfmt"].assert_not_called()
 
+    def test_prettier_selection(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "prettier"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+        mock_formatters["shfmt"].assert_not_called()
+
     def test_python_alias_selection(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "python"])
         assert main() == 0
@@ -69,6 +78,13 @@ class TestFormatterSelection:
         _set_argv(monkeypatch, ["formattington", "all"])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+
+    def test_all_runs_prettier_exactly_once(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "all"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
             check=False, dry_run=False, args=[]
         )
 
@@ -112,6 +128,13 @@ class TestModes:
             check=True, dry_run=False, args=[]
         )
 
+    def test_check_before_prettier(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--check", "prettier"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
+            check=True, dry_run=False, args=[]
+        )
+
     def test_dry_run_before_formatter(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--dry-run", "clang-format"])
         assert main() == 0
@@ -123,6 +146,13 @@ class TestModes:
         _set_argv(monkeypatch, ["formattington", "--dry-run", "black"])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
+            check=False, dry_run=True, args=[]
+        )
+
+    def test_dry_run_before_prettier(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--dry-run", "prettier"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
             check=False, dry_run=True, args=[]
         )
 
@@ -146,7 +176,7 @@ class TestModes:
 
 
 class TestUnknownWords:
-    @pytest.mark.parametrize("word", ["foobar", "unknown-word", "prettier", "c"])
+    @pytest.mark.parametrize("word", ["foobar", "unknown-word", "c"])
     def test_unknown_word_exits_2(self, monkeypatch, mock_formatters, word):
         _set_argv(monkeypatch, ["formattington", word])
         with pytest.raises(SystemExit) as exc_info:
@@ -170,6 +200,13 @@ class TestVerbose:
         _set_argv(monkeypatch, ["formattington", "--verbose", "black"])
         assert main() == 0
         mock_formatters["black"].assert_called_once_with(
+            check=False, dry_run=False, args=[], verbose=True
+        )
+
+    def test_verbose_before_prettier(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--verbose", "prettier"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
             check=False, dry_run=False, args=[], verbose=True
         )
 
@@ -243,6 +280,22 @@ class TestArgForwarding:
             check=False, dry_run=False, args=["--line-length", "88"]
         )
 
+    def test_forward_args_after_prettier(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "prettier", "--check"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
+            check=False, dry_run=False, args=["--check"]
+        )
+
+    def test_forward_prettier_config_arg(self, monkeypatch, mock_formatters):
+        _set_argv(
+            monkeypatch, ["formattington", "prettier", "--single-quote", "my file.js"]
+        )
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
+            check=False, dry_run=False, args=["--single-quote", "my file.js"]
+        )
+
     def test_forward_preserves_spaces_in_args(self, monkeypatch, mock_formatters):
         _set_argv(
             monkeypatch,
@@ -293,11 +346,19 @@ class TestMissingToolExit127:
         ):
             assert main() == 127
 
+    def test_prettier_missing_returns_127(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "prettier"])
+        with patch(
+            "formattington.prettier.find_tool",
+            side_effect=FileNotFoundError("Could not find 'prettier'"),
+        ):
+            assert main() == 127
+
     def test_all_returns_127_when_any_missing(self, monkeypatch):
-        # shfmt missing, clang-format and black present: still runs the
+        # shfmt missing, clang-format, black and prettier present: still runs the
         # present ones, final exit is 127.
         _set_argv(monkeypatch, ["formattington", "all"])
-        # shfmt raises via find_tool; clang-format and black succeed via
+        # shfmt raises via find_tool; clang-format, black and prettier succeed via
         # mocked subprocess.run so no real binary is needed.
         def _fake_run(cmd, **kwargs):
             result = MagicMock()
@@ -315,6 +376,10 @@ class TestMissingToolExit127:
             "formattington.format_python.find_tool", return_value="/fake/black"
         ), patch(
             "formattington.format_python.subprocess.run", side_effect=_fake_run
+        ), patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch(
+            "formattington.prettier.subprocess.run", side_effect=_fake_run
         ):
             assert main() == 127
 
@@ -331,7 +396,7 @@ class TestMissingToolExit127:
         [[], ["--check"], ["--dry-run"]],
         ids=["default", "check", "dry-run"],
     )
-    @pytest.mark.parametrize("formatter", ["shfmt", "clang-format", "black"])
+    @pytest.mark.parametrize("formatter", ["shfmt", "clang-format", "black", "prettier"])
     def test_missing_tool_returns_127_in_every_mode(
         self, monkeypatch, capsys, mode_args, formatter
     ):
@@ -343,6 +408,7 @@ class TestMissingToolExit127:
             "shfmt": "formattington.shfmt.find_tool",
             "clang-format": "formattington.clang_format.find_tool",
             "black": "formattington.format_python.find_tool",
+            "prettier": "formattington.prettier.find_tool",
         }[formatter]
         with patch(
             patch_target,
@@ -367,6 +433,20 @@ class TestMissingToolExit127:
             assert main() == 127
         assert "Could not find 'shfmt'" in capsys.readouterr().err
 
+    def test_prettier_missing_with_forwarded_args_returns_127(
+        self, monkeypatch, capsys
+    ):
+        _set_argv(monkeypatch, ["formattington", "prettier", "--check"])
+        with patch(
+            "formattington.prettier.find_tool",
+            side_effect=FileNotFoundError("Could not find 'prettier'"),
+        ):
+            assert main() == 127
+        err = capsys.readouterr().err
+        assert err.startswith("formattington:")
+        assert "Could not find 'prettier'" in err
+        assert "Traceback" not in err
+
     def test_help_and_version_do_not_require_tools(self, monkeypatch):
         # --help and --version must work even when tools are missing.
         _set_argv(monkeypatch, ["formattington", "--help"])
@@ -387,7 +467,10 @@ class TestMissingToolExit127:
         ), patch(
             "formattington.format_python.find_tool",
             side_effect=FileNotFoundError("Could not find 'black'"),
+        ), patch(
+            "formattington.prettier.find_tool",
+            side_effect=FileNotFoundError("Could not find 'prettier'"),
         ):
             assert main() == 127
         err = capsys.readouterr().err
-        assert err.count("formattington:") == 3
+        assert err.count("formattington:") == 4

@@ -9,6 +9,8 @@ import pytest
 from formattington import _tools
 from formattington.clang_format import clang_format
 from formattington.format_python import FILE_EXTENSIONS, black, format_python
+from formattington.prettier import FILE_EXTENSIONS as PRETTIER_FILE_EXTENSIONS
+from formattington.prettier import prettier
 from formattington.shfmt import shfmt
 
 
@@ -330,3 +332,171 @@ class TestBlack:
     def test_alias_and_extensions(self):
         assert format_python is black
         assert FILE_EXTENSIONS == (".py",)
+
+
+class TestPrettier:
+    def test_default_mode_writes(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            assert prettier() == 0
+        assert calls[0][0] == ["/fake/prettier", "--write"]
+
+    def test_check_mode_uses_check_flag(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            assert prettier(check=True) == 0
+        assert calls[0][0] == ["/fake/prettier", "--check"]
+
+    def test_dry_run_mode_uses_list_different(self):
+        # Prettier has no --diff; --list-different is the dry-run equivalent
+        # that lists differing files without modifying them.
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            assert prettier(dry_run=True) == 0
+        assert calls[0][0] == ["/fake/prettier", "--list-different"]
+
+    def test_forwards_args_after_mode_flag_and_preserves_spaces(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            prettier(check=True, args=["my file.js", "another file.json"])
+        assert calls[0][0] == [
+            "/fake/prettier",
+            "--check",
+            "my file.js",
+            "another file.json",
+        ]
+        assert len(calls) == 1
+
+    def test_dry_run_forwards_args_and_preserves_spaces(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            prettier(dry_run=True, args=["my file.ts"])
+        assert calls[0][0] == ["/fake/prettier", "--list-different", "my file.ts"]
+
+    def test_default_forwards_args_after_write(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            prettier(args=["--single-quote", "file with spaces.js"])
+        assert calls[0][0] == [
+            "/fake/prettier",
+            "--write",
+            "--single-quote",
+            "file with spaces.js",
+        ]
+        assert len(calls) == 1
+
+    def test_does_not_duplicate_write_when_present(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            prettier(args=["--write", "file.js"])
+        assert calls[0][0] == ["/fake/prettier", "--write", "file.js"]
+
+    def test_forwarded_check_omits_write(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            prettier(args=["--check"])
+        assert calls[0][0] == ["/fake/prettier", "--check"]
+
+    def test_forwarded_list_different_omits_write(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            prettier(args=["--list-different"])
+        assert calls[0][0] == ["/fake/prettier", "--list-different"]
+
+    def test_check_and_dry_run_are_exclusive(self):
+        with pytest.raises(ValueError, match="cannot both be enabled"):
+            prettier(check=True, dry_run=True)
+
+    def test_propagates_subprocess_exit_code(self):
+        fake, _ = _fake_run_capture(returncode=1)
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            assert prettier(check=True) == 1
+
+    def test_missing_tool_raises(self):
+        with patch(
+            "formattington.prettier.find_tool",
+            side_effect=FileNotFoundError("Could not find 'prettier'"),
+        ):
+            with pytest.raises(FileNotFoundError):
+                prettier()
+
+    def test_forwards_verbose_to_find_tool(self):
+        fake, _ = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ) as mock_find, patch(
+            "formattington.prettier.subprocess.run", side_effect=fake
+        ):
+            assert prettier(verbose=True) == 0
+        mock_find.assert_called_once_with("prettier", verbose=True)
+
+    def test_help_passthrough_without_mode_flags(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            assert prettier(check=True, args=["--help"]) == 0
+        assert calls[0][0] == ["/fake/prettier", "--help"]
+
+    def test_version_passthrough_without_mode_flags(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            assert prettier(dry_run=True, args=["--version"]) == 0
+        assert calls[0][0] == ["/fake/prettier", "--version"]
+
+    def test_no_shell_used(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            prettier(args=["file with spaces.js"])
+        _, kwargs = calls[0]
+        assert kwargs.get("shell") is None
+        assert kwargs["check"] is False
+
+    def test_does_not_add_config_flag(self):
+        # The project .prettierrc must be respected; Formattington adds no
+        # --config override unless the caller forwards one.
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.prettier.find_tool", return_value="/fake/prettier"
+        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
+            prettier(args=["file.js"])
+        assert "--config" not in calls[0][0]
+
+    def test_extensions(self):
+        assert PRETTIER_FILE_EXTENSIONS == (
+            ".js",
+            ".ts",
+            ".tsx",
+            ".jsx",
+            ".json",
+            ".html",
+            ".css",
+            ".scss",
+            ".yaml",
+            ".yml",
+            ".md",
+        )

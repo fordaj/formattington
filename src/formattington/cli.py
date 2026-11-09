@@ -5,6 +5,7 @@ from importlib.metadata import PackageNotFoundError, version
 
 from formattington.clang_format import clang_format
 from formattington.format_python import black
+from formattington.prettier import prettier
 from formattington.shfmt import shfmt
 
 
@@ -12,6 +13,7 @@ FORMATTERS = {
     "shfmt": shfmt,
     "clang-format": clang_format,
     "black": black,
+    "prettier": prettier,
 }
 
 LANGUAGE_ALIASES = {

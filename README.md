@@ -88,6 +88,7 @@ name; arguments after the formatter are forwarded verbatim):
 | shfmt        | `shfmt -l` — list unformatted files; exit 1 if any listed, else 0 | `shfmt -d` — print diff, do not modify | `shfmt -w` — write in place |
 | clang-format | `clang-format --dry-run --Werror` — fail if any file needs formatting, do not modify | `clang-format --dry-run` — validate without modifying | `clang-format -i` — format in place (unless `-i`/`--in-place` already given) |
 | black        | `black --check` — fail if any file needs formatting, do not modify | `black --diff` — show diff, do not modify | `black` in place (no flag) |
+| prettier     | `prettier --check` — fail if any file needs formatting, do not modify | `prettier --list-different` — list files that differ, do not modify (Prettier has no `--diff`) | `prettier --write` — write in place (unless `--write`/`-w`, `--check`/`-c`, or `--list-different`/`-l` already given) |
 
 When a formatter executable cannot be found, Formattington does not
 raise a Python traceback. It prints a single line to stderr (for
@@ -95,7 +96,7 @@ example `formattington: Could not find 'shfmt'. Expected a bundled
 executable under tools/shfmt/<version>/<platform>/shfmt or an
 installation on PATH.`) and exits `127`. This happens identically in
 default, `--check`, and `--dry-run` modes, for `shfmt`,
-`clang-format`, and `black`, and under `all` (the remaining
+`clang-format`, `black`, and `prettier`, and under `all` (the remaining
 formatters still run; the final exit is `127` if any was missing).
 Use `--verbose` to see which executable was resolved when a tool is
 present.
@@ -106,9 +107,10 @@ any formatter executables and continue to work when tools are absent.
 Install hints: `shfmt` comes from https://github.com/mvdan/sh ;
 `clang-format` is part of LLVM (https://clang.llvm.org/docs/ClangFormat.html);
 `black` is installed via pip (`pip install black` or
-`uv tool install black`). Either a bundled copy under `tools/` (see
+`uv tool install black`); `prettier` is installed via npm
+(`npm install -g prettier`). Either a bundled copy under `tools/` (see
 [Bundled tools](#bundled-tools)) or an installation on `PATH`
-satisfies `find_tool()`; `black` is `PATH`-only (not bundled) and is
+satisfies `find_tool()`; `black` and `prettier` are `PATH`-only (not bundled) and are
 found via `PATH`.
 
 ## Supported formatters
@@ -120,15 +122,17 @@ Formattington integrates existing tools rather than reimplementing their formatt
 | [clang-format](https://clang.llvm.org/docs/ClangFormat.html) | Available | C, C++, and related languages                           |
 | [shfmt](https://github.com/mvdan/sh)                         | Available | Shell scripts                                           |
 | [Black](https://black.readthedocs.io/)                       | Available | Python (`.py`)                                          |
-| [Prettier](https://prettier.io/)                             | Planned   | JavaScript, TypeScript, JSON, HTML, CSS, Markdown, YAML |
+| [Prettier](https://prettier.io/)                             | Available | JavaScript, TypeScript, JSON, HTML, CSS, Markdown, YAML |
 | Markdown formatting                                          | Planned   | Markdown-specific workflows                             |
 
-Only `shfmt`, `clang-format`, `black`, `python` (alias for `black`), and
-`all` are accepted by the CLI today. Prettier and Markdown integrations
-are planned but not yet implemented — Formattington reports a usage
-error (exit 2) for those names until they land. The `Usage` examples
+Only `shfmt`, `clang-format`, `black`, `prettier`, `python` (alias for `black`), and
+`all` are accepted by the CLI today. The Markdown-specific integration
+is planned but not yet implemented — Formattington reports a usage
+error (exit 2) for those planned names until they land. The `Usage` examples
 above describe the intended public interface; the available subset is
-`shfmt`, `clang-format`, and `black`.
+`shfmt`, `clang-format`, `black`, and `prettier`. Note that Prettier
+also formats `.md` files, so Markdown can be formatted via `prettier`
+today; the planned Markdown-specific integration remains separate.
 
 ### Prerequisites
 
@@ -137,6 +141,7 @@ above describe the intended public interface; the available subset is
 | shfmt        | Comes under `tools/shfmt/v3.14.1/<platform>/shfmt` in a fresh clone                    | `go install mvdan.cc/sh/v3/cmd/shfmt@latest` or your OS package manager        | Bundled first, then `PATH` via `find_tool("shfmt")`                     |
 | clang-format | Comes under `tools/clang-format/v23.1.3/<platform>/clang-format` in a fresh clone       | Install LLVM/clang-tools for your OS (for example `brew install clang-format` or `apt install clang-format`) | Bundled first, then `PATH` via `find_tool("clang-format")`              |
 | black        | Not bundled (PATH-only)                                                                | `pip install black` or `uv tool install black`                                | `PATH` via `find_tool("black")` (bundled lookup finds nothing)          |
+| prettier     | Not bundled (PATH-only)                                                                | `npm install -g prettier` (or use `npx prettier` with the executable on `PATH`) | `PATH` via `find_tool("prettier")` (bundled lookup finds nothing)       |
 
 Bundled versions are pinned in `tools/` for offline use; see
 [Bundled tools](#bundled-tools) for the layout and refresh process.
@@ -180,7 +185,7 @@ uv run python -m formattington --version
 
 ### Formatter dependencies
 
-Formattington orchestrates external formatters; it does not automatically make every formatter available simply by installing the Python package. A fresh clone already contains the pinned bundled executables under `tools/`, so `uv sync` plus the clones above are sufficient for offline use. If you prefer a system installation, put the tool on `PATH` instead — `find_tool()` prefers bundled copies and falls back to `PATH`. `black` is `PATH`-only (installed via `pip install black` or `uv tool install black`) and is not bundled under `tools/`. See the [prerequisites table](#prerequisites) for per-formatter options.
+Formattington orchestrates external formatters; it does not automatically make every formatter available simply by installing the Python package. A fresh clone already contains the pinned bundled executables under `tools/`, so `uv sync` plus the clones above are sufficient for offline use. If you prefer a system installation, put the tool on `PATH` instead — `find_tool()` prefers bundled copies and falls back to `PATH`. `black` is `PATH`-only (installed via `pip install black` or `uv tool install black`) and is not bundled under `tools/`. `prettier` is `PATH`-only (installed via `npm install -g prettier`) and is not bundled under `tools/`. See the [prerequisites table](#prerequisites) for per-formatter options.
 
 ## How it works
 
@@ -200,9 +205,9 @@ Formattington looks for bundled formatter executables under
 hyphenated `<os>-<arch>` name returned by `get_platform_dir()` (for
 example `linux-x86_64`, `macos-arm64`, `windows-x86_64`). Bundled
 tools are preferred; when none is found, lookup falls back to `PATH`.
-`black` is `PATH`-only and is not bundled under `tools/`; install it
-via `pip install black` or `uv tool install black` and place it on
-`PATH`.
+`black` and `prettier` are `PATH`-only and are not bundled under `tools/`; install `black`
+via `pip install black` or `uv tool install black`, and install `prettier`
+via `npm install -g prettier`, and place the executable on `PATH`.
 
 Use `--verbose` before the formatter name to see which executable was
 resolved, or set `FORMATTINGTON_VERBOSE=1`:
