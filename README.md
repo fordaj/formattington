@@ -123,6 +123,30 @@ Formattington separates the orchestration layer from the formatting tools themse
 
 The goal is to keep the interface simple while letting established formatter tools do what they do best.
 
+## Bundled tools
+
+Formattington looks for bundled formatter executables under
+`tools/<name>/v<version>/<platform>/`, where `<platform>` is the
+hyphenated `<os>-<arch>` name returned by `get_platform_dir()` (for
+example `linux-x86_64`, `macos-arm64`, `windows-x86_64`). Bundled
+tools are preferred; when none is found, lookup falls back to `PATH`.
+
+Use `--verbose` before the formatter name to see which executable was
+resolved, or set `FORMATTINGTON_VERBOSE=1`:
+
+```bash
+formattington --verbose shfmt
+formattington --verbose --check shfmt
+```
+
+Migration notes: the shfmt linux bundles were previously stored under
+underscored names (`linux_arm64`, `linux_x86_64`). They are now
+hyphenated (`linux-arm64`, `linux-x86_64`) to match `get_platform_dir()`
+and clang-format. `find_tool()` still accepts the legacy underscored
+form as a fallback. Bundled versions are compared numerically, so
+`v10` wins over `v9` and `v23.1.3` wins over `v22.1.8`. On Windows,
+`PATH` lookup tries both `name` and `name.exe`.
+
 ## Testing
 
 Run the test suite with:

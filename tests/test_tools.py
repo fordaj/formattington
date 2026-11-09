@@ -133,6 +133,144 @@ class TestFindTool:
             assert _tools.find_tool("shfmt") == "/usr/local/bin/shfmt"
 
 
+class TestVersionOrdering:
+    def test_version_key_is_numeric(self):
+        assert _tools._version_key("9.0.0") < _tools._version_key("10.0.0")
+        assert _tools._version_key("22.1.8") < _tools._version_key("23.1.3")
+        assert _tools._version_key("3.14.1") == (3, 14, 1)
+
+    def test_prefers_numeric_newest_over_lexical(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)
+        _make_bundled_layout(
+            tmp_path, "clang-format", "9.0.0", "macos-x86_64", "clang-format"
+        )
+        newest = _make_bundled_layout(
+            tmp_path, "clang-format", "10.0.0", "macos-x86_64", "clang-format"
+        )
+        with (
+            patch("formattington._tools.platform.system", return_value="Darwin"),
+            patch("formattington._tools.platform.machine", return_value="x86_64"),
+            patch("formattington._tools.shutil.which", return_value=None),
+        ):
+            assert _tools.find_tool("clang-format") == str(newest)
+
+
+class TestLegacyPlatformDir:
+    def test_prefers_hyphenated_over_legacy_underscored(
+        self, monkeypatch, tmp_path
+    ):
+        monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)
+        expected = _make_bundled_layout(
+            tmp_path, "shfmt", "3.14.1", "macos-x86_64", "shfmt"
+        )
+        _make_bundled_layout(
+            tmp_path, "shfmt", "3.14.1", "macos_x86_64", "shfmt"
+        )
+        with (
+            patch("formattington._tools.platform.system", return_value="Darwin"),
+            patch("formattington._tools.platform.machine", return_value="x86_64"),
+            patch("formattington._tools.shutil.which", return_value=None),
+        ):
+            assert _tools.find_tool("shfmt") == str(expected)
+
+    def test_falls_back_to_legacy_underscored(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)
+        legacy = _make_bundled_layout(
+            tmp_path, "shfmt", "3.14.1", "macos_x86_64", "shfmt"
+        )
+        with (
+            patch("formattington._tools.platform.system", return_value="Darwin"),
+            patch("formattington._tools.platform.machine", return_value="x86_64"),
+            patch("formattington._tools.shutil.which", return_value=None),
+        ):
+            assert _tools.find_tool("shfmt") == str(legacy)
+
+
+class TestWindowsPathFallback:
+    def test_tries_exe_when_name_not_found(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)
+
+        def _which(command):
+            if command == "shfmt":
+                return None
+            if command == "shfmt.exe":
+                return r"C:\tools\shfmt.exe"
+            return None
+
+        with (
+            patch("formattington._tools.platform.system", return_value="Windows"),
+            patch("formattington._tools.platform.machine", return_value="AMD64"),
+            patch(
+                "formattington._tools.shutil.which", side_effect=_which
+            ) as mock_which,
+        ):
+            assert _tools.find_tool("shfmt") == r"C:\tools\shfmt.exe"
+            calls = [call.args[0] for call in mock_which.call_args_list]
+            assert calls == ["shfmt", "shfmt.exe"]
+
+
+class TestVerboseResolution:
+    def test_verbose_reports_bundled(self, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)
+        expected = _make_bundled_layout(
+            tmp_path, "shfmt", "3.14.1", "macos-x86_64", "shfmt"
+        )
+        with (
+            patch("formattington._tools.platform.system", return_value="Darwin"),
+            patch("formattington._tools.platform.machine", return_value="x86_64"),
+            patch("formattington._tools.shutil.which", return_value=None),
+        ):
+            assert _tools.find_tool("shfmt", verbose=True) == str(expected)
+        err = capsys.readouterr().err
+        assert "resolved to" in err
+        assert str(expected) in err
+        assert "(bundled)" in err
+
+    def test_verbose_reports_path(self, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)
+        with (
+            patch("formattington._tools.platform.system", return_value="Darwin"),
+            patch("formattington._tools.platform.machine", return_value="x86_64"),
+            patch(
+                "formattington._tools.shutil.which",
+                return_value="/usr/local/bin/shfmt",
+            ),
+        ):
+            assert (
+                _tools.find_tool("shfmt", verbose=True)
+                == "/usr/local/bin/shfmt"
+            )
+        err = capsys.readouterr().err
+        assert "resolved to" in err
+        assert "(PATH)" in err
+
+    def test_verbose_via_environment(self, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)
+        monkeypatch.setenv("FORMATTINGTON_VERBOSE", "1")
+        expected = _make_bundled_layout(
+            tmp_path, "shfmt", "3.14.1", "macos-x86_64", "shfmt"
+        )
+        with (
+            patch("formattington._tools.platform.system", return_value="Darwin"),
+            patch("formattington._tools.platform.machine", return_value="x86_64"),
+            patch("formattington._tools.shutil.which", return_value=None),
+        ):
+            assert _tools.find_tool("shfmt") == str(expected)
+        assert "resolved to" in capsys.readouterr().err
+
+    def test_not_verbose_by_default(self, monkeypatch, tmp_path, capsys):
+        monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)
+        monkeypatch.delenv("FORMATTINGTON_VERBOSE", raising=False)
+        _make_bundled_layout(tmp_path, "shfmt", "3.14.1", "macos-x86_64", "shfmt")
+        with (
+            patch("formattington._tools.platform.system", return_value="Darwin"),
+            patch("formattington._tools.platform.machine", return_value="x86_64"),
+            patch("formattington._tools.shutil.which", return_value=None),
+        ):
+            _tools.find_tool("shfmt")
+        assert capsys.readouterr().err == ""
+
+
 class TestRunTool:
     def _fake_result(self, *, stdout: str = "", stderr: str = "", returncode: int = 0):
         result = MagicMock()

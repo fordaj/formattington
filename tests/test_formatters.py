@@ -96,6 +96,16 @@ class TestShfmt:
             with pytest.raises(FileNotFoundError):
                 shfmt()
 
+    def test_forwards_verbose_to_find_tool(self):
+        fake, _ = _fake_run_capture()
+        with patch(
+            "formattington.shfmt.find_tool", return_value="/fake/shfmt"
+        ) as mock_find, patch(
+            "formattington._tools.subprocess.run", side_effect=fake
+        ):
+            assert shfmt(verbose=True) == 0
+        mock_find.assert_called_once_with("shfmt", verbose=True)
+
 
 class TestClangFormat:
     def test_default_inserts_in_place(self):
@@ -189,6 +199,17 @@ class TestClangFormat:
         _, kwargs = calls[0]
         assert kwargs.get("shell") is None
         assert kwargs["check"] is False
+
+    def test_forwards_verbose_to_find_tool(self):
+        fake, _ = _fake_run_capture()
+        with patch(
+            "formattington.clang_format.find_tool",
+            return_value="/fake/clang-format",
+        ) as mock_find, patch(
+            "formattington.clang_format.subprocess.run", side_effect=fake
+        ):
+            assert clang_format(verbose=True) == 0
+        mock_find.assert_called_once_with("clang-format", verbose=True)
 
 
 class TestMainLegacyShfmt:

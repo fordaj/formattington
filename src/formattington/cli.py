@@ -40,6 +40,11 @@ def main() -> int:
         parser = argparse.ArgumentParser(
             prog="formattington",
             description="One formatter interface for your entire project.",
+            epilog=(
+                "Bundled tools live under tools/<name>/v<version>/"
+                "<platform>/; use --verbose (or set "
+                "FORMATTINGTON_VERBOSE=1) to show the resolved executable."
+            ),
         )
         parser.add_argument(
             "--version",
@@ -48,6 +53,14 @@ def main() -> int:
         )
         parser.add_argument("--check", action="store_true")
         parser.add_argument("--dry-run", action="store_true")
+        parser.add_argument(
+            "--verbose",
+            action="store_true",
+            help=(
+                "show which formatter executable was resolved "
+                "(also via FORMATTINGTON_VERBOSE=1)"
+            ),
+        )
         parser.parse_args(argv)
         return 0
 
@@ -58,6 +71,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="formattington",
         description="One formatter interface for your entire project.",
+        epilog=(
+            "Bundled tools live under tools/<name>/v<version>/"
+            "<platform>/; use --verbose (or set "
+            "FORMATTINGTON_VERBOSE=1) to show the resolved executable."
+        ),
     )
     parser.add_argument(
         "--version",
@@ -67,6 +85,14 @@ def main() -> int:
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--check", action="store_true")
     modes.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help=(
+            "show which formatter executable was resolved "
+            "(also via FORMATTINGTON_VERBOSE=1)"
+        ),
+    )
     args = parser.parse_args(formattington_args)
 
     if formatter_name == "all":
@@ -80,11 +106,14 @@ def main() -> int:
 
     for name in names:
         try:
-            result = FORMATTERS[name](
-                check=args.check,
-                dry_run=args.dry_run,
-                args=formatter_args,
-            )
+            call_kwargs = {
+                "check": args.check,
+                "dry_run": args.dry_run,
+                "args": formatter_args,
+            }
+            if getattr(args, "verbose", False):
+                call_kwargs["verbose"] = True
+            result = FORMATTERS[name](**call_kwargs)
         except (FileNotFoundError, RuntimeError) as exc:
             print(f"formattington: {exc}", file=sys.stderr)
             exit_code = 127
