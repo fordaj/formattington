@@ -176,6 +176,37 @@ form as a fallback. Bundled versions are compared numerically, so
 `v10` wins over `v9` and `v23.1.3` wins over `v22.1.8`. On Windows,
 `PATH` lookup tries both `name` and `name.exe`.
 
+### Binary policy
+
+Formattington intentionally commits pinned formatter binaries under
+`tools/` (option (a) in #11). Bundled binaries are the first lookup
+location in `find_tool()` and the fallback is `PATH`, so deleting or
+updating a bundle never breaks the fallback — a missing bundle simply
+defers to `PATH` and, if that also fails, exits `127` with a
+one-line `formattington: Could not find ...` message.
+
+Pinned upstream versions (recorded in `tools/README.md`):
+
+- `shfmt` `v3.14.1` from https://github.com/mvdan/sh
+- `clang-format` `v23.1.3` (plus a retained legacy `v22.1.8` macOS
+  bundle) from the LLVM project
+
+Keep these exact versions in sync with the docs when refreshing.
+To refresh, download the new upstream release for each platform,
+extract with `tools/clang-format/unzip.sh` where applicable, preserve
+the `tools/<name>/v<version>/<platform>/` layout, and verify with
+`formattington --verbose shfmt` (or `FORMATTINGTON_VERBOSE=1`).
+There is no automatic fetch on first run; this keeps offline use
+reliable at the cost of a large clone (about 45 MB for `tools/`).
+See `tools/README.md` for the full layout and version table.
+
+Repository hygiene: `__pycache__/`, `*.pyc`, `.DS_Store`, `.logs/`,
+`.venv/`, `.pytest_cache/`, and `*.egg-info/` are ignored via
+`.gitignore` and must not be tracked. The previously committed
+`__pycache__/*.pyc` and `tools/**/*.DS_Store` files were untracked
+with `git rm --cached`; only the formatter binaries remain tracked
+under `tools/`.
+
 ## Testing
 
 Run the test suite with:
