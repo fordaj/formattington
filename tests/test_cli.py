@@ -74,6 +74,74 @@ class TestFormatterSelection:
             check=False, dry_run=False, args=[]
         )
 
+    def test_md_alias_selection(self, monkeypatch, mock_formatters):
+        """Issue #6: 'md' resolves to the existing Prettier integration."""
+        from formattington.cli import LANGUAGE_ALIASES
+
+        assert LANGUAGE_ALIASES["md"] == "prettier"
+        _set_argv(monkeypatch, ["formattington", "md"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+        mock_formatters["black"].assert_not_called()
+
+    def test_markdown_alias_selection(self, monkeypatch, mock_formatters):
+        """Issue #6: 'markdown' resolves to the existing Prettier integration."""
+        from formattington.cli import LANGUAGE_ALIASES
+
+        assert LANGUAGE_ALIASES["markdown"] == "prettier"
+        _set_argv(monkeypatch, ["formattington", "markdown"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+        mock_formatters["black"].assert_not_called()
+
+    def test_markdown_alias_check_and_dry_run(self, monkeypatch, mock_formatters):
+        """Aliases support the same modes as 'prettier' (check/dry-run)."""
+        _set_argv(monkeypatch, ["formattington", "--check", "md"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
+            check=True, dry_run=False, args=[]
+        )
+        _set_argv(monkeypatch, ["formattington", "--dry-run", "markdown"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_with(
+            check=False, dry_run=True, args=[]
+        )
+
+    def test_markdown_alias_forwards_args(self, monkeypatch, mock_formatters):
+        """Forwarded Prettier args (including native --check) pass through."""
+        _set_argv(
+            monkeypatch,
+            ["formattington", "markdown", "--single-quote", "my file.md"],
+        )
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
+            check=False, dry_run=False, args=["--single-quote", "my file.md"]
+        )
+        _set_argv(monkeypatch, ["formattington", "md", "--check"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_with(
+            check=False, dry_run=False, args=["--check"]
+        )
+
+    def test_markdown_alias_missing_prettier_returns_127(
+        self, monkeypatch, capsys
+    ):
+        """Missing Prettier via an alias exits 127 with no traceback."""
+        _set_argv(monkeypatch, ["formattington", "md"])
+        with patch(
+            "formattington.prettier.find_tool",
+            side_effect=FileNotFoundError("Could not find 'prettier'"),
+        ):
+            assert main() == 127
+        err = capsys.readouterr().err
+        assert err.startswith("formattington:")
+        assert "Could not find 'prettier'" in err
+        assert "Traceback" not in err
+
     def test_all_runs_black_exactly_once(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "all"])
         assert main() == 0
@@ -235,6 +303,17 @@ class TestHelpAndVersion:
         out = capsys.readouterr().out
         for needle in ("--help", "--version", "--check", "--dry-run"):
             assert needle in out
+
+    def test_help_describes_markdown_aliases(self, monkeypatch, capsys):
+        """Issue #6: --help names Prettier as the Markdown backend."""
+        _set_argv(monkeypatch, ["formattington", "--help"])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        out = capsys.readouterr().out
+        assert "md/markdown use prettier" in out
+        assert ".md" in out
+        assert ".markdown" in out
 
     def test_help_short_flag(self, monkeypatch, capsys):
         _set_argv(monkeypatch, ["formattington", "-h"])
