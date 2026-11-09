@@ -1,0 +1,7 @@
+{
+  "commands": [
+    ["black", "--check", "src"],
+    ["prettier", "docs/**/*.md"],
+    ["shfmt", "-i", "2"]
+  ]
+}

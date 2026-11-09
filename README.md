@@ -90,6 +90,53 @@ formattington html
 
 Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; and `md`/`markdown`/`html` resolve to `prettier`. Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
 
+### Run with a configuration file (`.formattington.json`)
+
+Instead of always running every formatter, `formattington all` can run an exact list of commands declared in a JSON configuration file. This is useful for mixed-language projects that want to version-control which tools and arguments they use:
+
+```json
+{
+  "commands": [
+    ["black", "--check", "src"],
+    ["prettier", "docs/**/*.md"],
+    ["shfmt", "-i", "2"]
+  ]
+}
+```
+
+Save it as `./.formattington.json` and run:
+
+```bash
+formattington all
+```
+
+or point at any file with:
+
+```bash
+formattington all --config path/to/config.json
+formattington --config path/to/config.json all
+formattington --check all --config path/to/config.json
+```
+
+Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
+
+Config discovery precedence (highest first):
+
+| Priority | Source | Notes |
+| -------- | ------ | ----- |
+| 1 | `--config <path>` (before or after `all`) | Explicit path, relative paths resolve against the current directory; `--config` after `all` (e.g. `formattington all --config x.json`) is honored. |
+| 2 | `FORMATTINGTON_CONFIG_PATH` environment variable | Explicit path; an empty value counts as unset. |
+| 3 | `./.formattington.json` | Auto-discovered in the current directory only (no parent-directory or user-home search). |
+| 4 | No config file | `all` runs the full formatter registry as before (backwards compatible). |
+
+When a config is in effect, `all` runs exactly the listed commands. With no config, `all` keeps its current behavior (all six formatters). The config only changes what `all` means: single-tool runs ignore the file and the environment variable, and `--config` before a single formatter (e.g. `formattington --config x.json black`) is a usage error (exit 2). `--config` after a single formatter is forwarded to that formatter, so native flags such as Prettier's `--config` keep working.
+
+Global flags compose as with a full-registry `all`: `--check`/`--dry-run` and `--verbose` (or `FORMATTINGTON_VERBOSE=1`) propagate to every config command. Config commands run concurrently by default; use `--series` (before or after `all`) to run them sequentially in file order. The exit code is the last non-zero code in file order, or `0` only if every command succeeds. A missing formatter executable counts as `127` for that command and does not prevent the remaining commands from running.
+
+Empty `commands: []` is valid; `all` then runs nothing and exits `0`.
+
+Shell-string entries (`"black --check"`), object-form entries (`{"tool": "black", "args": [...]}`), and bare top-level arrays (`[["black"]]`) are rejected, as are unknown top-level keys (only `commands` is supported): the validator exits `2` with a `formattington: ...` message naming the file and the offending entry rather than misinterpreting them. Missing files, malformed JSON, and schema violations (missing/non-list `commands`, non-list/non-string/empty entries, unknown formatter/alias in element 0) all exit `2` the same way. A present but malformed `./.formattington.json` also exits `2` and does not silently fall back to the full registry.
+
 ## Operations and capabilities
 
 Formattington orchestrates tools that may support different operations.
@@ -115,7 +162,7 @@ Formattington preserves underlying formatter exit codes and uses a fixed scheme 
 | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0    | Success. Formatting applied (or nothing needed formatting).                                                                                        |
 | 1    | Formatting changes required in check mode.                                                                                                         |
-| 2    | Usage error (for example, unknown formatter, exclusive `--check` and `--dry-run` given together, or unexpected arguments parsed by Formattington). |
+| 2    | Usage error (for example, unknown formatter, exclusive `--check` and `--dry-run` given together, unexpected arguments parsed by Formattington, or a missing/invalid `--config` / `FORMATTINGTON_CONFIG_PATH` / `./.formattington.json` file). |
 | 127  | Formatter executable not found (no bundled binary and nothing on `PATH`).                                                                          |
 
 ### Mode semantics
@@ -154,6 +201,8 @@ The rule is deterministic regardless of completion order in the concurrent defau
 For example:
 - If `shfmt` returns `5` and `prettier` returns `1`, `all` exits `1`.
 - If `shfmt` returns `5` and the rest succeed, `all` exits `5`.
+
+With a config file, the same rule applies in config-command order: the last non-zero code among the listed commands wins (a missing tool counts as `127` in its command slot and does not stop later commands), or `0` only if every command succeeds. Invalid or missing config files exit `2` before any formatter runs.
 
 Use `--verbose` to see which executable was resolved when a tool is present.
 
