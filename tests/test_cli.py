@@ -474,3 +474,199 @@ class TestMissingToolExit127:
             assert main() == 127
         err = capsys.readouterr().err
         assert err.count("formattington:") == 4
+
+
+class TestSeriesAndParallel:
+    """Issue #3: --series vs concurrent default for 'all'."""
+
+    def test_all_series_after_all_runs_every_formatter_in_order(
+        self, monkeypatch, mock_formatters
+    ):
+        calls: list[str] = []
+
+        def make_side_effect(name):
+            def _fake(*args, **kwargs):
+                calls.append(name)
+                return 0
+
+            return _fake
+
+        for name, mock in mock_formatters.items():
+            mock.side_effect = make_side_effect(name)
+        _set_argv(monkeypatch, ["formattington", "all", "--series"])
+        assert main() == 0
+        assert calls == ["shfmt", "clang-format", "black", "prettier"]
+        for mock in mock_formatters.values():
+            mock.assert_called_once_with(check=False, dry_run=False, args=[])
+
+    def test_series_before_all_runs_every_formatter(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--series", "all"])
+        assert main() == 0
+        for mock in mock_formatters.values():
+            mock.assert_called_once_with(check=False, dry_run=False, args=[])
+
+    def test_series_flag_not_forwarded_to_formatters(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "all", "--series"])
+        assert main() == 0
+        for mock in mock_formatters.values():
+            assert mock.call_args.kwargs["args"] == []
+
+    def test_series_with_check_before_all(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--check", "--series", "all"])
+        assert main() == 0
+        for mock in mock_formatters.values():
+            mock.assert_called_once_with(check=True, dry_run=False, args=[])
+
+    def test_check_before_all_series_after(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--check", "all", "--series"])
+        assert main() == 0
+        for mock in mock_formatters.values():
+            mock.assert_called_once_with(check=True, dry_run=False, args=[])
+
+    def test_all_series_with_extra_arg_exits_2(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "all", "--series", "extra"])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 2
+
+    def test_series_is_noop_for_single_formatter(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--series", "shfmt"])
+        assert main() == 0
+        mock_formatters["shfmt"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+
+    def test_series_after_single_formatter_is_forwarded(
+        self, monkeypatch, mock_formatters
+    ):
+        # Like --check after a formatter, "--series" after a single formatter
+        # belongs to that formatter, not to Formattington.
+        _set_argv(monkeypatch, ["formattington", "shfmt", "--series"])
+        assert main() == 0
+        mock_formatters["shfmt"].assert_called_once_with(
+            check=False, dry_run=False, args=["--series"]
+        )
+
+    def test_series_without_formatter_is_a_noop(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--series"])
+        assert main() == 0
+        for mock in mock_formatters.values():
+            mock.assert_not_called()
+
+    def test_help_lists_series_and_documents_exit_rule(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "--help"])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        out = capsys.readouterr().out
+        assert "--series" in out
+        assert "concurrently" in out
+        assert "last non-zero" in out
+
+    def test_default_all_runs_concurrently(self, monkeypatch, mock_formatters):
+        # A barrier that only releases when all formatters overlap proves
+        # the default is concurrent (series would deadlock/time out).
+        import threading
+
+        barrier = threading.Barrier(len(mock_formatters), timeout=10)
+
+        def make_side_effect():
+            def _fake(*args, **kwargs):
+                barrier.wait()
+                return 0
+
+            return _fake
+
+        for mock in mock_formatters.values():
+            mock.side_effect = make_side_effect()
+        _set_argv(monkeypatch, ["formattington", "all"])
+        assert main() == 0
+
+    def test_series_runs_sequentially_same_thread(self, monkeypatch, mock_formatters):
+        import threading
+
+        idents: list[int] = []
+
+        def make_side_effect():
+            def _fake(*args, **kwargs):
+                idents.append(threading.get_ident())
+                return 0
+
+            return _fake
+
+        for mock in mock_formatters.values():
+            mock.side_effect = make_side_effect()
+        _set_argv(monkeypatch, ["formattington", "all", "--series"])
+        main_thread = threading.get_ident()
+        assert main() == 0
+        assert len(set(idents)) == 1
+        assert idents[0] == main_thread
+
+    def test_default_all_aggregates_last_nonzero(self, monkeypatch, mock_formatters):
+        mock_formatters["shfmt"].return_value = 5
+        mock_formatters["clang-format"].return_value = 2
+        mock_formatters["black"].return_value = 0
+        mock_formatters["prettier"].return_value = 1
+        _set_argv(monkeypatch, ["formattington", "all"])
+        assert main() == 1
+
+    def test_series_aggregates_last_nonzero(self, monkeypatch, mock_formatters):
+        mock_formatters["shfmt"].return_value = 5
+        mock_formatters["prettier"].return_value = 1
+        _set_argv(monkeypatch, ["formattington", "all", "--series"])
+        assert main() == 1
+
+    def test_failing_formatter_does_not_swallow_others(self, monkeypatch, mock_formatters, capsys):
+        mock_formatters["shfmt"].return_value = 3
+        _set_argv(monkeypatch, ["formattington", "all"])
+        assert main() == 3
+        for mock in mock_formatters.values():
+            mock.assert_called_once_with(check=False, dry_run=False, args=[])
+
+    def test_series_failing_does_not_swallow_others(self, monkeypatch, mock_formatters):
+        mock_formatters["prettier"].return_value = 4
+        _set_argv(monkeypatch, ["formattington", "all", "--series"])
+        assert main() == 4
+        for mock in mock_formatters.values():
+            mock.assert_called_once_with(check=False, dry_run=False, args=[])
+
+    def test_parallel_missing_does_not_swallow_others(self, monkeypatch, mock_formatters, capsys):
+        mock_formatters["shfmt"].side_effect = FileNotFoundError(
+            "Could not find 'shfmt'"
+        )
+        _set_argv(monkeypatch, ["formattington", "all"])
+        assert main() == 127
+        for name in ("clang-format", "black", "prettier"):
+            mock_formatters[name].assert_called_once()
+        assert "Could not find 'shfmt'" in capsys.readouterr().err
+
+    def test_series_missing_does_not_swallow_others(self, monkeypatch, mock_formatters, capsys):
+        mock_formatters["black"].side_effect = FileNotFoundError(
+            "Could not find 'black'"
+        )
+        _set_argv(monkeypatch, ["formattington", "all", "--series"])
+        assert main() == 127
+        for name in ("shfmt", "clang-format", "prettier"):
+            mock_formatters[name].assert_called_once()
+        assert "Could not find 'black'" in capsys.readouterr().err
+
+    def test_missing_in_middle_last_nonzero_wins(self, monkeypatch, mock_formatters):
+        # Missing (127) counts in its order slot: a later formatter
+        # failure (black=2) wins over the earlier missing code.
+        mock_formatters["clang-format"].side_effect = FileNotFoundError(
+            "Could not find 'clang-format'"
+        )
+        mock_formatters["black"].return_value = 2
+        _set_argv(monkeypatch, ["formattington", "all"])
+        assert main() == 2
+
+    def test_check_mode_all_still_reports_every_formatter(
+        self, monkeypatch, mock_formatters
+    ):
+        # Concurrent default and --series both run every formatter in
+        # check mode.
+        mock_formatters["black"].return_value = 1
+        _set_argv(monkeypatch, ["formattington", "--check", "all"])
+        assert main() == 1
+        for mock in mock_formatters.values():
+            mock.assert_called_once_with(check=True, dry_run=False, args=[])

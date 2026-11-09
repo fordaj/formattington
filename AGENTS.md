@@ -30,7 +30,13 @@ formattington all --series
 ```
 
 - `all` runs all configured formatter integrations against their matching files.
-- `--series` requests sequential execution rather than the default execution strategy.
+  By default (`formattington all`) they run concurrently via
+  `concurrent.futures.ThreadPoolExecutor`; `--series` (before or after `all`,
+  e.g. `formattington all --series`) requests sequential execution in
+  registration order. Exit code is the last non-zero code in
+  `shfmt`, `clang-format`, `black`, `prettier` order (missing tool = 127);
+  `0` only if all succeed. A missing/failing formatter never prevents the
+  others from running.
 
 ### Specific formatter
 
