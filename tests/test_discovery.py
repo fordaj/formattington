@@ -16,17 +16,15 @@ use fake executables on ``PATH`` (POSIX only), like test_integration.
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-import formattington._tools as tools
 import formattington.cli as cli
 from formattington._tools import discover_files, iter_chunks
 from formattington.cli import main
-from tests.conftest import make_fake_executable
+from tests.conftest import install_fake, read_recorded, set_argv
 
 
 def _mixed_fixture(root: Path) -> None:
@@ -133,22 +131,17 @@ class TestFormatterExtensions:
         assert set(cli.FORMATTER_EXTENSIONS) == set(cli.FORMATTERS)
 
 
-def _install_fake(monkeypatch, tmp_path, fake_argv_file, name):
-    """Point discovery at PATH fakes and chdir into the fixture root."""
-    empty_tools = tmp_path / "empty-tools"
-    empty_tools.mkdir(exist_ok=True)
-    monkeypatch.setattr(tools, "TOOLS_DIR", empty_tools)
+def _install_discovery_fake(monkeypatch, tmp_path, fake_argv_file, name):
+    """Install a PATH fake, pin Darwin, and chdir to the fixture root.
 
-    bin_dir = tmp_path / "bin"
-    make_fake_executable(bin_dir, name)
-    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
-    monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
-    monkeypatch.chdir(tmp_path)
-
-
-def _read_recorded(argv_file: Path) -> list[str]:
-    text = argv_file.read_text()
-    return [] if text == "" else text.splitlines()
+    Single helper covering TOOLS_DIR + FAKE_ARGV_FILE + Darwin pin,
+    matching the setup extracted in test_integration. The core
+    PATH-fake logic lives in conftest.install_fake; this wrapper adds
+    the deterministic Darwin pin.
+    """
+    install_fake(monkeypatch, tmp_path, fake_argv_file, name)
+    monkeypatch.setattr("formattington._tools.platform.system", lambda: "Darwin")
+    monkeypatch.setattr("formattington._tools.platform.machine", lambda: "x86_64")
 
 
 @pytest.mark.skipif(os.name == "nt", reason="shell fakes require POSIX")
@@ -157,13 +150,10 @@ class TestCliDiscoveryEndToEnd:
         self, monkeypatch, tmp_path, fake_argv_file
     ):
         _mixed_fixture(tmp_path)
-        _install_fake(monkeypatch, tmp_path, fake_argv_file, "shfmt")
-        monkeypatch.setattr(sys, "argv", ["formattington", "shfmt"])
-        with patch(
-            "formattington._tools.platform.system", return_value="Darwin"
-        ), patch("formattington._tools.platform.machine", return_value="x86_64"):
-            assert main() == 0
-        recorded = _read_recorded(fake_argv_file)
+        _install_discovery_fake(monkeypatch, tmp_path, fake_argv_file, "shfmt")
+        set_argv(monkeypatch, ["formattington", "shfmt"])
+        assert main() == 0
+        recorded = read_recorded(fake_argv_file)
         assert recorded == ["-w", "run.sh", "step.bash", "sub dir/my file.sh"]
         # Other extensions untouched: single batch, no .c/.cpp/.md/.txt.
         assert "main.c" not in recorded
@@ -173,42 +163,31 @@ class TestCliDiscoveryEndToEnd:
         self, monkeypatch, tmp_path, fake_argv_file
     ):
         _mixed_fixture(tmp_path)
-        _install_fake(monkeypatch, tmp_path, fake_argv_file, "clang-format")
-        monkeypatch.setattr(sys, "argv", ["formattington", "clang-format"])
-        with patch(
-            "formattington._tools.platform.system", return_value="Darwin"
-        ), patch("formattington._tools.platform.machine", return_value="x86_64"):
-            assert main() == 0
-        recorded = _read_recorded(fake_argv_file)
+        _install_discovery_fake(monkeypatch, tmp_path, fake_argv_file, "clang-format")
+        set_argv(monkeypatch, ["formattington", "clang-format"])
+        assert main() == 0
+        recorded = read_recorded(fake_argv_file)
         assert recorded == ["-i", "main.c", "sub dir/my file.cpp", "util.cpp"]
 
     def test_explicit_file_args_suppress_discovery(
         self, monkeypatch, tmp_path, fake_argv_file
     ):
         _mixed_fixture(tmp_path)
-        _install_fake(monkeypatch, tmp_path, fake_argv_file, "shfmt")
-        monkeypatch.setattr(
-            sys, "argv", ["formattington", "shfmt", "run.sh"]
-        )
-        with patch(
-            "formattington._tools.platform.system", return_value="Darwin"
-        ), patch("formattington._tools.platform.machine", return_value="x86_64"):
-            assert main() == 0
-        assert _read_recorded(fake_argv_file) == ["-w", "run.sh"]
+        _install_discovery_fake(monkeypatch, tmp_path, fake_argv_file, "shfmt")
+        set_argv(monkeypatch, ["formattington", "shfmt", "run.sh"])
+        assert main() == 0
+        assert read_recorded(fake_argv_file) == ["-w", "run.sh"]
 
     def test_no_matching_files_is_a_noop_batch(
         self, monkeypatch, tmp_path, fake_argv_file
     ):
         # Fixture contains no .sh files (only notes.md / data.txt).
         (tmp_path / "notes.md").write_text("# notes\n")
-        _install_fake(monkeypatch, tmp_path, fake_argv_file, "shfmt")
-        monkeypatch.setattr(sys, "argv", ["formattington", "shfmt"])
-        with patch(
-            "formattington._tools.platform.system", return_value="Darwin"
-        ), patch("formattington._tools.platform.machine", return_value="x86_64"):
-            assert main() == 0
+        _install_discovery_fake(monkeypatch, tmp_path, fake_argv_file, "shfmt")
+        set_argv(monkeypatch, ["formattington", "shfmt"])
+        assert main() == 0
         # Still one batched invocation with the mode flag only.
-        assert _read_recorded(fake_argv_file) == ["-w"]
+        assert read_recorded(fake_argv_file) == ["-w"]
 
 
 class TestCliDiscoveryWiring:
@@ -219,7 +198,7 @@ class TestCliDiscoveryWiring:
         monkeypatch.chdir(tmp_path)
         mock = MagicMock(return_value=0)
         monkeypatch.setitem(cli.FORMATTERS, "shfmt", mock)
-        monkeypatch.setattr(sys, "argv", ["formattington", "--check", "shfmt"])
+        set_argv(monkeypatch, ["formattington", "--check", "shfmt"])
         assert main() == 0
         mock.assert_called_once_with(
             check=True,
@@ -232,7 +211,7 @@ class TestCliDiscoveryWiring:
         monkeypatch.chdir(tmp_path)
         mock = MagicMock(return_value=0)
         monkeypatch.setitem(cli.FORMATTERS, "shfmt", mock)
-        monkeypatch.setattr(sys, "argv", ["formattington", "shfmt", "--help"])
+        set_argv(monkeypatch, ["formattington", "shfmt", "--help"])
         assert main() == 0
         mock.assert_called_once_with(check=False, dry_run=False, args=["--help"], verbose=False)
 
@@ -241,9 +220,7 @@ class TestCliDiscoveryWiring:
         monkeypatch.chdir(tmp_path)
         mock = MagicMock(return_value=0)
         monkeypatch.setitem(cli.FORMATTERS, "shfmt", mock)
-        monkeypatch.setattr(
-            sys, "argv", ["formattington", "shfmt", "--keep-padding", "-i", "2"]
-        )
+        set_argv(monkeypatch, ["formattington", "shfmt", "--keep-padding", "-i", "2"])
         assert main() == 0
         mock.assert_called_once_with(
             check=False,
@@ -266,7 +243,7 @@ class TestCliDiscoveryWiring:
         mock = MagicMock(return_value=0)
         monkeypatch.setitem(cli.FORMATTERS, "shfmt", mock)
         monkeypatch.setattr(cli, "MAX_FILES_PER_INVOCATION", 2)
-        monkeypatch.setattr(sys, "argv", ["formattington", "shfmt"])
+        set_argv(monkeypatch, ["formattington", "shfmt"])
         assert main() == 0
         assert mock.call_count == 3
         seen = [call.kwargs["args"] for call in mock.call_args_list]
@@ -279,7 +256,7 @@ class TestCliDiscoveryWiring:
         mock = MagicMock(side_effect=[3, 0, 5])
         monkeypatch.setitem(cli.FORMATTERS, "shfmt", mock)
         monkeypatch.setattr(cli, "MAX_FILES_PER_INVOCATION", 1)
-        monkeypatch.setattr(sys, "argv", ["formattington", "shfmt"])
+        set_argv(monkeypatch, ["formattington", "shfmt"])
         assert main() == 5
 
     def test_all_discovers_per_formatter(self, monkeypatch, tmp_path):
@@ -291,7 +268,7 @@ class TestCliDiscoveryWiring:
         original = dict(cli.FORMATTERS)
         cli.FORMATTERS.update(mocks)
         try:
-            monkeypatch.setattr(sys, "argv", ["formattington", "all", "--series"])
+            set_argv(monkeypatch, ["formattington", "all", "--series"])
             assert main() == 0
         finally:
             cli.FORMATTERS.clear()
