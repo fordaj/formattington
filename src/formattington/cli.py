@@ -11,6 +11,8 @@ from formattington.clang_format import clang_format
 from formattington.format_python import FILE_EXTENSIONS as BLACK_EXTENSIONS
 from formattington.format_python import black
 from formattington.prettier import FILE_EXTENSIONS as PRETTIER_EXTENSIONS
+from formattington.powershell import FILE_EXTENSIONS as POWERSHELL_EXTENSIONS
+from formattington.powershell import powershell
 from formattington.prettier import prettier
 from formattington.shfmt import FILE_EXTENSIONS as SHFMT_EXTENSIONS
 from formattington.shfmt import shfmt
@@ -21,6 +23,7 @@ FORMATTERS = {
     "clang-format": clang_format,
     "black": black,
     "prettier": prettier,
+    "powershell": powershell,
 }
 
 FORMATTER_EXTENSIONS: dict[str, tuple[str, ...]] = {
@@ -28,6 +31,7 @@ FORMATTER_EXTENSIONS: dict[str, tuple[str, ...]] = {
     "clang-format": CLANG_FORMAT_EXTENSIONS,
     "black": BLACK_EXTENSIONS,
     "prettier": PRETTIER_EXTENSIONS,
+    "powershell": POWERSHELL_EXTENSIONS,
 }
 
 # Upper bound on discovered files per formatter invocation, to respect
@@ -48,6 +52,7 @@ LANGUAGE_ALIASES = {
     "md": "prettier",
     "markdown": "prettier",
     "html": "prettier",
+    "ps1": "powershell",
 }
 
 _EPILOG = (
@@ -55,7 +60,8 @@ _EPILOG = (
     "semantics as formatter names): c/cpp/c++ use clang-format; bash "
     "uses shfmt; python/py use black; md/markdown use prettier "
     "(Markdown formatting is provided by Prettier; ``.md`` and "
-    "``.markdown`` files are covered); html uses prettier.\n\n"
+    "``.markdown`` files are covered); html uses prettier; ps1 uses powershell "
+    "(PSScriptAnalyzer linting of PowerShell scripts).\n\n"
     "With no file arguments, formattington discovers each formatter's "
     "matching files recursively from the current directory (skipping "
     "hidden directories and __pycache__, node_modules, vendor, venv, "
@@ -66,7 +72,8 @@ _EPILOG = (
     "With 'all', formatters run concurrently by default; "
     "use --series (before or after 'all', e.g. "
     "'formattington --series all' or 'formattington all --series') "
-    "to run them sequentially in shfmt, clang-format, black, prettier "
+    "to run them sequentially in shfmt, clang-format, black, prettier, "
+    "powershell "
     "order. Exit code is the last non-zero code in that order "
     "(missing tool counts as 127, printed to stderr, and does not "
     "prevent remaining formatters from running); 0 only if all succeed."

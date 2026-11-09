@@ -128,6 +128,7 @@ Formattington owns the mode flag before the formatter name; arguments after the 
 | clang-format | `clang-format --dry-run --Werror` — fail if any file needs formatting | `clang-format --dry-run` — validate without modifying                                          | `clang-format -i` — format in place (unless `-i`/`--in-place` already given)                                          |
 | black        | `black --check` — fail if any file needs formatting                   | `black --diff` — show diff, do not modify                                                      | `black` in place (no flag)                                                                                            |
 | prettier     | `prettier --check` — fail if any file needs formatting                | `prettier --list-different` — list files that differ, do not modify (Prettier has no `--diff`) | `prettier --write` — write in place (unless `--write`/`-w`, `--check`/`-c`, or `--list-different`/`-l` already given) |
+| powershell   | PSScriptAnalyzer lint (no in-place formatting); findings exit 1       | Same PSScriptAnalyzer lint invocation (check/dry-run are accepted for CLI uniformity)            | Same PSScriptAnalyzer lint invocation (findings exit 1)                                                                                    |
 
 These mode mappings are integration-specific. Future tools may support different operations or native flags, and their integrations should preserve those differences.
 
@@ -141,11 +142,11 @@ formattington: Could not find 'shfmt'. Expected a bundled executable under tools
 
 ) and exits `127`.
 
-This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, and `prettier`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
+This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, and `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
 
 ### Exit-code aggregation with `all`
 
-The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
+The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
 
 The rule is deterministic regardless of completion order in the concurrent default.
 
@@ -163,6 +164,7 @@ Use `--verbose` to see which executable was resolved when a tool is present.
 - `clang-format` is part of LLVM ([documentation](https://clang.llvm.org/docs/ClangFormat.html)).
 - `black` is installed via pip (`pip install black` or `uv tool install black`).
 - `prettier` is installed via npm (`npm install -g prettier`).
+- `powershell` lints with [PSScriptAnalyzer](https://github.com/microsoft/PSScriptAnalyzer) through PowerShell 7+ (`pwsh`); install the module with `Install-Module PSScriptAnalyzer` inside `pwsh` (Windows PowerShell 5.1, `powershell.exe`, is tried as a fallback).
 
 Either a bundled copy under `tools/` (see [Bundled tools](#bundled-tools)) or an installation on `PATH` satisfies `find_tool()`. `black` and `prettier` are PATH-only (not bundled) and are found via `PATH`.
 
@@ -176,11 +178,12 @@ Formattington integrates existing tools rather than reimplementing their functio
 | [shfmt](https://github.com/mvdan/sh)                         | Formatter | Available | Shell scripts                                           |
 | [Black](https://black.readthedocs.io/)                       | Formatter | Available | Python (`.py`)                                          |
 | [Prettier](https://prettier.io/)                             | Formatter | Available | JavaScript, TypeScript, JSON, HTML, CSS, Markdown, YAML |
+| [PSScriptAnalyzer](https://github.com/microsoft/PSScriptAnalyzer) | Linter | Available | PowerShell scripts (`.ps1`, `.psm1`) via `pwsh` |
 | [markdownlint](https://github.com/DavidAnson/markdownlint)   | Linter    | Planned   | Markdown style and consistency                          |
 
-Only `shfmt`, `clang-format`, `black`, `prettier`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), and `all` are accepted by the CLI.
+Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), and `all` are accepted by the CLI.
 
-Prettier is the sole owner of Markdown formatting. There is no dedicated `markdown_format.py` or separate Markdown formatter; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown-specific linting (for example `markdownlint`) is a distinct operation and is out of scope for this change; it can be integrated separately in the future if needed. Unrecognized names such as `c` or `html` still report a usage error (exit 2) until the language-alias work lands.
+Prettier is the sole owner of Markdown formatting. There is no dedicated `markdown_format.py` or separate Markdown formatter; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown-specific linting (for example `markdownlint`) is a distinct operation and is out of scope for this change; it can be integrated separately in the future if needed. Unrecognized names still report a usage error (exit 2).
 
 Additional tools may provide other capabilities, such as checking, linting, and fixing, without necessarily being formatters.
 
@@ -192,6 +195,7 @@ Additional tools may provide other capabilities, such as checking, linting, and 
 | clang-format | Comes under `tools/clang-format/v23.1.3/<platform>/clang-format` in a fresh clone | Install LLVM/clang-tools for your OS (for example `brew install clang-format` or `apt install clang-format`) | Bundled first, then `PATH` via `find_tool("clang-format")` |
 | black        | Not bundled (PATH-only)                                                           | `pip install black` or `uv tool install black`                                                               | `PATH` via `find_tool("black")`                            |
 | prettier     | Not bundled (PATH-only)                                                           | `npm install -g prettier`                                                                                    | `PATH` via `find_tool("prettier")`                         |
+| powershell   | Not bundled (PATH-only; PSScriptAnalyzer is a module)                             | PowerShell 7+ (`pwsh`) on `PATH` plus `Install-Module PSScriptAnalyzer` in `pwsh`                            | `PATH` via `find_tool("pwsh")`, then `find_tool("powershell")` |
 
 Bundled versions are pinned in `tools/` for offline use; see [Bundled tools](#bundled-tools) for the layout and refresh process.
 

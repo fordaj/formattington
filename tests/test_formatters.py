@@ -9,6 +9,7 @@ import pytest
 from formattington import _tools
 from formattington.clang_format import clang_format
 from formattington.format_python import FILE_EXTENSIONS, black, format_python
+from formattington.powershell import powershell
 from formattington.prettier import FILE_EXTENSIONS as PRETTIER_FILE_EXTENSIONS
 from formattington.prettier import prettier
 from formattington.shfmt import shfmt
@@ -501,3 +502,134 @@ class TestPrettier:
             ".md",
             ".markdown",
         )
+
+
+class TestPowershell:
+    """Issue #25: PSScriptAnalyzer linting via pwsh."""
+
+    def test_extensions(self):
+        from formattington.powershell import FILE_EXTENSIONS
+
+        assert FILE_EXTENSIONS == (".ps1", ".psm1")
+
+    def test_prefers_pwsh(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.powershell.find_tool", side_effect=["/fake/pwsh"]
+        ), patch("formattington.powershell.subprocess.run", side_effect=fake):
+            assert powershell() == 0
+        argv = calls[0][0]
+        assert argv[0] == "/fake/pwsh"
+        assert argv[1:3] == ["-NoProfile", "-Command"]
+        script = argv[3]
+        assert "Import-Module PSScriptAnalyzer" in script
+        assert "Invoke-ScriptAnalyzer -Path '.' -Recurse" in script
+        assert "$issues.Count -gt 0" in script
+
+    def test_falls_back_to_powershell(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.powershell.find_tool",
+            side_effect=[FileNotFoundError("no pwsh"), "/fake/powershell"],
+        ), patch("formattington.powershell.subprocess.run", side_effect=fake):
+            assert powershell() == 0
+        assert calls[0][0][0] == "/fake/powershell"
+
+    def test_missing_shell_raises_with_install_hint(self):
+        with patch(
+            "formattington.powershell.find_tool",
+            side_effect=FileNotFoundError("Could not find 'pwsh'"),
+        ):
+            with pytest.raises(FileNotFoundError, match="pwsh"):
+                powershell()
+
+    def test_missing_shell_message_mentions_module(self):
+        with patch(
+            "formattington.powershell.find_tool",
+            side_effect=FileNotFoundError("x"),
+        ):
+            with pytest.raises(
+                FileNotFoundError, match="Install-Module PSScriptAnalyzer"
+            ):
+                powershell()
+
+    def test_files_passed_via_path_list(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.powershell.find_tool", return_value="/fake/pwsh"
+        ), patch("formattington.powershell.subprocess.run", side_effect=fake):
+            powershell(args=["my dir/script.ps1", "other.psm1"])
+        script = calls[0][0][3]
+        assert "-Path 'my dir/script.ps1', 'other.psm1'" in script
+        assert "-Recurse" not in script
+
+    def test_single_quote_doubled(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.powershell.find_tool", return_value="/fake/pwsh"
+        ), patch("formattington.powershell.subprocess.run", side_effect=fake):
+            powershell(args=["it's here.ps1"])
+        assert "'it''s here.ps1'" in calls[0][0][3]
+
+    def test_params_forwarded_to_analyzer(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.powershell.find_tool", return_value="/fake/pwsh"
+        ), patch("formattington.powershell.subprocess.run", side_effect=fake):
+            powershell(args=["-Severity", "Error", "script.ps1"])
+        script = calls[0][0][3]
+        assert "-Severity Error" in script
+        assert "-Path 'script.ps1'" in script
+
+    def test_check_and_dry_run_same_lint_invocation(self):
+        for kwargs in ({}, {"check": True}, {"dry_run": True}):
+            fake, calls = _fake_run_capture()
+            with patch(
+                "formattington.powershell.find_tool", return_value="/fake/pwsh"
+            ), patch("formattington.powershell.subprocess.run", side_effect=fake):
+                powershell(**kwargs)
+            assert "Invoke-ScriptAnalyzer" in calls[0][0][3]
+
+    def test_check_and_dry_run_are_exclusive(self):
+        with patch(
+            "formattington.powershell.find_tool", return_value="/fake/pwsh"
+        ):
+            with pytest.raises(ValueError, match="cannot both be enabled"):
+                powershell(check=True, dry_run=True)
+
+    def test_propagates_exit_code(self):
+        fake, _ = _fake_run_capture(returncode=1)
+        with patch(
+            "formattington.powershell.find_tool", return_value="/fake/pwsh"
+        ), patch("formattington.powershell.subprocess.run", side_effect=fake):
+            # PSScriptAnalyzer findings map to exit 1 inside pwsh;
+            # Formattington preserves that code.
+            assert powershell(check=True) == 1
+
+    def test_help_passthrough(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.powershell.find_tool", return_value="/fake/pwsh"
+        ), patch("formattington.powershell.subprocess.run", side_effect=fake):
+            assert powershell(args=["--help"]) == 0
+        assert calls[0][0] == ["/fake/pwsh", "--help"]
+
+    def test_no_shell_used(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.powershell.find_tool", return_value="/fake/pwsh"
+        ), patch("formattington.powershell.subprocess.run", side_effect=fake):
+            powershell(args=["script.ps1"])
+        _, kwargs = calls[0]
+        assert kwargs.get("shell") is None
+        assert kwargs["check"] is False
+
+    def test_forwards_verbose_to_shell_lookup(self):
+        fake, _ = _fake_run_capture()
+        with patch(
+            "formattington.powershell.find_tool", return_value="/fake/pwsh"
+        ) as mock_find, patch(
+            "formattington.powershell.subprocess.run", side_effect=fake
+        ):
+            assert powershell(verbose=True) == 0
+        mock_find.assert_called_once_with("pwsh", verbose=True)

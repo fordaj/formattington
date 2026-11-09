@@ -24,7 +24,7 @@ def mock_formatters(monkeypatch):
     """
     mocks = {
         name: MagicMock(return_value=0)
-        for name in ("shfmt", "clang-format", "black", "prettier")
+        for name in ("shfmt", "clang-format", "black", "prettier", "powershell")
     }
     monkeypatch.setattr(cli, "discover_files", lambda extensions, root=None: [])
     original = dict(cli.FORMATTERS)
@@ -161,6 +161,62 @@ class TestFormatterSelection:
         mock_formatters["prettier"].assert_called_once_with(
             check=False, dry_run=False, args=[]
         )
+
+
+class TestPowershellSelection:
+    """Issue #25: `powershell` tool and `ps1` alias."""
+
+    def test_powershell_selection(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "powershell"])
+        assert main() == 0
+        mock_formatters["powershell"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+        mock_formatters["shfmt"].assert_not_called()
+
+    def test_ps1_alias_selection(self, monkeypatch, mock_formatters):
+        from formattington.cli import LANGUAGE_ALIASES
+
+        assert LANGUAGE_ALIASES["ps1"] == "powershell"
+        _set_argv(monkeypatch, ["formattington", "ps1"])
+        assert main() == 0
+        mock_formatters["powershell"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+        mock_formatters["black"].assert_not_called()
+
+    def test_ps1_alias_modes_and_forwarding(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--check", "ps1"])
+        assert main() == 0
+        mock_formatters["powershell"].assert_called_once_with(
+            check=True, dry_run=False, args=[]
+        )
+        _set_argv(monkeypatch, ["formattington", "ps1", "-Severity", "Error"])
+        assert main() == 0
+        mock_formatters["powershell"].assert_called_with(
+            check=False, dry_run=False, args=["-Severity", "Error"]
+        )
+
+    def test_powershell_missing_returns_127(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "ps1"])
+        with patch(
+            "formattington.powershell.find_tool",
+            side_effect=FileNotFoundError("Could not find 'pwsh' or 'powershell'"),
+        ):
+            assert main() == 127
+        err = capsys.readouterr().err
+        assert err.startswith("formattington:")
+        assert "Traceback" not in err
+
+    def test_help_mentions_powershell_alias(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "--help"])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        out = capsys.readouterr().out
+        assert "ps1" in out
+        assert "powershell" in out
+        assert "PSScriptAnalyzer" in out
 
     def test_all_runs_every_formatter(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "all"])
@@ -599,7 +655,10 @@ class TestMissingToolExit127:
         [[], ["--check"], ["--dry-run"]],
         ids=["default", "check", "dry-run"],
     )
-    @pytest.mark.parametrize("formatter", ["shfmt", "clang-format", "black", "prettier"])
+    @pytest.mark.parametrize(
+        "formatter",
+        ["shfmt", "clang-format", "black", "prettier", "powershell"],
+    )
     def test_missing_tool_returns_127_in_every_mode(
         self, monkeypatch, capsys, mode_args, formatter
     ):
@@ -612,6 +671,7 @@ class TestMissingToolExit127:
             "clang-format": "formattington.clang_format.find_tool",
             "black": "formattington.format_python.find_tool",
             "prettier": "formattington.prettier.find_tool",
+            "powershell": "formattington.powershell.find_tool",
         }[formatter]
         with patch(
             patch_target,
@@ -622,7 +682,10 @@ class TestMissingToolExit127:
             assert main() == 127
         err = capsys.readouterr().err
         assert err.startswith("formattington:")
-        assert f"Could not find '{formatter}'" in err
+        if formatter == "powershell":
+            assert "Could not find 'pwsh' or 'powershell'" in err
+        else:
+            assert f"Could not find '{formatter}'" in err
         assert "Traceback" not in err
 
     def test_missing_tool_with_forwarded_args_returns_127(self, monkeypatch, capsys):
@@ -673,10 +736,13 @@ class TestMissingToolExit127:
         ), patch(
             "formattington.prettier.find_tool",
             side_effect=FileNotFoundError("Could not find 'prettier'"),
+        ), patch(
+            "formattington.powershell.find_tool",
+            side_effect=FileNotFoundError("Could not find 'pwsh' or 'powershell'"),
         ):
             assert main() == 127
         err = capsys.readouterr().err
-        assert err.count("formattington:") == 4
+        assert err.count("formattington:") == 5
 
 
 class TestSeriesAndParallel:
@@ -698,7 +764,7 @@ class TestSeriesAndParallel:
             mock.side_effect = make_side_effect(name)
         _set_argv(monkeypatch, ["formattington", "all", "--series"])
         assert main() == 0
-        assert calls == ["shfmt", "clang-format", "black", "prettier"]
+        assert calls == ["shfmt", "clang-format", "black", "prettier", "powershell"]
         for mock in mock_formatters.values():
             mock.assert_called_once_with(check=False, dry_run=False, args=[])
 
