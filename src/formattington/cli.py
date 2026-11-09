@@ -11,6 +11,7 @@ from formattington.clang_format import clang_format
 from formattington.format_python import FILE_EXTENSIONS as BLACK_EXTENSIONS
 from formattington.format_python import black
 from formattington.prettier import FILE_EXTENSIONS as PRETTIER_EXTENSIONS
+from formattington.powershell import FILE_EXTENSIONS as POWERSHELL_EXTENSIONS
 from formattington.powershell import powershell
 from formattington.prettier import prettier
 from formattington.shfmt import FILE_EXTENSIONS as SHFMT_EXTENSIONS
@@ -30,6 +31,7 @@ FORMATTER_EXTENSIONS: dict[str, tuple[str, ...]] = {
     "clang-format": CLANG_FORMAT_EXTENSIONS,
     "black": BLACK_EXTENSIONS,
     "prettier": PRETTIER_EXTENSIONS,
+    "powershell": POWERSHELL_EXTENSIONS,
 }
 
 # Upper bound on discovered files per formatter invocation, to respect

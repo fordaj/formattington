@@ -214,7 +214,9 @@ class TestPowershellSelection:
             main()
         assert exc_info.value.code == 0
         out = capsys.readouterr().out
-        assert "ps1 uses powershell" in out
+        assert "ps1" in out
+        assert "powershell" in out
+        assert "PSScriptAnalyzer" in out
 
     def test_all_runs_every_formatter(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "all"])
