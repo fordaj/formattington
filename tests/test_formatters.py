@@ -8,6 +8,7 @@ import pytest
 
 from formattington import _tools
 from formattington.clang_format import clang_format
+from formattington.format_python import FILE_EXTENSIONS, black, format_python
 from formattington.shfmt import shfmt
 
 
@@ -214,3 +215,118 @@ class TestClangFormat:
     def test_run_tool_is_imported_by_shfmt(self):
         # Guards the documented subprocess boundary: shfmt delegates to run_tool.
         assert _tools.run_tool is not None
+
+
+class TestBlack:
+    def test_default_mode_no_flag(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
+            assert black() == 0
+        assert calls[0][0] == ["/fake/black"]
+
+    def test_check_mode_uses_check_flag(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
+            assert black(check=True) == 0
+        assert calls[0][0] == ["/fake/black", "--check"]
+
+    def test_dry_run_mode_uses_diff_flag(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
+            assert black(dry_run=True) == 0
+        assert calls[0][0] == ["/fake/black", "--diff"]
+
+    def test_forwards_args_after_mode_flag_and_preserves_spaces(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
+            black(check=True, args=["my file.py", "another file.py"])
+        assert calls[0][0] == [
+            "/fake/black",
+            "--check",
+            "my file.py",
+            "another file.py",
+        ]
+        assert len(calls) == 1
+
+    def test_check_and_dry_run_are_exclusive(self):
+        with pytest.raises(ValueError, match="cannot both be enabled"):
+            black(check=True, dry_run=True)
+
+    def test_propagates_subprocess_exit_code(self):
+        fake, _ = _fake_run_capture(returncode=2)
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
+            assert black() == 2
+
+    def test_missing_tool_raises(self):
+        with patch(
+            "formattington.format_python.find_tool",
+            side_effect=FileNotFoundError("Could not find 'black'"),
+        ):
+            with pytest.raises(FileNotFoundError):
+                black()
+
+    def test_forwards_verbose_to_find_tool(self):
+        fake, _ = _fake_run_capture()
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ) as mock_find, patch(
+            "formattington.format_python.subprocess.run", side_effect=fake
+        ):
+            assert black(verbose=True) == 0
+        mock_find.assert_called_once_with("black", verbose=True)
+
+    def test_help_passthrough_without_mode_flags(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
+            assert black(check=True, args=["--help"]) == 0
+        assert calls[0][0] == ["/fake/black", "--help"]
+
+    def test_version_passthrough_without_mode_flags(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
+            assert black(dry_run=True, args=["--version"]) == 0
+        assert calls[0][0] == ["/fake/black", "--version"]
+
+    def test_no_shell_used(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
+            black(args=["file with spaces.py"])
+        _, kwargs = calls[0]
+        assert kwargs.get("shell") is None
+        assert kwargs["check"] is False
+
+    def test_does_not_add_line_length(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
+            black(args=["file.py"])
+        assert "--line-length" not in calls[0][0]
+
+    def test_forwarded_line_length_passes_through(self):
+        fake, calls = _fake_run_capture()
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
+            black(args=["--line-length", "88", "file.py"])
+        assert calls[0][0] == ["/fake/black", "--line-length", "88", "file.py"]
+
+    def test_alias_and_extensions(self):
+        assert format_python is black
+        assert FILE_EXTENSIONS == (".py",)
