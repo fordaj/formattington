@@ -20,9 +20,14 @@ FORMATTERS = {
 LANGUAGE_ALIASES = {
     "python": "black",
     "py": "black",
+    "md": "prettier",
+    "markdown": "prettier",
 }
 
 _EPILOG = (
+    "Language aliases: python/py use black; md/markdown use prettier "
+    "(Markdown formatting is provided by Prettier; ``.md`` and "
+    "``.markdown`` files are covered).\n\n"
     "Bundled tools live under tools/<name>/v<version>/"
     "<platform>/; use --verbose (or set "
     "FORMATTINGTON_VERBOSE=1) to show the resolved executable.\n\n"

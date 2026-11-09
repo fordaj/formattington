@@ -499,4 +499,5 @@ class TestPrettier:
             ".yaml",
             ".yml",
             ".md",
+            ".markdown",
         )

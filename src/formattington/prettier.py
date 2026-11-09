@@ -14,6 +14,7 @@ FILE_EXTENSIONS: tuple[str, ...] = (
     ".yaml",
     ".yml",
     ".md",
+    ".markdown",
 )
 
 __all__ = ["prettier", "FILE_EXTENSIONS"]
@@ -49,9 +50,12 @@ def prettier(
       default also omits ``--write`` so the forwarded mode is preserved.
 
     The extension list above covers Prettier-supported types for future
-    file discovery (so the map lives in one place here). ``.md`` is
-    included because Prettier also formats Markdown; a separate
-    Markdown-specific integration remains planned.
+    file discovery (so the map lives in one place here). ``.md`` and
+    ``.markdown`` are included because Prettier also formats Markdown;
+    there is no separate Markdown integration -- the ``md`` and
+    ``markdown`` CLI aliases resolve to this Prettier integration and
+    Prettier's native configuration (for example ``.prettierrc``) is
+    respected.
     """
     if check and dry_run:
         raise ValueError("check and dry_run cannot both be enabled")

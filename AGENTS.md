@@ -100,6 +100,8 @@ formattington html
 
 Language aliases should resolve to the appropriate tool integration and matching file types.
 
+Today only `python`/`py` (→ `black`) and `md`/`markdown` (→ `prettier`) are implemented; the other names above are planned and remain unrecognized (exit 2) until the alias-selection work lands. Prettier is the sole owner of Markdown formatting: `md`/`markdown` reuse the `prettier` dispatch and its `.prettierrc` handling, with no separate Markdown module.
+
 When multiple tools support the same file type, selection should respect configured tool choices rather than arbitrarily invoking conflicting tools.
 
 When modifying CLI behavior, preserve these public command patterns unless the change explicitly updates the interface.
@@ -116,11 +118,11 @@ Important modules include:
 - `shfmt.py` — shfmt integration.
 - `clang_format.py` — clang-format integration.
 - `format_python.py` — Black (Python) integration (`.py` files; PATH-only, no bundle; respects `[tool.black]` / `pyproject.toml`).
-- `prettier.py` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`; PATH-only, no bundle; respects `.prettierrc`).
+- `prettier.py` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`, `.markdown`; PATH-only, no bundle; respects `.prettierrc`). Prettier is the sole owner of Markdown formatting; `md`/`markdown` are `LANGUAGE_ALIASES` for `prettier` in `cli.py`, and there is no `markdown_format.py`.
 
 `cli.py` is the single canonical entry point and the sole `FORMATTERS` registry.
 
-Bash and Markdown formatter modules (`format_bash.py`, `markdown_format.py`) are planned but not yet present. Do not reference them as existing files. `format_python.py` and `prettier.py` exist and are not part of the planned set.
+The Bash formatter module (`format_bash.py`) is planned but not yet present. Do not reference it as an existing file. `format_python.py` and `prettier.py` exist and are not part of the planned set. Markdown formatting is provided by Prettier via the `md`/`markdown` aliases; Markdown linting (for example `markdownlint`) is a separate operation outside this scope and is not yet integrated.
 
 Before modifying a module, inspect its current implementation and callers. Keep responsibilities separated and avoid duplicating tool-specific logic across the orchestration layer.
 
