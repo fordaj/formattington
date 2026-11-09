@@ -25,7 +25,12 @@ Formattington provides a common interface over these tools, so you can spend les
 formattington all
 ```
 
-Run all configured formatters against their matching files.
+Run all configured formatters against their matching files. This is
+the default strategy: formatters run concurrently (via a thread pool), so
+independent tools overlap. A missing or failing formatter does not
+prevent the others from running; its failure is reported on stderr and
+reflected in the exit code (see [Exit codes](#exit-codes)). Output from
+different formatters may interleave in this mode.
 
 ### Run formatters sequentially
 
@@ -33,7 +38,18 @@ Run all configured formatters against their matching files.
 formattington all --series
 ```
 
-Run formatters one after another instead of concurrently.
+Run formatters one after another (in `shfmt`, `clang-format`, `black`,
+`prettier` order) instead of concurrently, for ordered output. The flag
+is also accepted before `all` (for consistency with `--check`/`--dry-run`):
+
+```bash
+formattington --series all
+formattington --check --series all
+```
+
+`--check` and `--dry-run` keep their usual meaning (they go before
+`all`): in check mode every formatter still reports, whether you use the
+concurrent default, `--series`, or both flags together.
 
 ### Choose a specific formatter
 
@@ -97,9 +113,16 @@ executable under tools/shfmt/<version>/<platform>/shfmt or an
 installation on PATH.`) and exits `127`. This happens identically in
 default, `--check`, and `--dry-run` modes, for `shfmt`,
 `clang-format`, `black`, and `prettier`, and under `all` (the remaining
-formatters still run; the final exit is `127` if any was missing).
-Use `--verbose` to see which executable was resolved when a tool is
-present.
+formatters still run in both the concurrent default and `--series`).
+
+Exit-code aggregation with `all`: the exit code is the **last non-zero
+code in `shfmt`, `clang-format`, `black`, `prettier` order** (a missing
+tool counts as `127` in its slot), or `0` only if every formatter
+succeeded. The rule is deterministic regardless of completion order in
+the concurrent default. For example, if `shfmt` returns `5` and
+`prettier` returns `1`, `all` exits `1`; if `shfmt` returns `5` and the
+rest succeed, `all` exits `5`. Use `--verbose` to see which executable
+was resolved when a tool is present.
 
 `formattington --help` and `formattington --version` do not require
 any formatter executables and continue to work when tools are absent.
@@ -193,8 +216,11 @@ Formattington separates the orchestration layer from the formatting tools themse
 
 1. **Discover** matching files in the project.
 2. **Select** formatters based on the requested language or formatter name.
-3. **Execute** the corresponding tools with the appropriate arguments.
-4. **Report** the results through a common interface.
+3. **Execute** the corresponding tools with the appropriate arguments
+   (concurrently by default with `all`; one after another with
+   `all --series`).
+4. **Report** the results through a common interface (last non-zero exit
+   code in formatter order, `0` only if all succeed).
 
 The goal is to keep the interface simple while letting established formatter tools do what they do best.
 
