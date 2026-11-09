@@ -14,13 +14,13 @@ tools/
         <executable>
 ```
 
-- `<name>` is `shfmt`, `clang-format`, or `taplo`.
+- `<name>` is `shfmt`, `clang-format`, `taplo`, or `versioner`.
 - `<version>` is the upstream version without the leading `v`
   in code (for example `v3.14.1`).
 - `<platform>` is the hyphenated `<os>-<arch>` from
   `get_platform_dir()` (for example `macos-arm64`,
   `linux-x86_64`, `windows-x86_64`).
-- `<executable>` is `shfmt` / `clang-format` / `taplo`, with `.exe` on
+- `<executable>` is `shfmt` / `clang-format` / `taplo` / `versioner`, with `.exe` on
   Windows.
 
 ## Pinned versions
@@ -31,6 +31,7 @@ tools/
 | clang-format | v23.1.3 | LLVM project (clang-format) | linux-arm64, linux-x86_64, macos-arm64, windows-arm64, windows-x86_64 |
 | clang-format (legacy) | v22.1.8 | LLVM project (clang-format) | macos-x86_64 only (superseded by v23.1.3) |
 | taplo | v0.10.0 | https://github.com/tamasfe/taplo (taplo-cli) | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-arm64, windows-x86_64 |
+| versioner | v0.0.3.0.5 | https://github.com/fordaj/Versioner | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-x86_64 |
 
 Versions are compared numerically, so `v23.1.3` wins over `v22.1.8`
 and `v10` would win over `v9`. The legacy v22.1.8 bundle is retained
@@ -46,7 +47,10 @@ only for reference; the resolver prefers the newest version.
    kept from an extraction). Taplo releases ship one gzipped binary
    per platform (`taplo-<os>-<arch>.gz`); gunzip and place it as
    `taplo` (or `taplo.exe` on Windows) under
-   `tools/taplo/v<version>/<platform>/`.
+   `tools/taplo/v<version>/<platform>/`. Versioner refreshes are
+   automated with `tools/versioner/update.bash`, which downloads the
+   latest release with `gh`, verifies `checksums.txt`, extracts each
+   binary, and removes old `v*/` dirs.
 3. Keep the exact version in the directory name (`v<version>`) and
    update the table above plus the note in the top-level `README.md`
    in the same commit.
@@ -59,6 +63,9 @@ only for reference; the resolver prefers the newest version.
    ```
    The verbose output prints the resolved path and whether it came
    from the bundle or `PATH`.
+
+`versioner` is not a formatter; `tools/versioner/update.bash` verifies
+the host binary (`--version` contains the tag) on each run.
 
 There is no on-demand fetch. Refreshes are manual commits so binary
 changes are reviewable.
@@ -73,6 +80,6 @@ CLI prints as `formattington: Could not find ...` and exits `127`.
 
 ## Hygiene
 
-Only binaries and the helper scripts (`clean.sh`, `unzip.sh`) are
-tracked. `__pycache__/`, `*.pyc`, and `.DS_Store` are ignored via
+Only binaries and the helper scripts (`clean.sh`, `unzip.sh`,
+`update.bash`) are tracked. `__pycache__/`, `*.pyc`, and `.DS_Store` are ignored via
 the top-level `.gitignore` and must not be tracked.

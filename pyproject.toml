@@ -1,6 +1,6 @@
 [project]
 name = "formattington"
-version = "0.1.0"
+dynamic = ["version"]
 description = "One formatter interface for your entire project: a cross-platform, multi-language formatting orchestrator that delegates to existing formatters"
 readme = "README.md"
 license = { text = "MIT" }
@@ -14,8 +14,14 @@ dependencies = []
 formattington = "formattington.cli:main"
 
 [build-system]
-requires = ["uv_build>=0.12.1,<0.13.0"]
-build-backend = "uv_build"
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "formattington._version.__version__"}
  
 [tool.black]
 line-length = 200

@@ -41,9 +41,7 @@ class TestDiscoveryPrecedence:
         cfg = _write_config(tmp_path / "cfg.json", {"commands": [["black", "--check"]]})
         set_argv(monkeypatch, ["formattington", "all", "--config", str(cfg)])
         assert main() == 0
-        mock_formatters["black"].assert_called_once_with(
-            check=False, dry_run=False, args=["--check"], verbose=False
-        )
+        mock_formatters["black"].assert_called_once_with(check=False, dry_run=False, args=["--check"], verbose=False)
         mock_formatters["shfmt"].assert_not_called()
 
     def test_config_flag_before_all(self, monkeypatch, tmp_path, mock_formatters):
@@ -51,9 +49,7 @@ class TestDiscoveryPrecedence:
         cfg = _write_config(tmp_path / "cfg.json", {"commands": [["shfmt"]]})
         set_argv(monkeypatch, ["formattington", "--config", str(cfg), "all"])
         assert main() == 0
-        mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=[], verbose=False
-        )
+        mock_formatters["shfmt"].assert_called_once_with(check=False, dry_run=False, args=[], verbose=False)
         mock_formatters["black"].assert_not_called()
 
     def test_config_equals_form_after_all(self, monkeypatch, tmp_path, mock_formatters):
@@ -76,9 +72,7 @@ class TestDiscoveryPrecedence:
         _write_config(tmp_path / ".formattington.json", {"commands": [["shfmt", "-i", "2"]]})
         set_argv(monkeypatch, ["formattington", "all"])
         assert main() == 0
-        mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=["-i", "2"], verbose=False
-        )
+        mock_formatters["shfmt"].assert_called_once_with(check=False, dry_run=False, args=["-i", "2"], verbose=False)
         mock_formatters["black"].assert_not_called()
 
     def test_no_config_falls_back_to_full_registry(self, monkeypatch, tmp_path, mock_formatters):
@@ -187,9 +181,7 @@ class TestDiscoveryPrecedence:
         assert "FORMATTINGTON_CONFIG_PATH" in err
         assert "Traceback" not in err
 
-    def test_malformed_auto_exits_2_without_fallback(
-        self, monkeypatch, tmp_path, mock_formatters, capsys
-    ):
+    def test_malformed_auto_exits_2_without_fallback(self, monkeypatch, tmp_path, mock_formatters, capsys):
         _isolate(monkeypatch, tmp_path)
         _write(tmp_path / ".formattington.json", "not json at all")
         set_argv(monkeypatch, ["formattington", "all"])
@@ -229,9 +221,7 @@ class TestSchemaValidation:
             pytest.param(json.dumps({"commands": [["black", 42]]}), id="non-string-element"),
             pytest.param(json.dumps({"commands": [["nosuch"]]}), id="unknown-tool"),
             pytest.param(json.dumps({"commands": [["all"]]}), id="all-not-allowed"),
-            pytest.param(
-                json.dumps({"commands": [], "extr": 1}), id="unknown-top-key"
-            ),
+            pytest.param(json.dumps({"commands": [], "extr": 1}), id="unknown-top-key"),
         ],
     )
     def test_invalid_schemas_exit_2(self, monkeypatch, tmp_path, mock_formatters, capsys, payload):
@@ -256,9 +246,7 @@ class TestSchemaValidation:
         assert "nosuch" in err
         assert "cfg.json" in err
 
-    def test_alias_with_missing_backend_is_not_yet_supported(
-        self, monkeypatch, tmp_path, mock_formatters, capsys
-    ):
+    def test_alias_with_missing_backend_is_not_yet_supported(self, monkeypatch, tmp_path, mock_formatters, capsys):
         _isolate(monkeypatch, tmp_path)
         monkeypatch.setitem(cli.LANGUAGE_ALIASES, "cobol", "cobol-formatter")
         cfg = _write_config(tmp_path / "cfg.json", {"commands": [["cobol"]]})
@@ -276,9 +264,7 @@ class TestSchemaValidation:
         for mock in mock_formatters.values():
             mock.assert_not_called()
 
-    def test_empty_commands_valid_with_series_exits_0_no_runs(
-        self, monkeypatch, tmp_path, mock_formatters
-    ):
+    def test_empty_commands_valid_with_series_exits_0_no_runs(self, monkeypatch, tmp_path, mock_formatters):
         _isolate(monkeypatch, tmp_path)
         cfg = _write_config(tmp_path / "cfg.json", {"commands": []})
         set_argv(monkeypatch, ["formattington", "all", "--series", "--config", str(cfg)])
@@ -296,12 +282,8 @@ class TestExecution:
         )
         set_argv(monkeypatch, ["formattington", "all", "--config", str(cfg)])
         assert main() == 0
-        mock_formatters["black"].assert_called_once_with(
-            check=False, dry_run=False, args=["--check", "src"], verbose=False
-        )
-        mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=["docs/**/*.md"], verbose=False
-        )
+        mock_formatters["black"].assert_called_once_with(check=False, dry_run=False, args=["--check", "src"], verbose=False)
+        mock_formatters["prettier"].assert_called_once_with(check=False, dry_run=False, args=["docs/**/*.md"], verbose=False)
         mock_formatters["shfmt"].assert_not_called()
         mock_formatters["clang-format"].assert_not_called()
 
@@ -328,12 +310,8 @@ class TestExecution:
         )
         set_argv(monkeypatch, ["formattington", "all", "--config", str(cfg)])
         assert main() == 0
-        mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=["my file.md"], verbose=False
-        )
-        mock_formatters["shfmt"].assert_called_once_with(
-            check=False, dry_run=False, args=["-i", "2", "sub dir/my file.sh"], verbose=False
-        )
+        mock_formatters["prettier"].assert_called_once_with(check=False, dry_run=False, args=["my file.md"], verbose=False)
+        mock_formatters["shfmt"].assert_called_once_with(check=False, dry_run=False, args=["-i", "2", "sub dir/my file.sh"], verbose=False)
 
     def test_check_propagates_to_config_commands(self, monkeypatch, tmp_path, mock_formatters):
         _isolate(monkeypatch, tmp_path)
@@ -341,9 +319,7 @@ class TestExecution:
         set_argv(monkeypatch, ["formattington", "--check", "all", "--config", str(cfg)])
         assert main() == 0
         for name in ("black", "shfmt"):
-            mock_formatters[name].assert_called_once_with(
-                check=True, dry_run=False, args=[], verbose=False
-            )
+            mock_formatters[name].assert_called_once_with(check=True, dry_run=False, args=[], verbose=False)
 
     def test_dry_run_and_verbose_propagate(self, monkeypatch, tmp_path, mock_formatters):
         _isolate(monkeypatch, tmp_path)
@@ -354,16 +330,10 @@ class TestExecution:
         )
         assert main() == 0
         for name in ("black", "prettier"):
-            mock_formatters[name].assert_called_once_with(
-                check=False, dry_run=True, args=[], verbose=True
-            )
+            mock_formatters[name].assert_called_once_with(check=False, dry_run=True, args=[], verbose=True)
 
-    @pytest.mark.parametrize(
-        "use_series", [True, False], ids=["series", "default"]
-    )
-    def test_series_vs_parallel_same_thread_and_barrier(
-        self, monkeypatch, tmp_path, mock_formatters, use_series
-    ):
+    @pytest.mark.parametrize("use_series", [True, False], ids=["series", "default"])
+    def test_series_vs_parallel_same_thread_and_barrier(self, monkeypatch, tmp_path, mock_formatters, use_series):
         _isolate(monkeypatch, tmp_path)
         cfg = _write_config(
             tmp_path / "cfg.json",
@@ -421,9 +391,7 @@ class TestExecution:
         mock_formatters["black"].assert_called_once()
         mock_formatters["shfmt"].assert_called_once()
 
-    def test_missing_does_not_swallow_later_commands(
-        self, monkeypatch, tmp_path, mock_formatters, capsys
-    ):
+    def test_missing_does_not_swallow_later_commands(self, monkeypatch, tmp_path, mock_formatters, capsys):
         _isolate(monkeypatch, tmp_path)
         mock_formatters["black"].side_effect = FileNotFoundError("Could not find 'black'")
         cfg = _write_config(tmp_path / "cfg.json", {"commands": [["black"], ["shfmt"]]})
@@ -435,9 +403,7 @@ class TestExecution:
         assert "Could not find 'black'" in err
         assert "Traceback" not in err
 
-    def test_missing_does_not_swallow_in_series(
-        self, monkeypatch, tmp_path, mock_formatters, capsys
-    ):
+    def test_missing_does_not_swallow_in_series(self, monkeypatch, tmp_path, mock_formatters, capsys):
         _isolate(monkeypatch, tmp_path)
         mock_formatters["black"].side_effect = FileNotFoundError("Could not find 'black'")
         cfg = _write_config(tmp_path / "cfg.json", {"commands": [["shfmt"], ["black"], ["prettier"]]})
@@ -451,9 +417,7 @@ class TestExecution:
         [([5, 1], 1), ([1, 5], 5)],
         ids=["last-wins-1", "last-wins-5"],
     )
-    def test_exit_aggregation_follows_config_order(
-        self, monkeypatch, tmp_path, mock_formatters, codes, expected
-    ):
+    def test_exit_aggregation_follows_config_order(self, monkeypatch, tmp_path, mock_formatters, codes, expected):
         _isolate(monkeypatch, tmp_path)
         mock_formatters["black"].return_value = codes[0]
         mock_formatters["shfmt"].return_value = codes[1]
@@ -477,10 +441,7 @@ class TestExecution:
         (tmp_path / "b.sh").write_text("#!/bin/sh\n")
         (tmp_path / "c.txt").write_text("hi\n")
         cfg = _write_config(tmp_path / "cfg.json", {"commands": [["shfmt"]]})
-        mocks = {
-            name: MagicMock(return_value=0)
-            for name in ("shfmt", "clang-format", "black", "prettier", "powershell", "taplo")
-        }
+        mocks = {name: MagicMock(return_value=0) for name in ("shfmt", "clang-format", "black", "prettier", "powershell", "taplo")}
         original = dict(cli.FORMATTERS)
         cli.FORMATTERS.update(mocks)
         try:
@@ -496,10 +457,7 @@ class TestExecution:
         (tmp_path / "a.sh").write_text("#!/bin/sh\n")
         (tmp_path / "explicit.sh").write_text("#!/bin/sh\n")
         cfg = _write_config(tmp_path / "cfg.json", {"commands": [["shfmt", "explicit.sh"]]})
-        mocks = {
-            name: MagicMock(return_value=0)
-            for name in ("shfmt", "clang-format", "black", "prettier", "powershell", "taplo")
-        }
+        mocks = {name: MagicMock(return_value=0) for name in ("shfmt", "clang-format", "black", "prettier", "powershell", "taplo")}
         original = dict(cli.FORMATTERS)
         cli.FORMATTERS.update(mocks)
         try:
@@ -537,9 +495,7 @@ class TestSingleToolInteraction:
         _isolate(monkeypatch, tmp_path)
         set_argv(monkeypatch, ["formattington", "prettier", "--config", "my.json"])
         assert main() == 0
-        mock_formatters["prettier"].assert_called_once_with(
-            check=False, dry_run=False, args=["--config", "my.json"], verbose=False
-        )
+        mock_formatters["prettier"].assert_called_once_with(check=False, dry_run=False, args=["--config", "my.json"], verbose=False)
 
     def test_single_ignores_auto_config(self, monkeypatch, tmp_path, mock_formatters):
         _isolate(monkeypatch, tmp_path)
@@ -608,10 +564,10 @@ class TestHelpAndVersion:
         _isolate(monkeypatch, tmp_path)
         set_argv(monkeypatch, ["formattington", "--version"])
         assert main() == 0
-        assert "0.1.0" in capsys.readouterr().out
+        assert cli.formattington_version() in capsys.readouterr().out
 
     def test_version_with_config_flag_works(self, monkeypatch, tmp_path, capsys):
         _isolate(monkeypatch, tmp_path)
         set_argv(monkeypatch, ["formattington", "--config", "anything.json", "--version"])
         assert main() == 0
-        assert "0.1.0" in capsys.readouterr().out
+        assert cli.formattington_version() in capsys.readouterr().out
