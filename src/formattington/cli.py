@@ -199,37 +199,46 @@ def _aggregate_codes(codes: list[int]) -> int:
     return exit_code
 
 
-def _load_config(
+def _resolve_config_path(
     explicit: str | None,
-) -> tuple[list[list[str]] | None, str | None]:
-    """Resolve, read, and validate the Formattington config file.
+) -> tuple[Path | None, str | None, str | None]:
+    """Resolve the config path by precedence.
 
     Precedence (highest first): ``explicit`` (``--config``), then
     ``FORMATTINGTON_CONFIG_PATH``, then ``./.formattington.json`` in cwd
-    only (no parent search). Returns ``(commands, None)`` when a config
-    is in effect, ``(None, None)`` when no config applies (backwards
-    compatible full-registry ``all``), or ``(None, message)`` on error
-    where ``message`` is the text after ``formattington: `` and the
-    caller prints it and exits 2.
+    only (no parent search). Returns ``(path, raw, source)`` where
+    ``raw`` is the display string and ``source`` is the label used in
+    the could-not-find message, or ``(None, None, None)`` when no
+    config applies (backwards compatible full-registry ``all``).
+    An empty ``FORMATTINGTON_CONFIG_PATH`` counts as unset.
     """
     if explicit is not None:
-        raw = explicit
-        source = "--config"
-        path = Path(raw)
-    else:
-        env_value = os.environ.get(CONFIG_ENV_VAR)
-        if env_value:
-            raw = env_value
-            source = CONFIG_ENV_VAR
-            path = Path(raw)
-        else:
-            auto = Path.cwd() / CONFIG_FILENAME
-            if not auto.exists():
-                return (None, None)
-            raw = str(auto)
-            source = "auto-discovered .formattington.json"
-            path = auto
+        return (Path(explicit), explicit, "--config")
 
+    env_value = os.environ.get(CONFIG_ENV_VAR)
+    if env_value:
+        return (Path(env_value), env_value, CONFIG_ENV_VAR)
+
+    auto = Path.cwd() / CONFIG_FILENAME
+    if not auto.exists():
+        return (None, None, None)
+    return (auto, str(auto), "auto-discovered .formattington.json")
+
+
+def _read_config_data(
+    path: Path,
+    *,
+    raw: str,
+    source: str,
+) -> tuple[object | None, str | None]:
+    """Read ``path`` and parse JSON.
+
+    Returns ``(data, None)`` on success or ``(None, message)`` where
+    ``message`` is the text after ``formattington: `` for the caller
+    to print and exit 2. ``raw`` and ``source`` preserve
+    byte-identical could-not-find wording (see
+    :func:`_resolve_config_path`).
+    """
     if not path.is_file():
         return (None, f"Could not find config file '{raw}' (via {source})")
 
@@ -243,6 +252,18 @@ def _load_config(
     except json.JSONDecodeError as exc:
         return (None, f"Invalid config file '{path}': invalid JSON: {exc}")
 
+    return (data, None)
+
+
+def _validate_config(
+    data: object,
+    path: Path,
+) -> tuple[list[list[str]] | None, str | None]:
+    """Validate top-level shape and each command entry.
+
+    Returns ``(commands, None)`` when valid (including an empty list)
+    or ``(None, message)`` with the same wording as before.
+    """
     if not isinstance(data, dict):
         return (
             None,
@@ -310,6 +331,33 @@ def _load_config(
         commands.append(list(entry))
 
     return (commands, None)
+
+
+def _load_config(
+    explicit: str | None,
+) -> tuple[list[list[str]] | None, str | None]:
+    """Resolve, read, and validate the Formattington config file.
+
+    Precedence (highest first): ``explicit`` (``--config``), then
+    ``FORMATTINGTON_CONFIG_PATH``, then ``./.formattington.json`` in cwd
+    only (no parent search). Returns ``(commands, None)`` when a config
+    is in effect, ``(None, None)`` when no config applies (backwards
+    compatible full-registry ``all``), or ``(None, message)`` on error
+    where ``message`` is the text after ``formattington: `` and the
+    caller prints it and exits 2.
+    """
+    # Resolve
+    path, raw, source = _resolve_config_path(explicit)
+    if path is None or raw is None or source is None:
+        return (None, None)
+
+    # Read
+    data, read_error = _read_config_data(path, raw=raw, source=source)
+    if read_error is not None:
+        return (None, read_error)
+
+    # Validate
+    return _validate_config(data, path)
 
 
 def _run_config_series(
