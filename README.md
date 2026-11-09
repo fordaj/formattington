@@ -67,6 +67,35 @@ formattington html
 
 Language selection lets you target the relevant files without having to remember which formatter handles each extension.
 
+## Exit codes
+
+Formattington preserves underlying formatter exit codes and uses a fixed scheme for its own failures:
+
+| Code | Meaning                                                                 |
+| ---- | ----------------------------------------------------------------------- |
+| 0    | Success. Formatting applied (or nothing needed formatting).             |
+| 1    | Formatting changes required in check mode.                              |
+| 2    | Usage error (for example, unknown formatter, exclusive `--check` and `--dry-run` given together, or unexpected arguments parsed by Formattington). |
+| 127  | Formatter executable not found (no bundled binary and nothing on `PATH`). |
+
+When a formatter executable cannot be found, Formattington does not
+raise a Python traceback. It prints a single line to stderr (for
+example `formattington: Could not find 'shfmt'. Expected a bundled
+executable under tools/shfmt/<version>/<platform>/shfmt or an
+installation on PATH.`) and exits `127`. This happens identically in
+default, `--check`, and `--dry-run` modes, for both `shfmt` and
+`clang-format`, and under `all` (the remaining formatters still run;
+the final exit is `127` if any was missing). Use `--verbose` to see
+which executable was resolved when a tool is present.
+
+`formattington --help` and `formattington --version` do not require
+any formatter executables and continue to work when tools are absent.
+
+Install hints: `shfmt` comes from https://github.com/mvdan/sh ;
+`clang-format` is part of LLVM (https://clang.llvm.org/docs/ClangFormat.html).
+Either a bundled copy under `tools/` (see [Bundled tools](#bundled-tools))
+or an installation on `PATH` satisfies `find_tool()`.
+
 ## Supported formatters
 
 Formattington integrates existing tools rather than reimplementing their formatting logic.

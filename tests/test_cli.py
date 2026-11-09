@@ -263,3 +263,66 @@ class TestMissingToolExit127:
             side_effect=RuntimeError("Unsupported platform: freebsd-sparc"),
         ):
             assert main() == 127
+
+    @pytest.mark.parametrize(
+        "mode_args",
+        [[], ["--check"], ["--dry-run"]],
+        ids=["default", "check", "dry-run"],
+    )
+    @pytest.mark.parametrize("formatter", ["shfmt", "clang-format"])
+    def test_missing_tool_returns_127_in_every_mode(
+        self, monkeypatch, capsys, mode_args, formatter
+    ):
+        # Missing-executable handling is identical across default,
+        # --check, and --dry-run: no traceback, stderr via
+        # "formattington: ...", exit 127.
+        _set_argv(monkeypatch, ["formattington", *mode_args, formatter])
+        patch_target = (
+            "formattington.shfmt.find_tool"
+            if formatter == "shfmt"
+            else "formattington.clang_format.find_tool"
+        )
+        with patch(
+            patch_target,
+            side_effect=FileNotFoundError(
+                f"Could not find '{formatter}'. Expected a bundled executable"
+            ),
+        ):
+            assert main() == 127
+        err = capsys.readouterr().err
+        assert err.startswith("formattington:")
+        assert f"Could not find '{formatter}'" in err
+        assert "Traceback" not in err
+
+    def test_missing_tool_with_forwarded_args_returns_127(self, monkeypatch, capsys):
+        # "--check" after the formatter is forwarded to the formatter,
+        # but a missing executable still exits 127 before any run.
+        _set_argv(monkeypatch, ["formattington", "shfmt", "--check"])
+        with patch(
+            "formattington.shfmt.find_tool",
+            side_effect=FileNotFoundError("Could not find 'shfmt'"),
+        ):
+            assert main() == 127
+        assert "Could not find 'shfmt'" in capsys.readouterr().err
+
+    def test_help_and_version_do_not_require_tools(self, monkeypatch):
+        # --help and --version must work even when tools are missing.
+        _set_argv(monkeypatch, ["formattington", "--help"])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        _set_argv(monkeypatch, ["formattington", "--version"])
+        assert main() == 0
+
+    def test_all_returns_127_when_both_missing(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "--check", "all"])
+        with patch(
+            "formattington.shfmt.find_tool",
+            side_effect=FileNotFoundError("Could not find 'shfmt'"),
+        ), patch(
+            "formattington.clang_format.find_tool",
+            side_effect=FileNotFoundError("Could not find 'clang-format'"),
+        ):
+            assert main() == 127
+        err = capsys.readouterr().err
+        assert err.count("formattington:") == 2
