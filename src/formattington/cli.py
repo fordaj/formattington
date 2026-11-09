@@ -164,14 +164,9 @@ def _run_formatter(
     exit_code = EXIT_OK
     for batch in batches:
         try:
-            call_kwargs: dict[str, object] = {
-                "check": check,
-                "dry_run": dry_run,
-                "args": list(batch),
-            }
-            if verbose:
-                call_kwargs["verbose"] = True
-            result = FORMATTERS[name](**call_kwargs)  # type: ignore[arg-type]
+            result = FORMATTERS[name](
+                check=check, dry_run=dry_run, args=list(batch), verbose=verbose
+            )
         except (FileNotFoundError, RuntimeError) as exc:
             return (name, EXIT_NOT_FOUND, str(exc))
         if result != EXIT_OK:

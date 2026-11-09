@@ -48,4 +48,5 @@ def black(
     ).returncode
 
 
+# Alias: ``format_python`` is the same callable as ``black``; the CLI registers ``black``.
 format_python = black
