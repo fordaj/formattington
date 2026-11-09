@@ -4,12 +4,19 @@ import sys
 from importlib.metadata import PackageNotFoundError, version
 
 from formattington.clang_format import clang_format
+from formattington.format_python import black
 from formattington.shfmt import shfmt
 
 
 FORMATTERS = {
     "shfmt": shfmt,
     "clang-format": clang_format,
+    "black": black,
+}
+
+LANGUAGE_ALIASES = {
+    "python": "black",
+    "py": "black",
 }
 
 
@@ -18,7 +25,7 @@ def main() -> int:
 
     # Formattington owns global options before the formatter name.
     formatter_index = next(
-        (i for i, arg in enumerate(argv) if arg in {*FORMATTERS, "all"}),
+        (i for i, arg in enumerate(argv) if arg in {*FORMATTERS, *LANGUAGE_ALIASES, "all"}),
         None,
     )
 
@@ -32,7 +39,7 @@ def main() -> int:
         return 0
 
     formatter_index = next(
-        (i for i, arg in enumerate(argv) if arg in {*FORMATTERS, "all"}),
+        (i for i, arg in enumerate(argv) if arg in {*FORMATTERS, *LANGUAGE_ALIASES, "all"}),
         None,
     )
 
@@ -100,7 +107,7 @@ def main() -> int:
             parser.error("extra arguments are not supported with 'all'")
         names = list(FORMATTERS)
     else:
-        names = [formatter_name]
+        names = [LANGUAGE_ALIASES.get(formatter_name, formatter_name)]
 
     exit_code = 0
 

@@ -18,7 +18,7 @@ def mock_formatters(monkeypatch):
     Returns a dict of mocks keyed by formatter name.
     """
     mocks = {
-        name: MagicMock(return_value=0) for name in ("shfmt", "clang-format")
+        name: MagicMock(return_value=0) for name in ("shfmt", "clang-format", "black")
     }
     original = dict(cli.FORMATTERS)
     cli.FORMATTERS.update(mocks)
@@ -49,6 +49,28 @@ class TestFormatterSelection:
             check=False, dry_run=False, args=[]
         )
         mock_formatters["shfmt"].assert_not_called()
+
+    def test_black_selection(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "black"])
+        assert main() == 0
+        mock_formatters["black"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+        mock_formatters["shfmt"].assert_not_called()
+
+    def test_python_alias_selection(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "python"])
+        assert main() == 0
+        mock_formatters["black"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+
+    def test_all_runs_black_exactly_once(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "all"])
+        assert main() == 0
+        mock_formatters["black"].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
 
     def test_all_runs_every_formatter(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "all"])
@@ -83,10 +105,24 @@ class TestModes:
             check=True, dry_run=False, args=[]
         )
 
+    def test_check_before_black(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--check", "black"])
+        assert main() == 0
+        mock_formatters["black"].assert_called_once_with(
+            check=True, dry_run=False, args=[]
+        )
+
     def test_dry_run_before_formatter(self, monkeypatch, mock_formatters):
         _set_argv(monkeypatch, ["formattington", "--dry-run", "clang-format"])
         assert main() == 0
         mock_formatters["clang-format"].assert_called_once_with(
+            check=False, dry_run=True, args=[]
+        )
+
+    def test_dry_run_before_black(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--dry-run", "black"])
+        assert main() == 0
+        mock_formatters["black"].assert_called_once_with(
             check=False, dry_run=True, args=[]
         )
 
@@ -127,6 +163,13 @@ class TestVerbose:
         _set_argv(monkeypatch, ["formattington", "--verbose", "shfmt"])
         assert main() == 0
         mock_formatters["shfmt"].assert_called_once_with(
+            check=False, dry_run=False, args=[], verbose=True
+        )
+
+    def test_verbose_before_black(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--verbose", "black"])
+        assert main() == 0
+        mock_formatters["black"].assert_called_once_with(
             check=False, dry_run=False, args=[], verbose=True
         )
 
@@ -193,6 +236,13 @@ class TestArgForwarding:
             check=False, dry_run=False, args=["--style=file"]
         )
 
+    def test_forward_args_after_black(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "black", "--line-length", "88"])
+        assert main() == 0
+        mock_formatters["black"].assert_called_once_with(
+            check=False, dry_run=False, args=["--line-length", "88"]
+        )
+
     def test_forward_preserves_spaces_in_args(self, monkeypatch, mock_formatters):
         _set_argv(
             monkeypatch,
@@ -235,13 +285,21 @@ class TestMissingToolExit127:
         ):
             assert main() == 127
 
+    def test_black_missing_returns_127(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "black"])
+        with patch(
+            "formattington.format_python.find_tool",
+            side_effect=FileNotFoundError("Could not find 'black'"),
+        ):
+            assert main() == 127
+
     def test_all_returns_127_when_any_missing(self, monkeypatch):
-        # shfmt missing, clang-format present: still runs the present one,
-        # final exit is 127.
+        # shfmt missing, clang-format and black present: still runs the
+        # present ones, final exit is 127.
         _set_argv(monkeypatch, ["formattington", "all"])
-        # shfmt raises via find_tool; clang-format succeeds via mocked
-        # subprocess.run so no real binary is needed.
-        def _fake_clang_run(cmd, **kwargs):
+        # shfmt raises via find_tool; clang-format and black succeed via
+        # mocked subprocess.run so no real binary is needed.
+        def _fake_run(cmd, **kwargs):
             result = MagicMock()
             result.returncode = 0
             return result
@@ -252,7 +310,11 @@ class TestMissingToolExit127:
         ), patch(
             "formattington.clang_format.find_tool", return_value="/fake/clang-format"
         ), patch(
-            "formattington.clang_format.subprocess.run", side_effect=_fake_clang_run
+            "formattington.clang_format.subprocess.run", side_effect=_fake_run
+        ), patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch(
+            "formattington.format_python.subprocess.run", side_effect=_fake_run
         ):
             assert main() == 127
 
@@ -269,7 +331,7 @@ class TestMissingToolExit127:
         [[], ["--check"], ["--dry-run"]],
         ids=["default", "check", "dry-run"],
     )
-    @pytest.mark.parametrize("formatter", ["shfmt", "clang-format"])
+    @pytest.mark.parametrize("formatter", ["shfmt", "clang-format", "black"])
     def test_missing_tool_returns_127_in_every_mode(
         self, monkeypatch, capsys, mode_args, formatter
     ):
@@ -277,11 +339,11 @@ class TestMissingToolExit127:
         # --check, and --dry-run: no traceback, stderr via
         # "formattington: ...", exit 127.
         _set_argv(monkeypatch, ["formattington", *mode_args, formatter])
-        patch_target = (
-            "formattington.shfmt.find_tool"
-            if formatter == "shfmt"
-            else "formattington.clang_format.find_tool"
-        )
+        patch_target = {
+            "shfmt": "formattington.shfmt.find_tool",
+            "clang-format": "formattington.clang_format.find_tool",
+            "black": "formattington.format_python.find_tool",
+        }[formatter]
         with patch(
             patch_target,
             side_effect=FileNotFoundError(
@@ -314,7 +376,7 @@ class TestMissingToolExit127:
         _set_argv(monkeypatch, ["formattington", "--version"])
         assert main() == 0
 
-    def test_all_returns_127_when_both_missing(self, monkeypatch, capsys):
+    def test_all_returns_127_when_all_missing(self, monkeypatch, capsys):
         _set_argv(monkeypatch, ["formattington", "--check", "all"])
         with patch(
             "formattington.shfmt.find_tool",
@@ -322,7 +384,10 @@ class TestMissingToolExit127:
         ), patch(
             "formattington.clang_format.find_tool",
             side_effect=FileNotFoundError("Could not find 'clang-format'"),
+        ), patch(
+            "formattington.format_python.find_tool",
+            side_effect=FileNotFoundError("Could not find 'black'"),
         ):
             assert main() == 127
         err = capsys.readouterr().err
-        assert err.count("formattington:") == 2
+        assert err.count("formattington:") == 3

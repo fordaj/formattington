@@ -22,6 +22,7 @@ import pytest
 import formattington._tools as tools
 from formattington import _tools as tools_module
 from formattington.clang_format import clang_format
+from formattington.format_python import black
 from formattington.shfmt import shfmt
 from tests.conftest import make_fake_executable
 
@@ -183,6 +184,71 @@ class TestPathStubs:
         # --check before the formatter maps to shfmt's "-l" batch.
         assert _read_recorded(fake_argv_file) == ["-l"]
 
+    def test_black_batches_paths_with_spaces(
+        self, monkeypatch, tmp_path, fake_argv_file
+    ):
+        empty_tools = tmp_path / "empty-tools"
+        empty_tools.mkdir()
+        monkeypatch.setattr(tools, "TOOLS_DIR", empty_tools)
+
+        bin_dir = tmp_path / "bin"
+        make_fake_executable(bin_dir, "black")
+        monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+        monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
+            mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")
+            assert black(args=["my file.py", "another file.py"]) == 0
+        assert _read_recorded(fake_argv_file) == ["my file.py", "another file.py"]
+
+    def test_black_check_mode(self, monkeypatch, tmp_path, fake_argv_file):
+        empty_tools = tmp_path / "empty-tools"
+        empty_tools.mkdir()
+        monkeypatch.setattr(tools, "TOOLS_DIR", empty_tools)
+
+        bin_dir = tmp_path / "bin"
+        make_fake_executable(bin_dir, "black")
+        monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+        monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
+            mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")
+            assert black(check=True, args=["file with spaces.py"]) == 0
+        assert _read_recorded(fake_argv_file) == ["--check", "file with spaces.py"]
+
+    def test_black_dry_run_mode(self, monkeypatch, tmp_path, fake_argv_file):
+        empty_tools = tmp_path / "empty-tools"
+        empty_tools.mkdir()
+        monkeypatch.setattr(tools, "TOOLS_DIR", empty_tools)
+
+        bin_dir = tmp_path / "bin"
+        make_fake_executable(bin_dir, "black")
+        monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+        monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
+            mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")
+            assert black(dry_run=True, args=["file.py"]) == 0
+        assert _read_recorded(fake_argv_file) == ["--diff", "file.py"]
+
+    def test_black_via_cli_end_to_end(self, monkeypatch, tmp_path, fake_argv_file):
+        empty_tools = tmp_path / "empty-tools"
+        empty_tools.mkdir()
+        monkeypatch.setattr(tools, "TOOLS_DIR", empty_tools)
+
+        bin_dir = tmp_path / "bin"
+        make_fake_executable(bin_dir, "black")
+        monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ.get('PATH', '')}")
+        monkeypatch.setenv("FAKE_ARGV_FILE", str(fake_argv_file))
+        monkeypatch.setattr(sys, "argv", ["formattington", "--check", "black", "my file.py"])
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr("formattington._tools.platform.system", lambda: "Darwin")
+            mp.setattr("formattington._tools.platform.machine", lambda: "x86_64")
+            from formattington.cli import main
+
+            assert main() == 0
+        assert _read_recorded(fake_argv_file) == ["--check", "my file.py"]
+
 
 class TestFileDiscoveryContract:
     """Discovery-agnostic checks that hold on every platform.
@@ -228,3 +294,21 @@ class TestFileDiscoveryContract:
             assert clang_format(args=paths) == 0
         assert len(calls) == 1
         assert calls[0] == ["/fake/clang-format", "-i", *paths]
+
+    def test_black_single_call_for_many_paths(self):
+        from unittest.mock import patch
+
+        paths = [f"dir/file {i}.py" for i in range(5)]
+        calls = []
+
+        def fake_run(cmd, **kwargs):
+            calls.append(list(cmd))
+            m = type("R", (), {"returncode": 0})()
+            return m
+
+        with patch(
+            "formattington.format_python.find_tool", return_value="/fake/black"
+        ), patch("formattington.format_python.subprocess.run", side_effect=fake_run):
+            assert black(args=paths) == 0
+        assert len(calls) == 1
+        assert calls[0] == ["/fake/black", *paths]
