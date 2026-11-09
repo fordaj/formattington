@@ -1,6 +1,4 @@
 
-from pathlib import Path
-
 from formattington._tools import ensure_valid_mode, find_tool, run_tool
 
 FILE_EXTENSIONS: tuple[str, ...] = (".sh", ".bash")
@@ -9,7 +7,6 @@ __all__ = ["shfmt", "FILE_EXTENSIONS"]
 
 
 def shfmt(
-    paths: str | Path | list[str | Path] = ".",
     *,
     check: bool = False,
     dry_run: bool = False,
