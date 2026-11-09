@@ -155,37 +155,6 @@ class TestVersionOrdering:
             assert _tools.find_tool("clang-format") == str(newest)
 
 
-class TestLegacyPlatformDir:
-    def test_prefers_hyphenated_over_legacy_underscored(
-        self, monkeypatch, tmp_path
-    ):
-        monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)
-        expected = _make_bundled_layout(
-            tmp_path, "shfmt", "3.14.1", "macos-x86_64", "shfmt"
-        )
-        _make_bundled_layout(
-            tmp_path, "shfmt", "3.14.1", "macos_x86_64", "shfmt"
-        )
-        with (
-            patch("formattington._tools.platform.system", return_value="Darwin"),
-            patch("formattington._tools.platform.machine", return_value="x86_64"),
-            patch("formattington._tools.shutil.which", return_value=None),
-        ):
-            assert _tools.find_tool("shfmt") == str(expected)
-
-    def test_falls_back_to_legacy_underscored(self, monkeypatch, tmp_path):
-        monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)
-        legacy = _make_bundled_layout(
-            tmp_path, "shfmt", "3.14.1", "macos_x86_64", "shfmt"
-        )
-        with (
-            patch("formattington._tools.platform.system", return_value="Darwin"),
-            patch("formattington._tools.platform.machine", return_value="x86_64"),
-            patch("formattington._tools.shutil.which", return_value=None),
-        ):
-            assert _tools.find_tool("shfmt") == str(legacy)
-
-
 class TestWindowsPathFallback:
     def test_tries_exe_when_name_not_found(self, monkeypatch, tmp_path):
         monkeypatch.setattr(_tools, "TOOLS_DIR", tmp_path)

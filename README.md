@@ -341,7 +341,7 @@ formattington --verbose --check shfmt
 
 The shfmt Linux bundles were previously stored under underscored names (`linux_arm64`, `linux_x86_64`). They are now hyphenated (`linux-arm64`, `linux-x86_64`) to match `get_platform_dir()` and clang-format.
 
-`find_tool()` still accepts the legacy underscored form as a fallback.
+Underscored layouts (for example `linux_x86_64`) are no longer resolved; only the hyphenated layout is supported.
 
 Bundled versions are compared numerically, so `v10` wins over `v9` and `v23.1.3` wins over `v22.1.8`.
 
