@@ -11,9 +11,11 @@ __all__ = ["powershell", "FILE_EXTENSIONS"]
 # in-box Windows PowerShell (powershell.exe) is tried as a fallback.
 SHELL_CANDIDATES: tuple[str, ...] = ("pwsh", "powershell")
 
-# Positional tokens ending in these suffixes (or existing on disk) are
-# analyzed scripts; every other token is forwarded to
-# Invoke-ScriptAnalyzer as a parameter (e.g. -Severity Error).
+# Positional tokens ending in these suffixes are analyzed scripts;
+# every other token is forwarded to Invoke-ScriptAnalyzer as a
+# parameter (e.g. -Severity Error). This is intentionally suffix-only
+# (unlike cli._has_user_file_args, which also checks existence for
+# discovery suppression).
 _PATH_SUFFIXES = frozenset({".ps1", ".psm1"})
 
 
@@ -66,7 +68,7 @@ def powershell(
     no findings exit 0. ``check`` and ``dry_run`` are accepted for
     CLI uniformity; they do not change the lint invocation.
 
-    Files (``.ps1``/``.psm1`` paths, or existing files) are passed via
+    Files (``.ps1``/``.psm1`` paths) are passed via
     ``-Path``; any other forwarded token becomes an
     ``Invoke-ScriptAnalyzer`` parameter, so e.g.
     ``formattington ps1 -Severity Error`` forwards ``-Severity`` and
@@ -87,19 +89,22 @@ def powershell(
             check=False,
         ).returncode
 
-    paths = [arg for arg in forwarded if _is_path_arg(arg)]
-    params = [arg for arg in forwarded if not _is_path_arg(arg)]
+    paths: list[str] = []
+    params: list[str] = []
+    for arg in forwarded:
+        if _is_path_arg(arg):
+            paths.append(arg)
+        else:
+            params.append(arg)
 
-    if paths:
-        path_list = ", ".join(_single_quoted(path) for path in paths)
-        recurse = ""
-    else:
-        path_list = "'.'"
-        recurse = " -Recurse"
-    extra = (" " + " ".join(params)) if params else ""
+    path_list = (
+        ", ".join(_single_quoted(path) for path in paths) if paths else "'.'"
+    )
+    recurse_suffix = "" if paths else " -Recurse"
+    params_suffix = (" " + " ".join(params)) if params else ""
     script = (
         "Import-Module PSScriptAnalyzer -ErrorAction Stop; "
-        f"$issues = @(Invoke-ScriptAnalyzer -Path {path_list}{recurse}{extra}); "
+        f"$issues = @(Invoke-ScriptAnalyzer -Path {path_list}{recurse_suffix}{params_suffix}); "
         "$issues; if ($issues.Count -gt 0) { exit 1 }"
     )
 
