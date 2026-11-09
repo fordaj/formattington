@@ -82,24 +82,12 @@ class TestShfmt:
         # One batched subprocess call, not one per file.
         assert len(calls) == 1
 
-    def test_check_and_dry_run_are_exclusive(self):
-        with pytest.raises(ValueError, match="cannot both be enabled"):
-            shfmt(check=True, dry_run=True)
-
     def test_propagates_subprocess_exit_code(self):
         fake, _ = _fake_run_capture(returncode=2)
         with patch("formattington.shfmt.find_tool", return_value="/fake/shfmt"), patch(
             "formattington._tools.subprocess.run", side_effect=fake
         ):
             assert shfmt() == 2
-
-    def test_missing_tool_raises(self):
-        with patch(
-            "formattington.shfmt.find_tool",
-            side_effect=FileNotFoundError("Could not find 'shfmt'"),
-        ):
-            with pytest.raises(FileNotFoundError):
-                shfmt()
 
     def test_forwards_verbose_to_find_tool(self):
         fake, _ = _fake_run_capture()
@@ -150,22 +138,6 @@ class TestClangFormat:
             assert clang_format(dry_run=True) == 0
         assert calls[0][0] == ["/fake/clang-format", "--dry-run"]
 
-    def test_help_passthrough_without_mode_flags(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.clang_format.find_tool", return_value="/fake/clang-format"
-        ), patch("formattington.clang_format.subprocess.run", side_effect=fake):
-            assert clang_format(args=["--help"]) == 0
-        assert calls[0][0] == ["/fake/clang-format", "--help"]
-
-    def test_version_passthrough_without_mode_flags(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.clang_format.find_tool", return_value="/fake/clang-format"
-        ), patch("formattington.clang_format.subprocess.run", side_effect=fake):
-            assert clang_format(args=["--version"]) == 0
-        assert calls[0][0] == ["/fake/clang-format", "--version"]
-
     def test_short_help_passthrough_without_mode_flags(self):
         fake, calls = _fake_run_capture()
         with patch(
@@ -198,28 +170,6 @@ class TestClangFormat:
         ]
         # Batched: a single subprocess invocation carries every path.
         assert len(calls) == 1
-
-    def test_check_and_dry_run_are_exclusive(self):
-        with pytest.raises(ValueError, match="cannot both be enabled"):
-            clang_format(check=True, dry_run=True)
-
-    def test_missing_tool_raises(self):
-        with patch(
-            "formattington.clang_format.find_tool",
-            side_effect=FileNotFoundError("Could not find 'clang-format'"),
-        ):
-            with pytest.raises(FileNotFoundError):
-                clang_format()
-
-    def test_no_shell_string_used(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.clang_format.find_tool", return_value="/fake/clang-format"
-        ), patch("formattington.clang_format.subprocess.run", side_effect=fake):
-            clang_format(args=["file with spaces.cpp"])
-        _, kwargs = calls[0]
-        assert kwargs.get("shell") is None
-        assert kwargs["check"] is False
 
     def test_forwards_verbose_to_find_tool(self):
         fake, _ = _fake_run_capture()
@@ -276,24 +226,12 @@ class TestBlack:
         ]
         assert len(calls) == 1
 
-    def test_check_and_dry_run_are_exclusive(self):
-        with pytest.raises(ValueError, match="cannot both be enabled"):
-            black(check=True, dry_run=True)
-
     def test_propagates_subprocess_exit_code(self):
         fake, _ = _fake_run_capture(returncode=2)
         with patch(
             "formattington.format_python.find_tool", return_value="/fake/black"
         ), patch("formattington.format_python.subprocess.run", side_effect=fake):
             assert black() == 2
-
-    def test_missing_tool_raises(self):
-        with patch(
-            "formattington.format_python.find_tool",
-            side_effect=FileNotFoundError("Could not find 'black'"),
-        ):
-            with pytest.raises(FileNotFoundError):
-                black()
 
     def test_forwards_verbose_to_find_tool(self):
         fake, _ = _fake_run_capture()
@@ -304,32 +242,6 @@ class TestBlack:
         ):
             assert black(verbose=True) == 0
         mock_find.assert_called_once_with("black", verbose=True)
-
-    def test_help_passthrough_without_mode_flags(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.format_python.find_tool", return_value="/fake/black"
-        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
-            assert black(check=True, args=["--help"]) == 0
-        assert calls[0][0] == ["/fake/black", "--help"]
-
-    def test_version_passthrough_without_mode_flags(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.format_python.find_tool", return_value="/fake/black"
-        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
-            assert black(dry_run=True, args=["--version"]) == 0
-        assert calls[0][0] == ["/fake/black", "--version"]
-
-    def test_no_shell_used(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.format_python.find_tool", return_value="/fake/black"
-        ), patch("formattington.format_python.subprocess.run", side_effect=fake):
-            black(args=["file with spaces.py"])
-        _, kwargs = calls[0]
-        assert kwargs.get("shell") is None
-        assert kwargs["check"] is False
 
     def test_does_not_add_line_length(self):
         fake, calls = _fake_run_capture()
@@ -439,24 +351,12 @@ class TestPrettier:
             prettier(args=["--list-different"])
         assert calls[0][0] == ["/fake/prettier", "--list-different"]
 
-    def test_check_and_dry_run_are_exclusive(self):
-        with pytest.raises(ValueError, match="cannot both be enabled"):
-            prettier(check=True, dry_run=True)
-
     def test_propagates_subprocess_exit_code(self):
         fake, _ = _fake_run_capture(returncode=1)
         with patch(
             "formattington.prettier.find_tool", return_value="/fake/prettier"
         ), patch("formattington.prettier.subprocess.run", side_effect=fake):
             assert prettier(check=True) == 1
-
-    def test_missing_tool_raises(self):
-        with patch(
-            "formattington.prettier.find_tool",
-            side_effect=FileNotFoundError("Could not find 'prettier'"),
-        ):
-            with pytest.raises(FileNotFoundError):
-                prettier()
 
     def test_forwards_verbose_to_find_tool(self):
         fake, _ = _fake_run_capture()
@@ -467,32 +367,6 @@ class TestPrettier:
         ):
             assert prettier(verbose=True) == 0
         mock_find.assert_called_once_with("prettier", verbose=True)
-
-    def test_help_passthrough_without_mode_flags(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.prettier.find_tool", return_value="/fake/prettier"
-        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
-            assert prettier(check=True, args=["--help"]) == 0
-        assert calls[0][0] == ["/fake/prettier", "--help"]
-
-    def test_version_passthrough_without_mode_flags(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.prettier.find_tool", return_value="/fake/prettier"
-        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
-            assert prettier(dry_run=True, args=["--version"]) == 0
-        assert calls[0][0] == ["/fake/prettier", "--version"]
-
-    def test_no_shell_used(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.prettier.find_tool", return_value="/fake/prettier"
-        ), patch("formattington.prettier.subprocess.run", side_effect=fake):
-            prettier(args=["file with spaces.js"])
-        _, kwargs = calls[0]
-        assert kwargs.get("shell") is None
-        assert kwargs["check"] is False
 
     def test_does_not_add_config_flag(self):
         # The project .prettierrc must be respected; Formattington adds no
@@ -607,13 +481,6 @@ class TestPowershell:
                 powershell(**kwargs)
             assert "Invoke-ScriptAnalyzer" in calls[0][0][3]
 
-    def test_check_and_dry_run_are_exclusive(self):
-        with patch(
-            "formattington.powershell.find_tool", return_value="/fake/pwsh"
-        ):
-            with pytest.raises(ValueError, match="cannot both be enabled"):
-                powershell(check=True, dry_run=True)
-
     def test_propagates_exit_code(self):
         fake, _ = _fake_run_capture(returncode=1)
         with patch(
@@ -622,24 +489,6 @@ class TestPowershell:
             # PSScriptAnalyzer findings map to exit 1 inside pwsh;
             # Formattington preserves that code.
             assert powershell(check=True) == 1
-
-    def test_help_passthrough(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.powershell.find_tool", return_value="/fake/pwsh"
-        ), patch("formattington.powershell.subprocess.run", side_effect=fake):
-            assert powershell(args=["--help"]) == 0
-        assert calls[0][0] == ["/fake/pwsh", "--help"]
-
-    def test_no_shell_used(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.powershell.find_tool", return_value="/fake/pwsh"
-        ), patch("formattington.powershell.subprocess.run", side_effect=fake):
-            powershell(args=["script.ps1"])
-        _, kwargs = calls[0]
-        assert kwargs.get("shell") is None
-        assert kwargs["check"] is False
 
     def test_forwards_verbose_to_shell_lookup(self):
         fake, _ = _fake_run_capture()
@@ -715,51 +564,12 @@ class TestTaplo:
             taplo(args=["--colors", "always", "file.toml"])
         assert calls[0][0] == ["/fake/taplo", "fmt", "--colors", "always", "file.toml"]
 
-    def test_check_and_dry_run_are_exclusive(self):
-        with patch("formattington.taplo.find_tool", return_value="/fake/taplo"):
-            with pytest.raises(ValueError, match="cannot both be enabled"):
-                taplo(check=True, dry_run=True)
-
     def test_propagates_subprocess_exit_code(self):
         fake, _ = _fake_run_capture(returncode=1)
         with patch(
             "formattington.taplo.find_tool", return_value="/fake/taplo"
         ), patch("formattington.taplo.subprocess.run", side_effect=fake):
             assert taplo(check=True) == 1
-
-    def test_missing_tool_raises(self):
-        with patch(
-            "formattington.taplo.find_tool",
-            side_effect=FileNotFoundError("Could not find 'taplo'"),
-        ):
-            with pytest.raises(FileNotFoundError):
-                taplo()
-
-    def test_help_passthrough_without_mode_flags(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.taplo.find_tool", return_value="/fake/taplo"
-        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
-            assert taplo(check=True, args=["--help"]) == 0
-        assert calls[0][0] == ["/fake/taplo", "--help"]
-
-    def test_version_passthrough_without_mode_flags(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.taplo.find_tool", return_value="/fake/taplo"
-        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
-            assert taplo(dry_run=True, args=["--version"]) == 0
-        assert calls[0][0] == ["/fake/taplo", "--version"]
-
-    def test_no_shell_used(self):
-        fake, calls = _fake_run_capture()
-        with patch(
-            "formattington.taplo.find_tool", return_value="/fake/taplo"
-        ), patch("formattington.taplo.subprocess.run", side_effect=fake):
-            taplo(args=["file with spaces.toml"])
-        _, kwargs = calls[0]
-        assert kwargs.get("shell") is None
-        assert kwargs["check"] is False
 
     def test_does_not_add_config_flag(self):
         # A project taplo.toml must be respected; Formattington adds no
@@ -780,3 +590,139 @@ class TestTaplo:
         ):
             assert taplo(verbose=True) == 0
         mock_find.assert_called_once_with("taplo", verbose=True)
+
+
+class TestSharedBehavior:
+    """Parametrized equivalents shared across formatter integrations.
+
+    Covers the genuinely equivalent checks that were previously
+    duplicated per class (exclusivity, missing-tool, help/version
+    passthrough, no-shell). Per-tool argv contracts remain in the
+    per-class tests and are asserted literally there; this class does
+    not hide expected argv behind a generic helper.
+    """
+
+    ALL_FORMATTERS = [
+        pytest.param(shfmt, "formattington.shfmt.find_tool", id="shfmt"),
+        pytest.param(
+            clang_format, "formattington.clang_format.find_tool", id="clang-format"
+        ),
+        pytest.param(
+            black, "formattington.format_python.find_tool", id="black"
+        ),
+        pytest.param(
+            prettier, "formattington.prettier.find_tool", id="prettier"
+        ),
+        pytest.param(
+            powershell, "formattington.powershell.find_tool", id="powershell"
+        ),
+        pytest.param(taplo, "formattington.taplo.find_tool", id="taplo"),
+    ]
+
+    # Subprocess-boundary tools only: shfmt delegates to run_tool()
+    # (patched via formattington._tools.subprocess.run) while the
+    # other five patch their own module's subprocess.run. No-shell and
+    # help/version parametrizes cover those five; shfmt's boundary is
+    # preserved and asserted in TestShfmt.
+    SUBPROCESS_FORMATTERS = [
+        pytest.param(
+            clang_format,
+            "formattington.clang_format.find_tool",
+            "formattington.clang_format.subprocess.run",
+            "/fake/clang-format",
+            "file with spaces.cpp",
+            id="clang-format",
+        ),
+        pytest.param(
+            black,
+            "formattington.format_python.find_tool",
+            "formattington.format_python.subprocess.run",
+            "/fake/black",
+            "file with spaces.py",
+            id="black",
+        ),
+        pytest.param(
+            prettier,
+            "formattington.prettier.find_tool",
+            "formattington.prettier.subprocess.run",
+            "/fake/prettier",
+            "file with spaces.js",
+            id="prettier",
+        ),
+        pytest.param(
+            powershell,
+            "formattington.powershell.find_tool",
+            "formattington.powershell.subprocess.run",
+            "/fake/pwsh",
+            "script.ps1",
+            id="powershell",
+        ),
+        pytest.param(
+            taplo,
+            "formattington.taplo.find_tool",
+            "formattington.taplo.subprocess.run",
+            "/fake/taplo",
+            "file with spaces.toml",
+            id="taplo",
+        ),
+    ]
+
+    @pytest.mark.parametrize(("func", "find_target"), ALL_FORMATTERS)
+    def test_check_and_dry_run_are_exclusive(self, func, find_target):
+        with pytest.raises(ValueError, match="cannot both be enabled"):
+            func(check=True, dry_run=True)
+
+    @pytest.mark.parametrize(("func", "find_target"), ALL_FORMATTERS)
+    def test_missing_tool_raises(self, func, find_target):
+        with patch(
+            find_target,
+            side_effect=FileNotFoundError("Could not find tool"),
+        ):
+            with pytest.raises(FileNotFoundError):
+                func()
+
+    @pytest.mark.parametrize(
+        ("func", "find_target", "run_target", "exe", "file_arg"),
+        SUBPROCESS_FORMATTERS,
+    )
+    def test_no_shell_string_used(
+        self, func, find_target, run_target, exe, file_arg
+    ):
+        fake, calls = _fake_run_capture()
+        with patch(find_target, return_value=exe), patch(
+            run_target, side_effect=fake
+        ):
+            assert func(args=[file_arg]) == 0
+        _, kwargs = calls[0]
+        assert kwargs.get("shell") is None
+        assert kwargs["check"] is False
+
+    @pytest.mark.parametrize(
+        ("func", "find_target", "run_target", "exe", "file_arg"),
+        SUBPROCESS_FORMATTERS,
+    )
+    def test_help_passthrough(
+        self, func, find_target, run_target, exe, file_arg
+    ):
+        fake, calls = _fake_run_capture()
+        with patch(find_target, return_value=exe), patch(
+            run_target, side_effect=fake
+        ):
+            assert func(check=True, args=["--help"]) == 0
+        assert len(calls) == 1
+        assert calls[0][0] == [exe, "--help"]
+
+    @pytest.mark.parametrize(
+        ("func", "find_target", "run_target", "exe", "file_arg"),
+        SUBPROCESS_FORMATTERS,
+    )
+    def test_version_passthrough(
+        self, func, find_target, run_target, exe, file_arg
+    ):
+        fake, calls = _fake_run_capture()
+        with patch(find_target, return_value=exe), patch(
+            run_target, side_effect=fake
+        ):
+            assert func(dry_run=True, args=["--version"]) == 0
+        assert len(calls) == 1
+        assert calls[0][0] == [exe, "--version"]
