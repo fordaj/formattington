@@ -11,6 +11,17 @@ def test_all_names_importable():
         "prettier",
         "powershell",
         "taplo",
+        "gofmt",
+        "goimports",
     ]
-    for name in ("shfmt", "clang_format", "black", "prettier", "powershell", "taplo"):
+    for name in (
+        "shfmt",
+        "clang_format",
+        "black",
+        "prettier",
+        "powershell",
+        "taplo",
+        "gofmt",
+        "goimports",
+    ):
         assert callable(getattr(formattington, name))

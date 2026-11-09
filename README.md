@@ -39,7 +39,7 @@ Output from different formatters may interleave in this mode.
 formattington all --series
 ```
 
-Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier` order) instead of concurrently, for ordered output.
+Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo`, `gofmt`, `goimports` order) instead of concurrently, for ordered output.
 
 The flag is also accepted before `all`:
 
@@ -57,6 +57,8 @@ formattington prettier
 formattington clang-format
 formattington shfmt
 formattington black
+formattington gofmt
+formattington goimports
 ```
 
 Pass additional arguments through to the underlying tool:
@@ -86,9 +88,10 @@ formattington python
 formattington md
 formattington markdown
 formattington html
+formattington go
 ```
 
-Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; and `md`/`markdown`/`html` resolve to `prettier`. Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
+Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; `md`/`markdown`/`html` resolve to `prettier`; and `go` resolves to `gofmt`. Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
 
 ### Run with a configuration file (`.formattington.json`)
 
@@ -118,7 +121,7 @@ formattington --config path/to/config.json all
 formattington --check all --config path/to/config.json
 ```
 
-Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
+Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo`, `gofmt`, `goimports`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`, `go`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
 
 Config discovery precedence (highest first):
 
@@ -129,7 +132,7 @@ Config discovery precedence (highest first):
 | 3 | `./.formattington.json` | Auto-discovered in the current directory only (no parent-directory or user-home search). |
 | 4 | No config file | `all` runs the full formatter registry as before (backwards compatible). |
 
-When a config is in effect, `all` runs exactly the listed commands. With no config, `all` keeps its current behavior (all six formatters). The config only changes what `all` means: single-tool runs ignore the file and the environment variable, and `--config` before a single formatter (e.g. `formattington --config x.json black`) is a usage error (exit 2). `--config` after a single formatter is forwarded to that formatter, so native flags such as Prettier's `--config` keep working.
+When a config is in effect, `all` runs exactly the listed commands. With no config, `all` keeps its current behavior (all eight formatters). The config only changes what `all` means: single-tool runs ignore the file and the environment variable, and `--config` before a single formatter (e.g. `formattington --config x.json black`) is a usage error (exit 2). `--config` after a single formatter is forwarded to that formatter, so native flags such as Prettier's `--config` keep working.
 
 Global flags compose as with a full-registry `all`: `--check`/`--dry-run` and `--verbose` (or `FORMATTINGTON_VERBOSE=1`) propagate to every config command. Config commands run concurrently by default; use `--series` (before or after `all`) to run them sequentially in file order. The exit code is the last non-zero code in file order, or `0` only if every command succeeds. A missing formatter executable counts as `127` for that command and does not prevent the remaining commands from running.
 
@@ -177,6 +180,8 @@ Formattington owns the mode flag before the formatter name; arguments after the 
 | prettier     | `prettier --check` — fail if any file needs formatting                | `prettier --list-different` — list files that differ, do not modify (Prettier has no `--diff`) | `prettier --write` — write in place (unless `--write`/`-w`, `--check`/`-c`, or `--list-different`/`-l` already given) |
 | powershell   | PSScriptAnalyzer lint (no in-place formatting); findings exit 1       | Same PSScriptAnalyzer lint invocation (check/dry-run are accepted for CLI uniformity)            | Same PSScriptAnalyzer lint invocation (findings exit 1)                                                                                    |
 | taplo        | `taplo fmt --check` — fail if any file needs formatting               | `taplo fmt --diff` — print diff, do not modify                         | `taplo fmt` in place (no flag)                                                                                   |
+| gofmt        | `gofmt -l` — list unformatted files; exit 1 if any listed, else 0     | `gofmt -d` — display diffs instead of rewriting files                                          | `gofmt -w` — write result to the source file instead of stdout (format in place)                                    |
+| goimports    | `goimports -l` — list files whose formatting differs; exit 1 if any listed, else 0 | `goimports -d` — display diffs instead of rewriting files                          | `goimports -w` — write result to the source file instead of stdout (format in place, fixing imports)                |
 
 These mode mappings are integration-specific. Future tools may support different operations or native flags, and their integrations should preserve those differences.
 
@@ -190,11 +195,11 @@ formattington: Could not find 'shfmt'. Expected a bundled executable under tools
 
 ) and exits `127`.
 
-This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), and `taplo`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
+This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `taplo`, `gofmt`, and `goimports`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
 
 ### Exit-code aggregation with `all`
 
-The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
+The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo`, `gofmt`, `goimports` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
 
 The rule is deterministic regardless of completion order in the concurrent default.
 
@@ -216,8 +221,10 @@ Use `--verbose` to see which executable was resolved when a tool is present.
 - `prettier` is installed via npm (`npm install -g prettier`).
 - `powershell` lints with [PSScriptAnalyzer](https://github.com/microsoft/PSScriptAnalyzer) through PowerShell 7+ (`pwsh`); install the module with `Install-Module PSScriptAnalyzer` inside `pwsh` (Windows PowerShell 5.1, `powershell.exe`, is tried as a fallback).
 - `taplo` (`taplo fmt`) formats TOML; a pinned copy is bundled under `tools/taplo/v0.10.0/<platform>/` for offline use (download the release binary and put it on `PATH` if you prefer a system install).
+- `gofmt` is part of the [Go](https://go.dev/) installation (install Go for your OS; `gofmt` comes with it).
+- `goimports` formats like `gofmt` and also fixes import grouping; install with `go install golang.org/x/tools/cmd/goimports@latest`.
 
-Either a bundled copy under `tools/` (see [Bundled tools](#bundled-tools)) or an installation on `PATH` satisfies `find_tool()`. `black` and `prettier` are PATH-only (not bundled) and are found via `PATH`.
+Either a bundled copy under `tools/` (see [Bundled tools](#bundled-tools)) or an installation on `PATH` satisfies `find_tool()`. `black`, `prettier`, `gofmt`, and `goimports` are PATH-only (not bundled) and are found via `PATH`.
 
 ## Supported tools
 
@@ -231,11 +238,15 @@ Formattington integrates existing tools rather than reimplementing their functio
 | [Prettier](https://prettier.io/)                             | Formatter | Available | JavaScript, TypeScript, JSON, HTML, CSS, Markdown, YAML |
 | [PSScriptAnalyzer](https://github.com/microsoft/PSScriptAnalyzer) | Linter | Available | PowerShell scripts (`.ps1`, `.psm1`) via `pwsh` |
 | [Taplo](https://taplo.tamasfe.dev/)                            | Formatter | Available | TOML (`.toml`) via `taplo fmt`                          |
+| [gofmt](https://pkg.go.dev/cmd/gofmt)                        | Formatter | Available | Go (`.go`)                                              |
+| [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) | Formatter | Available | Go (`.go`) with import fixing                           |
 | [markdownlint](https://github.com/DavidAnson/markdownlint)   | Linter    | Planned   | Markdown style and consistency                          |
 
-Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), and `all` are accepted by the CLI.
+Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo`, `gofmt`, `goimports`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), and `all` are accepted by the CLI.
 
 Prettier is the sole owner of Markdown formatting. There is no dedicated `markdown_format.py` or separate Markdown formatter; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown-specific linting (for example `markdownlint`) is a distinct operation and is out of scope for this change; it can be integrated separately in the future if needed. Unrecognized names still report a usage error (exit 2).
+
+Go has two formatters covering the same `.go` files: `gofmt` (canonical formatting) and `goimports` (formatting plus import grouping). `formattington go` resolves to `gofmt`; use `formattington goimports` or a config command listing `goimports` when imports should also be fixed. Use `--series` with `all` to run them sequentially (`gofmt` then `goimports`) instead of concurrently, or list only one in a config file to avoid running both against the same files. Per AGENTS.md, when multiple tools support the same file type, selection should respect configured tool choices.
 
 Additional tools may provide other capabilities, such as checking, linting, and fixing, without necessarily being formatters.
 
@@ -249,6 +260,8 @@ Additional tools may provide other capabilities, such as checking, linting, and 
 | prettier     | Not bundled (PATH-only)                                                           | `npm install -g prettier`                                                                                    | `PATH` via `find_tool("prettier")`                         |
 | powershell   | Not bundled (PATH-only; PSScriptAnalyzer is a module)                             | PowerShell 7+ (`pwsh`) on `PATH` plus `Install-Module PSScriptAnalyzer` in `pwsh`                            | `PATH` via `find_tool("pwsh")`, then `find_tool("powershell")` |
 | taplo        | Comes under `tools/taplo/v0.10.0/<platform>/taplo` in a fresh clone               | Download taplo from https://github.com/tamasfe/taplo releases and put `taplo` on `PATH`                     | Bundled first, then `PATH` via `find_tool("taplo")`        |
+| gofmt        | Not bundled (PATH-only)                                                           | Install Go for your OS; `gofmt` comes with the Go installation                                               | `PATH` via `find_tool("gofmt")`                            |
+| goimports    | Not bundled (PATH-only)                                                           | `go install golang.org/x/tools/cmd/goimports@latest` (ensure `$(go env GOPATH)/bin` is on `PATH`)           | `PATH` via `find_tool("goimports")`                        |
 
 Bundled versions are pinned in `tools/` for offline use; see [Bundled tools](#bundled-tools) for the layout and refresh process.
 
@@ -301,6 +314,8 @@ If you prefer a system installation, put the tool on `PATH` instead — `find_to
 
 `prettier` is PATH-only (installed via `npm install -g prettier`) and is not bundled under `tools/`.
 
+`gofmt` (part of the Go installation) and `goimports` (installed via `go install golang.org/x/tools/cmd/goimports@latest`) are PATH-only and are not bundled under `tools/`.
+
 See the [prerequisites table](#prerequisites) for per-tool options.
 
 ## How it works
@@ -328,7 +343,7 @@ Here, `<platform>` is the hyphenated `<os>-<arch>` name returned by `get_platfor
 
 Bundled tools are preferred; when none is found, lookup falls back to `PATH`.
 
-`black` and `prettier` are PATH-only and are not bundled under `tools/`; install `black` via `pip install black` or `uv tool install black`, and install `prettier` via `npm install -g prettier`, placing the executables on `PATH`.
+`black`, `prettier`, `gofmt`, and `goimports` are PATH-only and are not bundled under `tools/`; install `black` via `pip install black` or `uv tool install black`, `prettier` via `npm install -g prettier`, `gofmt` via the Go installation, and `goimports` via `go install golang.org/x/tools/cmd/goimports@latest`, placing the executables on `PATH`.
 
 Use `--verbose` before the tool name to see which executable was resolved, or set `FORMATTINGTON_VERBOSE=1`:
 

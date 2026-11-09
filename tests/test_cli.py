@@ -14,7 +14,7 @@ from tests.conftest import set_argv
 class TestFormatterSelection:
     @pytest.mark.parametrize(
         "formatter",
-        ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo"],
+        ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo", "gofmt", "goimports"],
     )
     def test_single_tool_selection(self, monkeypatch, mock_formatters, formatter):
         set_argv(monkeypatch, ["formattington", formatter])
@@ -201,10 +201,67 @@ class TestTaploSelection:
             mock.assert_not_called()
 
 
+class TestGoSelection:
+    """Issue #66: `gofmt`/`goimports` tools and `go` alias."""
+
+    def test_go_alias_selection(self, monkeypatch, mock_formatters):
+        from formattington.cli import LANGUAGE_ALIASES
+
+        assert LANGUAGE_ALIASES["go"] == "gofmt"
+        set_argv(monkeypatch, ["formattington", "go"])
+        assert main() == 0
+        mock_formatters["gofmt"].assert_called_once_with(check=False, dry_run=False, args=[], verbose=False)
+        mock_formatters["black"].assert_not_called()
+
+    def test_go_alias_modes_and_forwarding(self, monkeypatch, mock_formatters):
+        set_argv(monkeypatch, ["formattington", "--check", "go"])
+        assert main() == 0
+        mock_formatters["gofmt"].assert_called_once_with(check=True, dry_run=False, args=[], verbose=False)
+        set_argv(monkeypatch, ["formattington", "go", "-s"])
+        assert main() == 0
+        mock_formatters["gofmt"].assert_called_with(check=False, dry_run=False, args=["-s"], verbose=False)
+
+    def test_goimports_selection(self, monkeypatch, mock_formatters):
+        set_argv(monkeypatch, ["formattington", "goimports"])
+        assert main() == 0
+        mock_formatters["goimports"].assert_called_once_with(check=False, dry_run=False, args=[], verbose=False)
+
+    def test_gofmt_missing_returns_127(self, monkeypatch, capsys):
+        set_argv(monkeypatch, ["formattington", "gofmt"])
+        with patch(
+            "formattington.gofmt.find_tool",
+            side_effect=FileNotFoundError("Could not find 'gofmt'"),
+        ):
+            assert main() == 127
+        err = capsys.readouterr().err
+        assert err.startswith("formattington:")
+        assert "Traceback" not in err
+
+    def test_goimports_missing_returns_127(self, monkeypatch, capsys):
+        set_argv(monkeypatch, ["formattington", "goimports"])
+        with patch(
+            "formattington.goimports.find_tool",
+            side_effect=FileNotFoundError("Could not find 'goimports'"),
+        ):
+            assert main() == 127
+        err = capsys.readouterr().err
+        assert err.startswith("formattington:")
+        assert "Traceback" not in err
+
+    def test_help_mentions_go_alias(self, monkeypatch, capsys):
+        set_argv(monkeypatch, ["formattington", "--help"])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        out = capsys.readouterr().out
+        assert "go uses gofmt" in out
+        assert "goimports" in out
+
+
 class TestModes:
     @pytest.mark.parametrize(
         "formatter",
-        ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo"],
+        ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo", "gofmt", "goimports"],
     )
     @pytest.mark.parametrize(
         ("flag", "expected_check", "expected_dry_run"),
@@ -264,6 +321,9 @@ class TestLanguageAliases:
         "md": "prettier",
         "markdown": "prettier",
         "html": "prettier",
+        "ps1": "powershell",
+        "toml": "taplo",
+        "go": "gofmt",
     }
 
     @pytest.mark.parametrize(
@@ -348,7 +408,7 @@ class TestLanguageAliases:
 class TestVerbose:
     @pytest.mark.parametrize(
         "formatter",
-        ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo"],
+        ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo", "gofmt", "goimports"],
     )
     def test_verbose_before_formatter(self, monkeypatch, mock_formatters, formatter):
         set_argv(monkeypatch, ["formattington", "--verbose", formatter])
@@ -454,8 +514,9 @@ class TestArgForwarding:
 
 class TestMissingToolExit127:
     def test_all_returns_127_when_any_missing(self, monkeypatch):
-        # shfmt missing, clang-format, black, prettier, powershell, and taplo
-        # present: still runs the present ones, final exit is 127.
+        # shfmt missing, clang-format, black, prettier, powershell, taplo,
+        # gofmt, and goimports present: still runs the present ones, final
+        # exit is 127.
         set_argv(monkeypatch, ["formattington", "all"])
 
         # shfmt raises via find_tool; the rest succeed via mocked
@@ -480,6 +541,10 @@ class TestMissingToolExit127:
             patch("formattington.powershell.subprocess.run", side_effect=_fake_run),
             patch("formattington.taplo.find_tool", return_value="/fake/taplo"),
             patch("formattington.taplo.subprocess.run", side_effect=_fake_run),
+            patch("formattington.gofmt.find_tool", return_value="/fake/gofmt"),
+            patch("formattington.gofmt.subprocess.run", side_effect=_fake_run),
+            patch("formattington.goimports.find_tool", return_value="/fake/goimports"),
+            patch("formattington.goimports.subprocess.run", side_effect=_fake_run),
         ):
             assert main() == 127
 
@@ -498,7 +563,7 @@ class TestMissingToolExit127:
     )
     @pytest.mark.parametrize(
         "formatter",
-        ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo"],
+        ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo", "gofmt", "goimports"],
     )
     def test_missing_tool_returns_127_in_every_mode(self, monkeypatch, capsys, mode_args, formatter):
         # Missing-executable handling is identical across default,
@@ -512,6 +577,8 @@ class TestMissingToolExit127:
             "prettier": "formattington.prettier.find_tool",
             "powershell": "formattington.powershell.find_tool",
             "taplo": "formattington.taplo.find_tool",
+            "gofmt": "formattington.gofmt.find_tool",
+            "goimports": "formattington.goimports.find_tool",
         }[formatter]
         with patch(
             patch_target,
@@ -585,10 +652,18 @@ class TestMissingToolExit127:
                 "formattington.taplo.find_tool",
                 side_effect=FileNotFoundError("Could not find 'taplo'"),
             ),
+            patch(
+                "formattington.gofmt.find_tool",
+                side_effect=FileNotFoundError("Could not find 'gofmt'"),
+            ),
+            patch(
+                "formattington.goimports.find_tool",
+                side_effect=FileNotFoundError("Could not find 'goimports'"),
+            ),
         ):
             assert main() == 127
         err = capsys.readouterr().err
-        assert err.count("formattington:") == 6
+        assert err.count("formattington:") == 8
 
 
 class TestSeriesAndParallel:
@@ -608,7 +683,7 @@ class TestSeriesAndParallel:
             mock.side_effect = make_side_effect(name)
         set_argv(monkeypatch, ["formattington", "all", "--series"])
         assert main() == 0
-        assert calls == ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo"]
+        assert calls == ["shfmt", "clang-format", "black", "prettier", "powershell", "taplo", "gofmt", "goimports"]
         for mock in mock_formatters.values():
             mock.assert_called_once_with(check=False, dry_run=False, args=[], verbose=False)
 

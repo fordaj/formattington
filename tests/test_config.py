@@ -291,7 +291,7 @@ class TestExecution:
         _isolate(monkeypatch, tmp_path)
         cfg = _write_config(
             tmp_path / "cfg.json",
-            {"commands": [["bash"], ["python"], ["md"], ["c"], ["ps1"], ["toml"]]},
+            {"commands": [["bash"], ["python"], ["md"], ["c"], ["ps1"], ["toml"], ["go"], ["goimports"]]},
         )
         set_argv(monkeypatch, ["formattington", "all", "--config", str(cfg)])
         assert main() == 0
@@ -301,6 +301,8 @@ class TestExecution:
         mock_formatters["clang-format"].assert_called_once()
         mock_formatters["powershell"].assert_called_once()
         mock_formatters["taplo"].assert_called_once()
+        mock_formatters["gofmt"].assert_called_once()
+        mock_formatters["goimports"].assert_called_once()
 
     def test_forwards_spaces_as_single_entries(self, monkeypatch, tmp_path, mock_formatters):
         _isolate(monkeypatch, tmp_path)
@@ -441,7 +443,7 @@ class TestExecution:
         (tmp_path / "b.sh").write_text("#!/bin/sh\n")
         (tmp_path / "c.txt").write_text("hi\n")
         cfg = _write_config(tmp_path / "cfg.json", {"commands": [["shfmt"]]})
-        mocks = {name: MagicMock(return_value=0) for name in ("shfmt", "clang-format", "black", "prettier", "powershell", "taplo")}
+        mocks = {name: MagicMock(return_value=0) for name in ("shfmt", "clang-format", "black", "prettier", "powershell", "taplo", "gofmt", "goimports")}
         original = dict(cli.FORMATTERS)
         cli.FORMATTERS.update(mocks)
         try:
@@ -457,7 +459,7 @@ class TestExecution:
         (tmp_path / "a.sh").write_text("#!/bin/sh\n")
         (tmp_path / "explicit.sh").write_text("#!/bin/sh\n")
         cfg = _write_config(tmp_path / "cfg.json", {"commands": [["shfmt", "explicit.sh"]]})
-        mocks = {name: MagicMock(return_value=0) for name in ("shfmt", "clang-format", "black", "prettier", "powershell", "taplo")}
+        mocks = {name: MagicMock(return_value=0) for name in ("shfmt", "clang-format", "black", "prettier", "powershell", "taplo", "gofmt", "goimports")}
         original = dict(cli.FORMATTERS)
         cli.FORMATTERS.update(mocks)
         try:

@@ -19,6 +19,10 @@ from formattington.clang_format import FILE_EXTENSIONS as CLANG_FORMAT_EXTENSION
 from formattington.clang_format import clang_format
 from formattington.format_python import FILE_EXTENSIONS as BLACK_EXTENSIONS
 from formattington.format_python import black
+from formattington.gofmt import FILE_EXTENSIONS as GOFMT_EXTENSIONS
+from formattington.gofmt import gofmt
+from formattington.goimports import FILE_EXTENSIONS as GOIMPORTS_EXTENSIONS
+from formattington.goimports import goimports
 from formattington.prettier import FILE_EXTENSIONS as PRETTIER_EXTENSIONS
 from formattington.powershell import FILE_EXTENSIONS as POWERSHELL_EXTENSIONS
 from formattington.powershell import powershell
@@ -36,6 +40,8 @@ FORMATTERS = {
     "prettier": prettier,
     "powershell": powershell,
     "taplo": taplo,
+    "gofmt": gofmt,
+    "goimports": goimports,
 }
 
 FORMATTER_EXTENSIONS: dict[str, tuple[str, ...]] = {
@@ -45,6 +51,8 @@ FORMATTER_EXTENSIONS: dict[str, tuple[str, ...]] = {
     "prettier": PRETTIER_EXTENSIONS,
     "powershell": POWERSHELL_EXTENSIONS,
     "taplo": TAPLO_EXTENSIONS,
+    "gofmt": GOFMT_EXTENSIONS,
+    "goimports": GOIMPORTS_EXTENSIONS,
 }
 
 # Upper bound on discovered files per formatter invocation, to respect
@@ -63,6 +71,7 @@ LANGUAGE_ALIASES = {
     "html": "prettier",
     "ps1": "powershell",
     "toml": "taplo",
+    "go": "gofmt",
 }
 
 CONFIG_FILENAME = ".formattington.json"
@@ -75,7 +84,9 @@ _EPILOG = (
     "(Markdown formatting is provided by Prettier; ``.md`` and "
     "``.markdown`` files are covered); html uses prettier; ps1 uses powershell "
     "(PSScriptAnalyzer linting of PowerShell scripts); toml uses taplo "
-    "(TOML formatting via taplo fmt).\n\n"
+    "(TOML formatting via taplo fmt); go uses gofmt (Go formatting "
+    "via gofmt; goimports additionally fixes imports, so use it via "
+    "the goimports name or a config command for import-aware formatting).\n\n"
     "With no file arguments, formattington discovers each formatter's "
     "matching files recursively from the current directory (skipping "
     "hidden directories and __pycache__, node_modules, vendor, venv, "
@@ -87,7 +98,7 @@ _EPILOG = (
     "use --series (before or after 'all', e.g. "
     "'formattington --series all' or 'formattington all --series') "
     "to run them sequentially in shfmt, clang-format, black, prettier, "
-    "powershell, taplo "
+    "powershell, taplo, gofmt, goimports "
     "order. Exit code is the last non-zero code in that order "
     "(missing tool counts as 127, printed to stderr, and does not "
     "prevent remaining formatters from running); 0 only if all succeed.\n\n"

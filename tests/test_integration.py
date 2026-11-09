@@ -20,6 +20,8 @@ import pytest
 import formattington._tools as tools
 from formattington.clang_format import clang_format
 from formattington.format_python import black
+from formattington.gofmt import gofmt
+from formattington.goimports import goimports
 from formattington.prettier import prettier
 from formattington.shfmt import shfmt
 from tests.conftest import (
@@ -229,6 +231,64 @@ class TestPathStubs:
         # Forwarded --check omits the default --write.
         assert read_recorded(fake_argv_file) == ["--check"]
 
+    def test_gofmt_batches_paths_with_spaces(
+        self, monkeypatch, tmp_path, fake_argv_file
+    ):
+        _install_path_fakes(monkeypatch, tmp_path, fake_argv_file, "gofmt")
+        assert gofmt(args=["my file.go", "another file.go"]) == 0
+        assert read_recorded(fake_argv_file) == [
+            "-w",
+            "my file.go",
+            "another file.go",
+        ]
+
+    def test_gofmt_check_mode(self, monkeypatch, tmp_path, fake_argv_file):
+        _install_path_fakes(monkeypatch, tmp_path, fake_argv_file, "gofmt")
+        assert gofmt(check=True, args=["file with spaces.go"]) == 0
+        assert read_recorded(fake_argv_file) == ["-l", "file with spaces.go"]
+
+    def test_gofmt_dry_run_mode(self, monkeypatch, tmp_path, fake_argv_file):
+        _install_path_fakes(monkeypatch, tmp_path, fake_argv_file, "gofmt")
+        assert gofmt(dry_run=True, args=["file.go"]) == 0
+        assert read_recorded(fake_argv_file) == ["-d", "file.go"]
+
+    def test_gofmt_via_cli_end_to_end(self, monkeypatch, tmp_path, fake_argv_file):
+        _install_path_fakes(monkeypatch, tmp_path, fake_argv_file, "gofmt")
+        set_argv(monkeypatch, ["formattington", "--check", "gofmt", "my file.go"])
+        from formattington.cli import main
+
+        assert main() == 0
+        assert read_recorded(fake_argv_file) == ["-l", "my file.go"]
+
+    def test_goimports_batches_paths_with_spaces(
+        self, monkeypatch, tmp_path, fake_argv_file
+    ):
+        _install_path_fakes(monkeypatch, tmp_path, fake_argv_file, "goimports")
+        assert goimports(args=["my file.go", "another file.go"]) == 0
+        assert read_recorded(fake_argv_file) == [
+            "-w",
+            "my file.go",
+            "another file.go",
+        ]
+
+    def test_goimports_check_mode(self, monkeypatch, tmp_path, fake_argv_file):
+        _install_path_fakes(monkeypatch, tmp_path, fake_argv_file, "goimports")
+        assert goimports(check=True, args=["file with spaces.go"]) == 0
+        assert read_recorded(fake_argv_file) == ["-l", "file with spaces.go"]
+
+    def test_goimports_dry_run_mode(self, monkeypatch, tmp_path, fake_argv_file):
+        _install_path_fakes(monkeypatch, tmp_path, fake_argv_file, "goimports")
+        assert goimports(dry_run=True, args=["file.go"]) == 0
+        assert read_recorded(fake_argv_file) == ["-d", "file.go"]
+
+    def test_goimports_via_cli_end_to_end(self, monkeypatch, tmp_path, fake_argv_file):
+        _install_path_fakes(monkeypatch, tmp_path, fake_argv_file, "goimports")
+        set_argv(monkeypatch, ["formattington", "--check", "goimports", "my file.go"])
+        from formattington.cli import main
+
+        assert main() == 0
+        assert read_recorded(fake_argv_file) == ["-l", "my file.go"]
+
 
 class TestFileDiscoveryContract:
     """Discovery-agnostic checks that hold on every platform.
@@ -310,3 +370,39 @@ class TestFileDiscoveryContract:
             assert prettier(args=paths) == 0
         assert len(calls) == 1
         assert calls[0] == ["/fake/prettier", "--write", *paths]
+
+    def test_gofmt_single_call_for_many_paths(self):
+        from unittest.mock import patch
+
+        paths = [f"dir/file {i}.go" for i in range(5)]
+        calls = []
+
+        def fake_run(cmd, **kwargs):
+            calls.append(list(cmd))
+            m = type("R", (), {"returncode": 0})()
+            return m
+
+        with patch(
+            "formattington.gofmt.find_tool", return_value="/fake/gofmt"
+        ), patch("formattington.gofmt.subprocess.run", side_effect=fake_run):
+            assert gofmt(args=paths) == 0
+        assert len(calls) == 1
+        assert calls[0] == ["/fake/gofmt", "-w", *paths]
+
+    def test_goimports_single_call_for_many_paths(self):
+        from unittest.mock import patch
+
+        paths = [f"dir/file {i}.go" for i in range(5)]
+        calls = []
+
+        def fake_run(cmd, **kwargs):
+            calls.append(list(cmd))
+            m = type("R", (), {"returncode": 0})()
+            return m
+
+        with patch(
+            "formattington.goimports.find_tool", return_value="/fake/goimports"
+        ), patch("formattington.goimports.subprocess.run", side_effect=fake_run):
+            assert goimports(args=paths) == 0
+        assert len(calls) == 1
+        assert calls[0] == ["/fake/goimports", "-w", *paths]
