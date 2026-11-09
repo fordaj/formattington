@@ -100,7 +100,7 @@ formattington html
 
 Language aliases should resolve to the appropriate tool integration and matching file types.
 
-Today only `python`/`py` (→ `black`) and `md`/`markdown` (→ `prettier`) are implemented; the other names above are planned and remain unrecognized (exit 2) until the alias-selection work lands. Prettier is the sole owner of Markdown formatting: `md`/`markdown` reuse the `prettier` dispatch and its `.prettierrc` handling, with no separate Markdown module.
+All documented names above resolve: `c`/`cpp`/`c++` → `clang-format`, `bash` → `shfmt`, `python`/`py` → `black`, `md`/`markdown`/`html` → `prettier`. Prettier is the sole owner of Markdown formatting: `md`/`markdown` reuse the `prettier` dispatch and its `.prettierrc` handling, with no separate Markdown module. Unrecognized words produce a usage error (exit 2); an alias whose backend is not registered yet reports `'<name>' is not yet supported` (exit 2) rather than silently succeeding.
 
 When multiple tools support the same file type, selection should respect configured tool choices rather than arbitrarily invoking conflicting tools.
 

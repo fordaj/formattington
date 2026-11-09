@@ -250,7 +250,7 @@ class TestModes:
 
 
 class TestUnknownWords:
-    @pytest.mark.parametrize("word", ["foobar", "unknown-word", "c"])
+    @pytest.mark.parametrize("word", ["foobar", "unknown-word", "cs"])
     def test_unknown_word_exits_2(self, monkeypatch, mock_formatters, word):
         _set_argv(monkeypatch, ["formattington", word])
         with pytest.raises(SystemExit) as exc_info:
@@ -258,6 +258,124 @@ class TestUnknownWords:
         assert exc_info.value.code == 2
         for mock in mock_formatters.values():
             mock.assert_not_called()
+
+
+class TestLanguageAliases:
+    """Issue #2: language / file-type alias selection.
+
+    Every alias in the README (c, cpp, c++, bash, md, markdown, html)
+    plus python/py resolves to a registered formatter with the same
+    --check/--dry-run and forwarding semantics as formatter selection.
+    """
+
+    ALIAS_TO_FORMATTER = {
+        "c": "clang-format",
+        "cpp": "clang-format",
+        "c++": "clang-format",
+        "bash": "shfmt",
+        "python": "black",
+        "py": "black",
+        "md": "prettier",
+        "markdown": "prettier",
+        "html": "prettier",
+    }
+
+    @pytest.mark.parametrize(
+        ("alias", "formatter"),
+        sorted(ALIAS_TO_FORMATTER.items()),
+        ids=sorted(ALIAS_TO_FORMATTER),
+    )
+    def test_alias_registry(self, alias, formatter):
+        assert cli.LANGUAGE_ALIASES[alias] == formatter
+        assert formatter in cli.FORMATTERS
+
+    @pytest.mark.parametrize(
+        ("alias", "formatter"),
+        sorted(ALIAS_TO_FORMATTER.items()),
+        ids=sorted(ALIAS_TO_FORMATTER),
+    )
+    def test_alias_dispatches_to_formatter(
+        self, monkeypatch, mock_formatters, alias, formatter
+    ):
+        _set_argv(monkeypatch, ["formattington", alias])
+        assert main() == 0
+        mock_formatters[formatter].assert_called_once_with(
+            check=False, dry_run=False, args=[]
+        )
+        for name, mock in mock_formatters.items():
+            if name != formatter:
+                mock.assert_not_called()
+
+    def test_alias_check_and_dry_run(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--check", "c"])
+        assert main() == 0
+        mock_formatters["clang-format"].assert_called_once_with(
+            check=True, dry_run=False, args=[]
+        )
+        _set_argv(monkeypatch, ["formattington", "--dry-run", "bash"])
+        assert main() == 0
+        mock_formatters["shfmt"].assert_called_with(
+            check=False, dry_run=True, args=[]
+        )
+
+    def test_alias_forwards_args(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "cpp", "--style=file"])
+        assert main() == 0
+        mock_formatters["clang-format"].assert_called_once_with(
+            check=False, dry_run=False, args=["--style=file"]
+        )
+
+    def test_alias_forwarded_check_is_native(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "html", "--check"])
+        assert main() == 0
+        mock_formatters["prettier"].assert_called_once_with(
+            check=False, dry_run=False, args=["--check"]
+        )
+
+    def test_alias_verbose(self, monkeypatch, mock_formatters):
+        _set_argv(monkeypatch, ["formattington", "--verbose", "bash"])
+        assert main() == 0
+        mock_formatters["shfmt"].assert_called_once_with(
+            check=False, dry_run=False, args=[], verbose=True
+        )
+
+    def test_alias_missing_tool_exits_127(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "c"])
+        with patch(
+            "formattington.clang_format.find_tool",
+            side_effect=FileNotFoundError("Could not find 'clang-format'"),
+        ):
+            assert main() == 127
+        err = capsys.readouterr().err
+        assert err.startswith("formattington:")
+        assert "Traceback" not in err
+
+    def test_unregistered_alias_is_not_yet_supported(
+        self, monkeypatch, mock_formatters, capsys
+    ):
+        monkeypatch.setitem(cli.LANGUAGE_ALIASES, "cobol", "cobol-formatter")
+        _set_argv(monkeypatch, ["formattington", "cobol"])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 2
+        assert "not yet supported" in capsys.readouterr().err
+        for mock in mock_formatters.values():
+            mock.assert_not_called()
+
+    def test_help_lists_all_aliases(self, monkeypatch, capsys):
+        _set_argv(monkeypatch, ["formattington", "--help"])
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code == 0
+        out = capsys.readouterr().out
+        for needle in ("c/cpp/c++", "bash", "python/py", "html", "clang-format"):
+            assert needle in out
+
+    def test_all_aliases_have_backends(self):
+        assert all(
+            target in cli.FORMATTERS
+            for target in cli.LANGUAGE_ALIASES.values()
+        )
 
 
 class TestVerbose:

@@ -39,16 +39,23 @@ _INFORMATIONAL_ARGS = frozenset(
 )
 
 LANGUAGE_ALIASES = {
+    "c": "clang-format",
+    "cpp": "clang-format",
+    "c++": "clang-format",
+    "bash": "shfmt",
     "python": "black",
     "py": "black",
     "md": "prettier",
     "markdown": "prettier",
+    "html": "prettier",
 }
 
 _EPILOG = (
-    "Language aliases: python/py use black; md/markdown use prettier "
+    "Language aliases (same --check/--dry-run and forwarded-argument "
+    "semantics as formatter names): c/cpp/c++ use clang-format; bash "
+    "uses shfmt; python/py use black; md/markdown use prettier "
     "(Markdown formatting is provided by Prettier; ``.md`` and "
-    "``.markdown`` files are covered).\n\n"
+    "``.markdown`` files are covered); html uses prettier.\n\n"
     "With no file arguments, formattington discovers each formatter's "
     "matching files recursively from the current directory (skipping "
     "hidden directories and __pycache__, node_modules, vendor, venv, "
@@ -320,7 +327,12 @@ def main() -> int:
         formatter_args = []
         names = list(FORMATTERS)
     else:
-        names = [LANGUAGE_ALIASES.get(formatter_name, formatter_name)]
+        target = LANGUAGE_ALIASES.get(formatter_name, formatter_name)
+        if target not in FORMATTERS:
+            # A documented alias whose backend has not landed yet must
+            # fail loudly, never silently succeed.
+            parser.error(f"'{formatter_name}' is not yet supported")
+        names = [target]
 
     verbose = getattr(args, "verbose", False)
 

@@ -88,9 +88,7 @@ formattington markdown
 formattington html
 ```
 
-Language selection lets you target the relevant files without having to remember which tool handles each extension.
-
-Only `python`/`py` (for Black) and `md`/`markdown` (for Prettier) are accepted as language aliases today; the other names above (for example `c`, `cpp`, `c++`, `bash`, `html`) are planned for a future change.
+Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; and `md`/`markdown`/`html` resolve to `prettier`. Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
 
 ## Operations and capabilities
 
@@ -180,7 +178,7 @@ Formattington integrates existing tools rather than reimplementing their functio
 | [Prettier](https://prettier.io/)                             | Formatter | Available | JavaScript, TypeScript, JSON, HTML, CSS, Markdown, YAML |
 | [markdownlint](https://github.com/DavidAnson/markdownlint)   | Linter    | Planned   | Markdown style and consistency                          |
 
-Only `shfmt`, `clang-format`, `black`, `prettier`, `python`/`py` (aliases for `black`), `md`/`markdown` (aliases for `prettier`), and `all` are accepted by the CLI today.
+Only `shfmt`, `clang-format`, `black`, `prettier`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), and `all` are accepted by the CLI.
 
 Prettier is the sole owner of Markdown formatting. There is no dedicated `markdown_format.py` or separate Markdown formatter; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown-specific linting (for example `markdownlint`) is a distinct operation and is out of scope for this change; it can be integrated separately in the future if needed. Unrecognized names such as `c` or `html` still report a usage error (exit 2) until the language-alias work lands.
 
