@@ -14,25 +14,26 @@ tools/
         <executable>
 ```
 
-- `<name>` is `shfmt`, `clang-format`, `taplo`, `versioner`, or `logamuffin`.
+- `<name>` is `shfmt`, `clang-format`, or `taplo`.
 - `<version>` is the upstream version without the leading `v`
   in code (for example `v3.14.1`).
 - `<platform>` is the hyphenated `<os>-<arch>` from
   `get_platform_dir()` (for example `macos-arm64`,
   `linux-x86_64`, `windows-x86_64`).
-- `<executable>` is `shfmt` / `clang-format` / `taplo` / `versioner` / `logamuffin`,
-  with `.exe` on Windows.
+- `<executable>` is `shfmt` / `clang-format` / `taplo` / `versioner` /
+  `logamuffin` / `runner-spawner`, with `.exe` on Windows.
 
 ## Pinned versions
 
-| Tool | Pinned version | Upstream | Platforms in this repo |
-| --- | --- | --- | --- |
-| shfmt | v3.14.1 | https://github.com/mvdan/sh | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-arm64, windows-x86_64 |
-| clang-format | v23.1.3 | LLVM project (clang-format) | linux-arm64, linux-x86_64, macos-arm64, windows-arm64, windows-x86_64 |
-| clang-format (legacy) | v22.1.8 | LLVM project (clang-format) | macos-x86_64 only (superseded by v23.1.3) |
-| taplo | v0.10.0 | https://github.com/tamasfe/taplo (taplo-cli) | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-arm64, windows-x86_64 |
-| versioner | v0.0.3.0.5 | https://github.com/fordaj/Versioner | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-x86_64 |
-| logamuffin | v0.1.3.0.35 | https://github.com/fordaj/logamuffin | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-arm64, windows-x86_64 |
+| Tool                  | Pinned version | Upstream                                     | Platforms in this repo                                                              |
+| --------------------- | -------------- | -------------------------------------------- | ----------------------------------------------------------------------------------- |
+| shfmt                 | v3.14.1        | https://github.com/mvdan/sh                  | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-arm64, windows-x86_64 |
+| clang-format          | v23.1.3        | LLVM project (clang-format)                  | linux-arm64, linux-x86_64, macos-arm64, windows-arm64, windows-x86_64               |
+| clang-format (legacy) | v22.1.8        | LLVM project (clang-format)                  | macos-x86_64 only (superseded by v23.1.3)                                           |
+| taplo                 | v0.10.0        | https://github.com/tamasfe/taplo (taplo-cli) | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-arm64, windows-x86_64 |
+| versioner             | v0.0.3.0.5     | https://github.com/fordaj/Versioner          | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-x86_64                |
+| logamuffin            | v0.1.3.0.35    | https://github.com/fordaj/logamuffin         | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-arm64, windows-x86_64 |
+| runner-spawner        | v0.0.1.0.4     | https://github.com/fordaj/runner-spawner     | linux-arm64, linux-x86_64, macos-arm64, macos-x86_64, windows-arm64, windows-x86_64 |
 
 Versions are compared numerically, so `v23.1.3` wins over `v22.1.8`
 and `v10` would win over `v9`. The legacy v22.1.8 bundle is retained
@@ -52,7 +53,9 @@ only for reference; the resolver prefers the newest version.
    automated with `tools/versioner/update.bash`, which downloads the
    latest release with `gh`, verifies `checksums.txt`, extracts each
    binary, and removes old `v*/` dirs. Logamuffin refreshes follow the
-   same pattern with `tools/logamuffin/update.bash`.
+   same pattern with `tools/logamuffin/update.bash`. Runner-spawner
+   refreshes follow the same pattern with
+   `tools/runner-spawner/update.bash`.
 3. Keep the exact version in the directory name (`v<version>`) and
    update the table above plus the note in the top-level `README.md`
    in the same commit.
@@ -72,6 +75,14 @@ is not a formatter either; it provides `log <level> <message>` via
 `scripts/env.sh` (`LOGAMUFFIN_BIN`, with printf fallback), and
 `tools/logamuffin/update.bash` verifies the host binary (`--version`
 contains the tag with or without the leading `v`) on each run.
+`runner-spawner` is not a formatter either; it installs and manages
+repository-scoped self-hosted runners for CI (see
+`.runner-spawner.json` and `scripts/env.sh` (`RUNNER_SPAWNER_BIN`)),
+and `tools/runner-spawner/update.bash` verifies the host binary
+(`--version` contains the tag) on each run. Runner-spawner currently
+supports macOS and Windows runners only; the Linux binaries ship for
+`list`/`status` diagnostics but `create`/`remove`/`start`/`stop` refuse
+on Linux (add `linux` to the caller matrices once that lands).
 
 There is no on-demand fetch. Refreshes are manual commits so binary
 changes are reviewable.

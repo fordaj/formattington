@@ -373,6 +373,7 @@ Pinned upstream versions (recorded in `tools/README.md`):
 - `shfmt` `v3.14.1` from [mvdan/sh](https://github.com/mvdan/sh).
 - `clang-format` `v23.1.3` (plus a retained legacy `v22.1.8` macOS bundle) from the LLVM project.
 - `taplo` `v0.10.0` from [tamasfe/taplo](https://github.com/tamasfe/taplo) (taplo-cli).
+- `runner-spawner` `v0.0.1.0.4` from [fordaj/runner-spawner](https://github.com/fordaj/runner-spawner) (not a formatter; bundled for CI runner management, see "Continuous integration").
 
 Keep these exact versions in sync with the docs when refreshing.
 
@@ -398,6 +399,23 @@ uv run pytest
 ```
 
 Tests live in `tests/` and cover CLI parsing, tool discovery, subprocess boundaries, and argument forwarding. They run without network access and without formatter binaries installed, using mocks and fake executable scripts in temporary directories.
+
+## Continuous integration
+
+CI runs on self-hosted runners managed by [runner-spawner](https://github.com/fordaj/runner-spawner): the bundled binary under `tools/runner-spawner/v<version>/<platform>/` installs repository-scoped runners at `$HOME/.runners/formattington/` (one checkout per run) with auto labels `self-hosted`, `<os>` (`windows`/`macos`), arch, hostname, and `<hostname>-<runner-name>`. The workflows under `.github/` (callers `pull_request_caller.yml` and `nightly_caller.yml`, reusable `pull_request.yml`/`nightly.yml`) use those labels to pin `Setup` (checkout) and `Checks` (format + pytest) to the same host.
+
+Host setup:
+
+```bash
+source scripts/env.sh
+"$RUNNER_SPAWNER_BIN" list                  # configured names + on-disk dirs
+"$RUNNER_SPAWNER_BIN" create --dry-run      # preview labels and paths
+"$RUNNER_SPAWNER_BIN" create                 # needs a registration token (RUNNER_SPAWNER_TOKEN / GH_TOKEN / gh)
+```
+
+The committed `.runner-spawner.json` (owner `fordaj`, repo `formattington`, `runnerNames: ["runner01"]`) drives the default; edit it per host for more runners. A caller-provided `RUNNER_SPAWNER_BIN` wins over the bundle. `create` downloads the actions runner archive once into `.runners/cache` and installs the service; on Windows it must run with admin privileges and `--windows-username`/`--windows-password` (or the env vars); on macOS it installs via `svc.sh`.
+
+Python 3.14+ and `uv` must be on `PATH` on each host — the Checks step runs `uv run formattington --check all` and `uv run pytest` (the suite is the primary gate). Because `black`, `prettier`, `gofmt`, and `goimports` are PATH-only (not bundled), `uv run formattington --check all` exits `127` unless those tools are installed on the host; the bundled `shfmt`, `clang-format`, and `taplo` work offline from `tools/`. `pull_request_caller.yml` and `nightly_caller.yml` pass secrets with `secrets: inherit` so the reusable workflow's checkout can clone with `GITHUB_TOKEN`. Linux is not yet in the OS matrices — runner-spawner supports macOS and Windows runners only (Linux binaries ship for `list`/`status` diagnostics).
 
 ## Project status
 
