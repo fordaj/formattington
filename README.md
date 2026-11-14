@@ -39,7 +39,7 @@ Output from different formatters may interleave in this mode.
 formattington all --series
 ```
 
-Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua` order) instead of concurrently, for ordered output.
+Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt`, `gleam-format`, `mojo-format`, `odinfmt`, `forge-fmt`, `gnatformat` order) instead of concurrently, for ordered output.
 
 The flag is also accepted before `all`:
 
@@ -60,6 +60,36 @@ formattington black
 formattington gofmt
 formattington goimports
 formattington stylua
+formattington nixfmt
+formattington php-cs-fixer
+formattington perltidy
+formattington fprettify
+formattington erlfmt
+formattington sqlfluff
+formattington gdformat
+formattington google-java-format
+formattington ktfmt
+formattington scalafmt
+formattington npm-groovy-lint
+formattington cljfmt
+formattington fantomas
+formattington rubocop
+formattington styler
+formattington jlfmt
+formattington elm-format
+formattington fourmolu
+formattington ocamlformat
+formattington rustfmt
+formattington swift-format
+formattington dart-format
+formattington dotnet-format
+formattington mix-format
+formattington zig-fmt
+formattington gleam-format
+formattington mojo-format
+formattington odinfmt
+formattington forge-fmt
+formattington gnatformat
 ```
 
 Pass additional arguments through to the underlying tool:
@@ -91,9 +121,40 @@ formattington markdown
 formattington html
 formattington go
 formattington lua
+formattington nix
+formattington php
+formattington perl
+formattington fortran
+formattington erlang
+formattington sql
+formattington gdscript
+formattington java
+formattington kotlin
+formattington scala
+formattington groovy
+formattington micropython
+formattington clojure
+formattington fsharp
+formattington ruby
+formattington r
+formattington julia
+formattington elm
+formattington haskell
+formattington ocaml
+formattington rust
+formattington swift
+formattington dart
+formattington csharp
+formattington elixir
+formattington zig
+formattington gleam
+formattington mojo
+formattington odin
+formattington solidity
+formattington ada
 ```
 
-Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; `md`/`markdown`/`html` resolve to `prettier`; `go` resolves to `gofmt`; and `lua` resolves to `stylua`. Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
+Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; `md`/`markdown`/`html` resolve to `prettier`; `go` resolves to `gofmt`; `lua` resolves to `stylua`; `nix` resolves to `nixfmt`; `php` resolves to `php-cs-fixer`; `perl` resolves to `perltidy`; `fortran` resolves to `fprettify`; `erlang` resolves to `erlfmt`; `sql` resolves to `sqlfluff`; `gdscript` resolves to `gdformat`; `java` resolves to `google-java-format`; `kotlin` resolves to `ktfmt`; `scala` resolves to `scalafmt`; `groovy` resolves to `npm-groovy-lint`; and `micropython` resolves to `black`; and `clojure` resolves to `cljfmt`; and `fsharp` resolves to `fantomas`; and `ruby` resolves to `rubocop`; and `r` resolves to `styler`; and `julia` resolves to `jlfmt`; and `elm` resolves to `elm-format`; and `haskell` resolves to `fourmolu`; and `ocaml` resolves to `ocamlformat`; and `rust` resolves to `rustfmt`; and `swift` resolves to `swift-format`; and `dart` resolves to `dart-format`; and `csharp`/`vbnet` resolve to `dotnet-format`; and `elixir` resolves to `mix-format`; and `zig` resolves to `zig-fmt`; and `gleam` resolves to `gleam-format`; and `mojo` resolves to `mojo-format`; and `odin` resolves to `odinfmt`; and `solidity` resolves to `forge-fmt`; and `ada` resolves to `gnatformat`. Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
 
 ### Run with a configuration file (`.formattington.json`)
 
@@ -123,7 +184,7 @@ formattington --config path/to/config.json all
 formattington --check all --config path/to/config.json
 ```
 
-Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`, `go`, `lua`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
+Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt`, `gleam-format`, `mojo-format`, `odinfmt`, `forge-fmt`, `gnatformat`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`, `go`, `lua`, `nix`, `php`, `perl`, `fortran`, `erlang`, `sql`, `gdscript`, `java`, `kotlin`, `scala`, `groovy`, `micropython`, `clojure`, `fsharp`, `ruby`, `r`, `julia`, `elm`, `haskell`, `ocaml`, `rust`, `swift`, `dart`, `csharp`, `vbnet`, `elixir`, `zig`, `gleam`, `mojo`, `odin`, `solidity`, `ada`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
 
 Config discovery precedence (highest first):
 
@@ -185,6 +246,36 @@ Formattington owns the mode flag before the formatter name; arguments after the 
 | gofmt        | `gofmt -l` — list unformatted files; exit 1 if any listed, else 0                  | `gofmt -d` — display diffs instead of rewriting files                                          | `gofmt -w` — write result to the source file instead of stdout (format in place)                                      |
 | goimports    | `goimports -l` — list files whose formatting differs; exit 1 if any listed, else 0 | `goimports -d` — display diffs instead of rewriting files                                      | `goimports -w` — write result to the source file instead of stdout (format in place, fixing imports)                  |
 | stylua       | `stylua --check` — fail if any file needs formatting; files are not modified                   | `stylua --check --output-format=unified` — print unified diffs, do not modify                    | `stylua` — format in place                                                                                          |
+| nixfmt       | `nixfmt --check` — fail if any file needs formatting (exit 1; also used for parse errors)       | `nixfmt --check` (no diff mode exists) — validate without modifying                               | `nixfmt` — format in place                                                                                       |
+| php-cs-fixer | `php-cs-fixer check` — fail if any file needs fixing (native exit 8 is reported as 1)              | `php-cs-fixer check` (non-modifying; same invocation)                                             | `php-cs-fixer fix` — fix in place                                                                               |
+| perltidy     | `perltidy --assert-tidy` — exit 0 when tidy, non-zero (reported as 1) otherwise                  | `perltidy -d` — print a diff, do not modify                                                       | `perltidy -b -bext=/` — format in place (backups suppressed)                                                      |
+| fprettify    | Synthesized: `fprettify --diff` — non-empty diff output means changes required (exit 1)          | `fprettify --diff` — print a diff, do not modify                                                  | `fprettify` — format in place                                                                                |
+| erlfmt       | `erlfmt -c` — fail if any file needs formatting (exit 1)                                          | `erlfmt -c` (no diff mode exists) — validate without modifying                                      | `erlfmt -w` — format in place                                                                               |
+| sqlfluff     | `sqlfluff lint --disable-progress-bar` — exit 1 on violations (exit 2 = error, passed through)       | `sqlfluff fix --dry-run --diff --disable-progress-bar` — print a diff, do not modify                  | `sqlfluff fix --disable-progress-bar` — fix in place                                                        |
+| gdformat     | `gdformat -c` — print "would reformat <file>" and exit 1 when reformatting is needed              | `gdformat -d` — print a diff, do not modify (implies --check)                                           | `gdformat` — format in place                                                                                |
+| google-java-format | `google-java-format --dry-run --set-exit-if-changed` — exit 1 when formatting is needed                 | `google-java-format --dry-run --set-exit-if-changed` (same invocation; there is no patch output)              | `google-java-format --replace` — format in place                                                                |
+| ktfmt        | `ktfmt --dry-run --set-exit-if-changed` — exit 1 when formatting is needed                        | `ktfmt --dry-run` — list files that would change (upstream always exits 0; NOT a check)                        | `ktfmt` — format in place                                                                                       |
+| scalafmt     | `scalafmt --test` — print a diff and exit 1 when formatting is needed                             | `scalafmt --test` (same invocation — this is scalafmt's diff mode)                                     | `scalafmt` — format in place                                                                                    |
+| npm-groovy-lint | `npm-groovy-lint --failon error` — linter-flavored check (no writes; NOT a byte comparison)         | `npm-groovy-lint --failon error` (same invocation)                                                      | `npm-groovy-lint --format` — format in place (layout rules only)                                                |
+| cljfmt       | `cljfmt check` — print a unified diff and exit 1 when formatting is needed                          | `cljfmt check` (same invocation — this is cljfmt's diff mode)                                            | `cljfmt fix` — format in place                                                                            |
+| fantomas     | `fantomas --check` — exit 99 when formatting is needed (reported as 1); 1 (error) passes through    | `fantomas --check` (same invocation; there is no diff mode)                                           | `fantomas` — format in place                                                                               |
+| rubocop      | `rubocop` — lint posture (all modes; findings exit 1, config error exit 2)                        | `rubocop` (same invocation)                                                                           | `rubocop` — lint posture; pass `-x` for layout-only fixes, `-a`/`-A` for all auto-corrections                |
+| styler       | `styler::style_file(..., dry = "fail")` via Rscript — errors abort; reported as 1                    | `styler::style_file(..., dry = "fail")` (same invocation)                                             | `styler::style_file(..., dry = "off")` — format in place                                             |
+| jlfmt        | `jlfmt --check` — exit 1 when formatting is needed (2 on error, passed through)                        | `jlfmt --diff` — print a unified diff; needs git on PATH, else degrades to --check                  | `jlfmt --inplace` — format in place                                                                        |
+| elm-format   | `elm-format --validate` — print a JSON report and exit 1 when formatting is needed                  | `elm-format --validate` (same invocation; there is no diff mode)                                    | `elm-format --yes` — format in place (accept all prompts)                                                |
+| fourmolu     | `fourmolu --mode check` — print a unified diff (stderr) and exit 100 when formatting is needed        | `fourmolu --mode check` (same invocation)                                                            | `fourmolu --mode inplace` — format in place                                                               |
+| ocamlformat  | `ocamlformat --check` — exit 1 when formatting is needed (also used for errors; stderr disambiguates)  | `ocamlformat --check` (same invocation; there is no diff mode)                                       | `ocamlformat --inplace` — format in place                                                                  |
+| rustfmt      | `rustfmt [--edition E] --check` — exit 1 when formatting is needed (also used for parse errors)     | `rustfmt [--edition E] --emit diff` — print a diff                                                    | `rustfmt [--edition E]` — format in place                                                                |
+| swift-format | `swift format lint --strict --ignore-unparsable-files` — exit 1 on findings                           | same as check (no diff mode)                                                                          | `swift format -i --ignore-unparsable-files` — format in place                                       |
+| dart-format  | `dart format --set-exit-if-changed -o none` — exit 1 when formatting is needed                        | same as check (never writes)                                                                          | `dart format` — format in place                                                                        |
+| dotnet-format | `dotnet format whitespace --verify-no-changes --folder . --include <files...>` — exit 2→1              | same as check (never writes)                                                                          | `dotnet format whitespace --folder . --include <files...>` — format in place                             |
+| mix-format   | `mix format --check-formatted --no-compile` — exit non-zero (reported as 1) when formatting is needed  | same as check (never writes)                                                                          | `mix format --no-compile` — format in place                                                              |
+| zig-fmt      | `zig fmt --check` — exit 1 when any file would change                                                   | `zig fmt --check` (same invocation; there is no diff mode)                                                | `zig fmt` — format in place                                                                                |
+| gleam-format | `gleam format --check` — exit non-zero (Error::Format = 1) listing files that would change             | same as check (no diff mode)                                                                          | `gleam format` — format in place                                                                        |
+| mojo-format  | Synthesized: copy→`mojo format`→byte-compare — exit 1 when any file would change (tree never touched)  | same synthesis (no diff mode exists)                                                                  | `mojo format` — format in place                                                                        |
+| odinfmt      | Synthesized: byte-compare `odinfmt <file>` stdout vs the original (one process per file)               | same synthesis (no diff mode exists)                                                                  | `odinfmt -w` — format in place (creates an `<file>_bk` backup first)                                      |
+| forge-fmt    | `forge fmt --check` — exit 1 when formatting is required (0 clean; diff printed by default)             | same as check (no separate diff mode; `-r` for raw output)                                            | `forge fmt` — format in place                                                                               |
+| gnatformat   | `gnatformat [--no-project] --check` — exit 1 when formatting is needed                                  | same as check (no built-in diff; `--pipe` forwarded verbatim)                                             | `gnatformat [--no-project]` — format in place                                                                |
 
 These mode mappings are integration-specific. Future tools may support different operations or native flags, and their integrations should preserve those differences.
 
@@ -198,11 +289,11 @@ formattington: Could not find 'shfmt'. Expected a bundled executable under forma
 
 ) and exits `127`.
 
-This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `taplo`, `gofmt`, `goimports`, and `stylua`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
+This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt`, `gleam-format`, `mojo-format`, `odinfmt`, `forge-fmt`, and `gnatformat`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
 
 ### Exit-code aggregation with `all`
 
-The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
+The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt`, `gleam-format`, `mojo-format`, `odinfmt`, `forge-fmt`, `gnatformat` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
 
 The rule is deterministic regardless of completion order in the concurrent default.
 
@@ -228,6 +319,36 @@ Use `--verbose` to see which executable was resolved when a tool is present.
 - `gofmt` is part of the [Go](https://go.dev/) installation (install Go for your OS; `gofmt` comes with it).
 - `goimports` formats like `gofmt` and also fixes import grouping; install with `go install golang.org/x/tools/cmd/goimports@latest`.
 - `stylua` is the standard Lua formatter; a pinned copy is bundled in the full release archives, or install with `brew install stylua` / `cargo install stylua`.
+- `nixfmt` is the official Nix formatter (RFC 166); install via Nix (`nixpkgs.nixfmt-rfc-style`) or `brew install nixfmt`.
+- `php-cs-fixer` is the de-facto PHP fixer; install with `composer global require friendsofphp/php-cs-fixer` or `brew install php-cs-fixer` (needs a PHP ≥ 7.4 interpreter on `PATH`). Its native check exit code is 8; Formattington reports it as 1.
+- `perltidy` is the Perl formatter; install from CPAN (`cpan Perl::Tidy`) or your package manager. It is GPL-2.0+ and is never bundled into the release binaries (and requires `perl` on `PATH` — on Windows, install Strawberry Perl).
+- `fprettify` is the de-facto Fortran formatter; install with `pipx install fprettify` / `pip install fprettify`. It is GPL-3.0+ and Python-based, so it was deliberately rejected for bundling; free-form Fortran only (`.f90`, `.f95`, `.f03`, `.f08`, `.f18`). Its `--diff` does not affect the exit code, so Formattington synthesizes check mode from non-empty diff output.
+- `erlfmt` is the mature Erlang formatter; there are no bundleable binaries (it ships as a rebar3 plugin or escript), so it is PATH-only and needs a working Erlang/OTP 21+ install. Invoke the escript form (`erlfmt -w` / `erlfmt -c`).
+- `sqlfluff` is the dialect-aware SQL linter/formatter; install with `pipx install sqlfluff` / `pip install sqlfluff`. There is no official binary and SQLFluff is Python-only, so it is PATH-only (a shared embedded Python runtime is tracked separately and was not introduced). Set the SQL dialect in the project config (`.sqlfluff` / `[tool.sqlfluff]` in `pyproject.toml`) or pass `--dialect` — Formattington never hardcodes one (SQLFluff falls back to `ansi` otherwise).
+- `gdformat` is the Godot 4 GDScript formatter (from the gdtoolkit package); install with `pipx install gdtoolkit==4.*` (3.x targets the Godot 3 line). It is PATH-only; Formattington does not set `--fast`, so the safety checks stay on.
+- `google-java-format` formats Java; the full release archives bundle the four upstream native binaries (macOS arm64, Linux arm64, Linux x86_64, Windows x86_64 — no macOS x86_64 or Windows arm64 asset exists upstream). Its non-whitespace `--cleanup` pass is disabled by default (`--cleanup=false`) so diffs stay formatting-only; pass `--cleanup=true` to opt in. For macOS x86_64 and Windows arm64 use the all-deps jar on a JDK ≥ 21 with the six `--add-exports` flags (`jdk.compiler/com.sun.tools.javac.{api,code,file,parser,tree,util}=ALL-UNNAMED`).
+- `ktfmt` formats Kotlin; the full release archives bundle the three upstream native binaries (Linux x86_64, macOS arm64, Windows x86_64 — no Linux arm64, macOS x86_64, or Windows arm64 asset exists upstream; those stay PATH-only). No style flag is injected — pass `--google-style`/`--kotlinlang-style`/`--meta-style` verbatim as needed.
+- `scalafmt` formats Scala; it is PATH-only via coursier (`cs install scalafmt`) or brew (`brew install scalafmt`). **Why PATH-only:** scalafmt requires a `version = <x.y.z>` line in `.scalafmt.conf`, and the upstream native release binaries have no dynamic runner — a config whose pinned version differs from the compiled-in one fails hard (exact error: `error: invalid Scalafmt version.`, exit bit 16). The coursier/JVM launcher honors the pin by downloading it dynamically, so PATH-only is the only route with full fidelity. The `.sc` worksheet extension is covered.
+- `cljfmt` formats Clojure; the full release archives bundle the four upstream native binaries (macOS arm64, Linux arm64, Linux x86_64 static, Windows x86_64 — no macOS x86_64 or Windows arm64 asset upstream). cljfmt is distributed under **EPL-1.0**; the redistributed binaries are unmodified upstream build artifacts (attribution in this README). `cljfmt check` exits 1 when files need formatting (2 on parse/format error, passed through verbatim); configuration is `.cljfmt.edn`/`cljfmt.edn` discovered by the tool itself.
+- `fantomas` is the F# formatter; it ships only as a .NET global tool (no native binaries, no runtime to embed), so it is PATH-only. Install with `dotnet tool install -g fantomas` (needs the .NET SDK ≥ 8). Its `--check` exits **99** when formatting is needed (1 on error); Formattington reports 99 as 1 and passes 1 through. Configuration is `.editorconfig` (plus `.fantomasignore`), discovered by the tool itself.
+- `swift-format` ships with Swift 6+ toolchains (Xcode 16+): it is PATH-only via `swift format` on macOS, or a standalone `swift-format` binary (brew, or any Swift toolchain build) tried first. Unparsable files are skipped (`--ignore-unparsable-files`). Configuration is `.swift-format` (JSON, discovered walking up from each file; `--configuration` overrides). `swift format lint --strict` exit 1 = findings (without `--strict` findings are warnings → exit 0); Formattington always uses `--strict` in check mode.
+- `gnatformat` formats Ada (AdaCore/GNATformat); it ships with **GNAT Pro** (commercial) or via **Alire** (`alr install gnatformat`, binary crate `gnatformat_bin`) — there is no standalone release binary to bundle. **Project-file model:** options come from the `.gpr` file; when exactly one `.gpr` exists in the cwd the tool auto-loads it, and when none exists Formattington passes `--no-project` (standalone defaults). `.ads`/`.adb` are covered; the `.gpr` file itself is configuration, not formatted. `--check` exits 1 when files are not formatted; `--pipe` prints the formatted source for your own `diff`.
+- `forge-fmt` is the standard Solidity formatter, from Foundry (`forge fmt`); install via `foundryup`, Homebrew (`brew install foundry`), or release tarballs from github.com/foundry-rs/foundry/releases. `forge fmt --check` exits 1 when formatting is required and prints a diff (`-r` for raw output). Configuration is the `[fmt]` table in `foundry.toml` (discovered from the project root/git root; `--nearest` uses each file's nearest `foundry.toml`). No Windows ARM64 build — use the x86_64 binary under emulation or WSL.
+- `odinfmt` formats Odin; the only implementation lives in the Odin Language Server (`DanielGavin/ols`, community-maintained, not officially blessed by odin-lang — no release binaries; no Windows binary at all). Install with `brew install odinfmt` or build from ols source; `odinfmt.json` is discovered by walking up from the target (`--config` overrides). **`-w` creates an `<file>_bk` backup** before replacing the file — add `*_bk` (sic) to your ignore rules. There is **no upstream check mode**; check mode is synthesized by byte-comparing `odinfmt <file>` stdout against the original (tree untouched; one process per file).
+- `mojo-format` is part of the Mojo toolchain (`mojo format`); install from Modular (`uv pip install mojo` / `pixi add mojo`). **Platform support is narrow: Linux glibc ≥ 2.34 (x86-64-v3 / Neoverse N1+) and macOS Apple silicon only; Windows requires WSL.** **There is no check mode upstream** — Formattington synthesizes one by copying each file to a temp dir, formatting the copies, and byte-comparing (the user tree is never modified); tool errors pass through verbatim. `-l/--line-length` is forwarded verbatim. No configuration file exists and none is invented.
+- `gleam-format` is part of the Gleam toolchain (`gleam format`); install [Gleam](https://gleam.run/getting-started/installing-gleam/) for your platform. No configuration by design (fixed style). `gleam format --check` exits non-zero (Error::Format, i.e. 1) when files would change — reported as 1.
+- `zig-fmt` is part of the Zig toolchain (`zig fmt`); install [Zig](https://ziglang.org/download/) for your platform. **Zig is pre-1.0: formatting can drift between toolchain versions** — Formattington always invokes the zig found on `PATH`, which matches the project's toolchain by construction. Zero configuration by design — there is no config file and none is invented. `.zon` files are NOT registered; pass `--zon` verbatim to include them. `zig fmt --check` exits 1 when any file would change (missing files also exit 1; the stderr diagnostic disambiguates).
+- `mix-format` is Elixir's built-in formatter (`mix format`); install [Elixir](https://elixir-lang.org/install.html) for your platform — it ships `mix` and needs Erlang/OTP. **`.formatter.exs` is EXECUTED CODE** (returns a keyword list of formatter inputs/plugins), discovered from the CURRENT DIRECTORY — never run it against untrusted projects. Formatter output can change between Elixir versions. `--no-compile` is passed by default so formatting never compiles; drop it (or set formatter plugins) when plugins are needed. `mix format --check-formatted --no-compile` exits non-zero when formatting is needed (reported as 1).
+- `dotnet-format` is the .NET SDK's in-box formatter (≥ 6); it is PATH-only via the .NET SDK. Formattington invokes the `whitespace` subcommand in `--folder` mode with `--include <files>`, which needs **no MSBuild project or solution** and never runs project code; `--verify-no-changes` (check mode) exits 2, reported as 1. VB.NET is covered by the same binary (`.vb`). **Trust boundary:** the `style` and `analyzers` subcommands can restore and compile project code — they are available verbatim (`formattington dotnet-format style --severity info src/app.csproj`) but are never invoked by default. `.editorconfig` is the only configuration source.
+- `dart-format` is Dart's built-in formatter (`dart format`); install the Dart SDK for your platform. Configuration lives in `analysis_options.yaml` under a `formatter:` section (`page_width`, `trailing_commas: preserve`; language version ≥ 3.7) or per-file with `// dart format width=NNN` markers — discovered by the tool itself. `--set-exit-if-changed -o none` exits 1 when changes are needed and writes nothing (`-o none` = no output).
+- `rustfmt` is the Rust formatter; install with `rustup component add rustfmt`. The edition defaults to rustfmt's own default (2015) — silently wrong for modern crates — so Formattington walks up from each file for the nearest Cargo.toml: `[package] edition` wins, and a member inheriting from a virtual workspace root uses the nearest `[workspace.package] edition`; files are grouped per edition before batching. Pass `--edition 2021` (etc.) verbatim to override detection or for repos with no Cargo.toml. `cargo fmt` reads the edition from Cargo.toml and is crate-aware, but it is not a file-list tool — `rustfmt` is used instead. `--check` exits 1 when files differ (also used for parse errors — indistinguishable; stderr disambiguates).
+- `ocamlformat` formats OCaml; it ships only as opam source (built from source against your switch), so it is PATH-only — there is no bundle. Install with `opam install ocamlformat`. **The `.ocamlformat` file requires a `version = <installed release>` line** and the tool refuses to run on a mismatch — a common failure mode; pin `version =` to the release you have installed. `--check` exit 1 means formatting needed *or* error (indistinguishable — stderr disambiguates). `.ocamlformat-ignore` exists. `dune fmt` wraps it for dune projects.
+- `fourmolu` formats Haskell; the full release archives bundle the four upstream binaries (macOS arm64, macOS x86_64, Linux arm64, Linux x86_64 — no Windows asset upstream, so Windows stays PATH-only via `ghcup install fourmolu` or `cabal install fourmolu`). Linux builds are glibc-dynamic (musl/Alpine users need the PATH route). Its `--mode check` prints a unified diff to **stderr** and exits **100** when files need formatting (0 clean; 102/101 on other failures — passed through verbatim). Configuration is `fourmolu.yaml` (walks up from each file; `--config` forwarded verbatim); literate Haskell (`.lhs`) is not registered (unverified against the released parser).
+- `elm-format` formats Elm; the full release archives bundle the five upstream static binaries (Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64 — no Windows arm64 asset upstream; that platform stays PATH-only). Zero-configuration by design — there is no config file. The mac-arm64 asset is ~42 MB extracted (an unstripped upstream build, redistributed unmodified). `--validate` prints a JSON report and exits 1 when files need formatting (0 clean; both modes are error-ambiguous but the report disambiguates).
+- `jlfmt` is the Julia formatter (JuliaFormatter.jl); it ships only as a Julia app (`julia -e 'using Pkg; Pkg.Apps.add("JuliaFormatter")'`, needs Julia ≥ 1.12 on `PATH`). There is no bundle — a ~600 MB runtime payload was never on the table; Windows on ARM has no Julia build at all. Configuration is `.JuliaFormatter.toml` (walks up from each file). `jlfmt --diff` is computed via `git --no-index` and thus needs git; without git on `PATH` Formattington prints a note on stderr and runs `--check` instead.
+- `styler` is the de-facto R formatter (tidyverse style); it is an R package invoked through `Rscript -e`, so it is PATH-only and needs a working R installation (`apt install r-base` / `brew install r` / CRAN installer) plus `install.packages("styler")`. The check mode maps to `style_file(..., dry = "fail")`, which errors out (non-zero) when a file would be modified — reported as 1. **CRAN ships a newer release than the stale GitHub tags** (CRAN 1.11.0 as of late 2025; GitHub tags trail at v1.10.3 since 2024-04) — install from CRAN. User flags cannot be spliced into the generated R expression, so forwarded flags are a usage error; customize through a wrapper script or R-level `options()` (e.g. `styler::tidyverse_style()`).
+- `rubocop` is a **linter with ~100 layout cops**, integrated like markdownlint/powershell, not like a formatter: plain `formattington rubocop` lints (it never writes); pass `-x` for layout-only fixes (`formattington rubocop -x`) or `-a`/`-A` for all auto-corrections. Findings exit 1, config errors exit 2. Projects should pin their own version (a project Gemfile, or `gem install rubocop`); Ruby ≥ 2.7 required (3.x recommended). `.rubocop.yml` is hierarchical (`inherit_from`) and discovered natively. Alternatives: [Rufo](https://github.com/ruby-formatter/rufo) (dedicated formatter, `--check` exits 3) and [Standard](https://github.com/standardrb/standard) (opinionated RuboCop wrapper).
+- `npm-groovy-lint` is the only viable Groovy formatter (Spotless is a Gradle/Maven build plugin with no standalone CLI; Apache Groovy ships no formatter). Layout-only — it fixes indentation/brace spacing/blank lines and never re-breaks long lines. Requires **Node ≥ 18 and Java 11+** on `PATH` (a long-lived Java microservice backs the analysis; `--noserver` disables it). The `format` preset must be enabled in `.groovylintrc` (for example `extends: ["recommended", "format"]`) or layout findings are not reported. `Jenkinsfile` has no extension and is out of scope for discovery — pass it explicitly. Jenkins pipelines and Gradle `.gradle` files are covered (the `.gradle` extension is registered).
 
 Either a bundled copy under `formatters/` (see [Bundled tools](#bundled-tools)) — or, in the full release builds, the copy embedded inside the binary — or an installation on `PATH` satisfies `FindTool()`. `gofmt` and `goimports` are PATH-only and are found via `PATH`.
 
@@ -247,12 +368,44 @@ Formattington integrates existing tools rather than reimplementing their functio
 | [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports)  | Formatter | Available | Go (`.go`) with import fixing                           |
 | [markdownlint](https://github.com/DavidAnson/markdownlint)        | Linter    | Available | Markdown style and consistency via `markdownlint-cli`   |
 | [StyLua](https://github.com/JohnnyMorganz/StyLua)                                 | Formatter | Available | Lua (`.lua`)                                            |
+| [nixfmt](https://github.com/NixOS/nixfmt)                                         | Formatter | Available | Nix (`.nix`)                                            |
+| [PHP-CS-Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer)                       | Formatter | Available | PHP (`.php`) via `php-cs-fixer fix`                     |
+| [perltidy](https://github.com/perltidy/perltidy)                              | Formatter | Available | Perl (`.pl`, `.pm`, `.t`) — PATH-only, GPL-2.0+            |
+| [fprettify](https://github.com/pseewald/fprettify)                           | Formatter | Available | Fortran free-form (`.f90`…) — PATH-only, GPL-3.0+           |
+| [erlfmt](https://github.com/WhatsApp/erlfmt)                                | Formatter | Available | Erlang (`.erl`, `.hrl`) — PATH-only; needs OTP 21+          |
+| [SQLFluff](https://github.com/sqlfluff/sqlfluff)                          | Linter/Formatter | Available | SQL (`.sql`) via `sqlfluff fix` — PATH-only                 |
+| [gdformat](https://github.com/Scony/godot-gdscript-toolkit)              | Formatter | Available | GDScript (`.gd`) — PATH-only, Godot 4                       |
+| [google-java-format](https://github.com/google/google-java-format)        | Formatter | Available | Java (`.java`)                                               |
+| [ktfmt](https://github.com/Kotlin/ktfmt)                                 | Formatter | Available | Kotlin (`.kt`, `.kts`)                                       |
+| [scalafmt](https://github.com/scalameta/scalafmt)                         | Formatter | Available | Scala (`.scala`, `.sbt`, `.sc`) — PATH-only                 |
+| [npm-groovy-lint](https://github.com/nvuillam/npm-groovy-lint)          | Formatter | Available | Groovy (`.groovy`, `.gradle`) — PATH-only; Node + Java      |
+| [cljfmt](https://github.com/weavejester/cljfmt)                          | Formatter | Available | Clojure (`.clj`, `.cljs`, `.cljc`, `.edn`)                   |
+| [Fantomas](https://github.com/fsprojects/fantomas)                         | Formatter | Available | F# (`.fs`, `.fsi`, `.fsx`) — PATH-only; .NET SDK required   |
+| [RuboCop](https://github.com/rubocop/rubocop)                           | Linter    | Available | Ruby (`.rb`, `.rake`, `.gemspec`, `.ru`) — PATH-only          |
+| [styler](https://github.com/r-lib/styler)                              | Formatter | Available | R (`.R`, `.r`) — PATH-only; needs Rscript                |
+| [JuliaFormatter.jl](https://github.com/JuliaEditorSupport/JuliaFormatter.jl)   | Formatter | Available | Julia (`.jl`) via `jlfmt` — PATH-only                   |
+| [elm-format](https://github.com/avh4/elm-format)                          | Formatter | Available | Elm (`.elm`)                                              |
+| [Fourmolu](https://github.com/fourmolu/fourmolu)                          | Formatter | Available | Haskell (`.hs`)                                              |
+| [ocamlformat](https://github.com/ocaml-ppx/ocamlformat)                    | Formatter | Available | OCaml (`.ml`, `.mli`) — PATH-only; needs opam                |
+| [rustfmt](https://github.com/rust-lang/rustfmt)                             | Formatter | Available | Rust (`.rs`) — PATH-only; rustup component                 |
+| [swift-format](https://github.com/swiftlang/swift-format)                   | Formatter | Available | Swift (`.swift`) — PATH-only; Swift 6+ toolchain           |
+| [Dart SDK](https://dart.dev/get-dart)                                    | Formatter | Available | Dart (`.dart`) via `dart format` — PATH-only; Dart SDK    |
+| [dotnet format](https://learn.microsoft.com/dotnet/core/tools/dotnet-format) | Formatter | Available | C#/VB.NET (`.cs`, `.vb`) — PATH-only; .NET SDK ≥ 6          |
+| [mix format](https://hexdocs.pm/mix/Mix.Tasks.Format.html)                | Formatter | Available | Elixir (`.ex`, `.exs`) via `mix format` — PATH-only        |
+| [zig fmt](https://ziglang.org/documentation/)                               | Formatter | Available | Zig (`.zig`) via `zig fmt` — PATH-only; Zig toolchain    |
+| [gleam format](https://gleam.run/book/introduction/formatting.html)          | Formatter | Available | Gleam (`.gleam`) via `gleam format` — PATH-only          |
+| [mojo format](https://docs.modular.com/mojo/manual/format/)                 | Formatter | Available | Mojo (`.mojo`) — Linux/macOS arm64 or WSL — PATH-only      |
+| [odinfmt](https://github.com/DanielGavin/ols) (community)               | Formatter | Available | Odin (`.odin`) — PATH-only; macOS/Linux only, no Windows   |
+| [forge fmt](https://github.com/foundry-rs/foundry) (Foundry)           | Formatter | Available | Solidity (`.sol`) via `forge fmt` — PATH-only               |
+| [GNATformat](https://github.com/AdaCore/GNATformat)                     | Formatter | Available | Ada (`.ads`, `.adb`) — PATH-only; GNAT Pro / Alire          |
 
-Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), `lua` (alias for `stylua`), and `all` are accepted by the CLI.
+Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt`, `gleam-format`, `mojo-format`, `odinfmt`, `forge-fmt`, `gnatformat`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), `lua` (alias for `stylua`), `nix` (alias for `nixfmt`), `php` (alias for `php-cs-fixer`), `perl` (alias for `perltidy`), `fortran` (alias for `fprettify`), `erlang` (alias for `erlfmt`), `sql` (alias for `sqlfluff`), `gdscript` (alias for `gdformat`), `java` (alias for `google-java-format`), `kotlin` (alias for `ktfmt`), `scala` (alias for `scalafmt`), `groovy` (alias for `npm-groovy-lint`), `micropython` (alias for `black`), `clojure` (alias for `cljfmt`), `fsharp` (alias for `fantomas`), `ruby` (alias for `rubocop`), `r` (alias for `styler`), `julia` (alias for `jlfmt`), `elm` (alias for `elm-format`), `haskell` (alias for `fourmolu`), `ocaml` (alias for `ocamlformat`), `rust` (alias for `rustfmt`), `swift` (alias for `swift-format`), `dart` (alias for `dart-format`), `csharp`/`vbnet` (aliases for `dotnet-format`), `elixir` (alias for `mix-format`), `zig` (alias for `zig-fmt`), `gleam` (alias for `gleam-format`), `mojo` (alias for `mojo-format`), `odin` (alias for `odinfmt`), `solidity` (alias for `forge-fmt`), `ada` (alias for `gnatformat`), and `all` are accepted by the CLI.
 
 Prettier is the sole owner of Markdown formatting. There is no dedicated Markdown formatter module; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown _style_ is a distinct operation and is linted by `formattington markdownlint`: it runs [`markdownlint-cli`](https://github.com/igorshubovych/markdownlint-cli) against `.md`/`.markdown` files, discovery batches files as usual, findings exit `1`, and no flags are injected — the tool is read-only without an explicit `--fix`, and `--fix`, `--config`, and glob patterns are forwarded verbatim, so it edits files only when you ask. Configuration is discovered natively by the tool (for example `.markdownlint.json` in the working directory) and `.prettierrc`'s sibling `.markdownlint.json` needs no Formattington-side setup. Aliases are not involved: use `md`/`markdown` for formatting and `markdownlint` for linting. Unrecognized names still report a usage error (exit 2).
 
 Go has two formatters covering the same `.go` files: `gofmt` (canonical formatting) and `goimports` (formatting plus import grouping). `formattington go` resolves to `gofmt`; use `formattington goimports` or a config command listing `goimports` when imports should also be fixed. Use `--series` with `all` to run them sequentially (`gofmt` then `goimports`) instead of concurrently, or list only one in a config file to avoid running both against the same files. Per AGENTS.md, when multiple tools support the same file type, selection should respect configured tool choices.
+
+MicroPython is covered by the Python formatter: MicroPython is a Python 3 subset, so `formattington micropython` (alias for `black`) and `formattington python` both format `.py` MicroPython files — fixtures using `micropython` imports, `@micropython.native`/`@micropython.viper`, and inline-assembly calls in `@micropython.asm_viper`/`@micropython.asm_thumb` parse and format cleanly under black 26.5.1 and `ruff format` (the two agree on the output). The caveat: constructs that are not valid Python — notably statement-level `label:` statements inside inline-assembly functions — cannot be parsed by black (or ruff; `Cannot parse: <line>:<col>`), so those functions must be excluded or kept minimal by hand.
 
 Additional tools may provide other capabilities, such as checking, linting, and fixing, without necessarily being formatters.
 
@@ -270,6 +423,36 @@ Additional tools may provide other capabilities, such as checking, linting, and 
 | goimports    | Not bundled (PATH-only)                                                                                                                                                 | `go install golang.org/x/tools/cmd/goimports@latest` (ensure `$(go env GOPATH)/bin` is on `PATH`)            | `PATH` via `FindTool("goimports")`                                      |
 | markdownlint | Fetched by `formatters/markdownlint/update.sh`; bundled in the full release archives                                                                        | `npm install -g markdownlint-cli`                                                                            | Bundled (or embedded) first, then `PATH` via `FindTool("markdownlint")` |
 | stylua       | Fetched by `formatters/stylua/update.sh`; bundled in the full release archives (no Windows arm64 asset upstream)                                                          | `brew install stylua` or `cargo install stylua`                                                              | Bundled (or embedded) first, then `PATH` via `FindTool("stylua")`     |
+| nixfmt       | Not bundled (PATH-only; upstream publishes only a static Linux x86_64 asset)                                                                                             | `nixpkgs.nixfmt-rfc-style` / `brew install nixfmt`                                                           | `PATH` via `FindTool("nixfmt")`                                      |
+| php-cs-fixer | Not bundled (PATH-only; needs a PHP interpreter)                                                                                                                          | `composer global require friendsofphp/php-cs-fixer` / `brew install php-cs-fixer` (PHP ≥ 7.4 on `PATH`)        | `PATH` via `FindTool("php-cs-fixer")`                               |
+| perltidy     | Not bundled (PATH-only; GPL-2.0+; needs `perl` on `PATH`)                                                                                                                | `cpan Perl::Tidy` / OS package manager (Windows: Strawberry Perl)                                              | `PATH` via `FindTool("perltidy")`                                  |
+| fprettify    | Not bundled (PATH-only; GPL-3.0+; needs Python 3 on `PATH`)                                                                                                               | `pipx install fprettify` / `pip install fprettify`                                                             | `PATH` via `FindTool("fprettify")`                                  |
+| erlfmt       | Not bundled (PATH-only; no bundleable binaries; needs Erlang/OTP 21+)                                                                                              | `brew install erlang` / OTP package of choice; escript built from rebar3 (`rebar3 as release escriptize`)   | `PATH` via `FindTool("erlfmt")`                                     |
+| sqlfluff     | Not bundled (PATH-only; Python-only; no official binaries)                                                                                                             | `pipx install sqlfluff` / `pip install sqlfluff`                                                              | `PATH` via `FindTool("sqlfluff")`                                   |
+| gdformat     | Not bundled (PATH-only; Python package; no official binaries)                                                                                                               | `pipx install gdtoolkit==4.*`                                                                      | `PATH` via `FindTool("gdformat")`                                    |
+| google-java-format | Fetched by `formatters/google-java-format/update.sh`; bundled for macOS arm64, Linux arm64/x86_64, Windows x86_64 | Download the release archive, or `brew install google-java-format`                                     | Bundled (or embedded) first, then `PATH` via `FindTool("google-java-format")` |
+| ktfmt        | Fetched by `formatters/ktfmt/update.sh`; bundled for Linux x86_64, macOS arm64, Windows x86_64                        | `brew install ktfmt` or a PATH install of ktfmt (or the with-dependencies jar, JDK 11+)                    | Bundled (or embedded) first, then `PATH` via `FindTool("ktfmt")`           |
+| scalafmt     | Not bundled (PATH-only; the natives fail hard on the `.scalafmt.conf` `version =` pin — verified: exit bit 16)              | `cs install scalafmt` / `brew install scalafmt` (JVM; honors the pin dynamically)            | `PATH` via `FindTool("scalafmt")`                                    |
+| npm-groovy-lint | Not bundled (PATH-only; needs Node ≥ 18 and Java 11+)                                                                                                                | `npm install -g npm-groovy-lint`                                                                          | `PATH` via `FindTool("npm-groovy-lint")`                               |
+| cljfmt       | Fetched by `formatters/cljfmt/update.sh`; bundled for macOS arm64, Linux arm64/x86_64-static, Windows x86_64 (EPL-1.0) | Download the release archive, or `brew install cljfmt`                                            | Bundled (or embedded) first, then `PATH` via `FindTool("cljfmt")`             |
+| fantomas     | Not bundled (PATH-only; ships only as a .NET global tool)                                                                                                                   | `dotnet tool install -g fantomas` (.NET SDK ≥ 8)                                                      | `PATH` via `FindTool("fantomas")`                                   |
+| rubocop      | Not bundled (PATH-only; gem-only; projects pin their own version)                                                                                                      | `gem install rubocop` / project Gemfile (Ruby ≥ 2.7)                                                  | `PATH` via `FindTool("rubocop")`                                    |
+| styler       | Not bundled (PATH-only; R package; needs `Rscript` on PATH + `install.packages("styler")`)                                                                                | `install.packages("styler")` in R                                                               | `PATH` via `FindTool("Rscript")`                                     |
+| jlfmt        | Not bundled (PATH-only; Julia app; ~600 MB runtime; no Windows ARM Julia build)                                                                                               | `julia -e 'using Pkg; Pkg.Apps.add("JuliaFormatter")'` (Julia ≥ 1.12)                                  | `PATH` via `FindTool("jlfmt")`                                      |
+| elm-format   | Fetched by `formatters/elm-format/update.sh`; bundled for Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64 | `npm install -g elm-format` / `brew install elm-format`                                   | Bundled (or embedded) first, then `PATH` via `FindTool("elm-format")`        |
+| fourmolu     | Fetched by `formatters/fourmolu/update.sh`; bundled for macOS arm64/x86_64, Linux arm64/x86_64                              | `ghcup install fourmolu` / `cabal install fourmolu`                                               | Bundled (or embedded) first, then `PATH` via `FindTool("fourmolu")`             |
+| ocamlformat  | Not bundled (PATH-only; opam source build; no native binaries exist)                                                                                                      | `opam install ocamlformat` (requires a working opam switch)                                           | `PATH` via `FindTool("ocamlformat")`                                 |
+| rustfmt      | Not bundled (PATH-only; rustup component)                                                                                                                                  | `rustup component add rustfmt`                                                                            | `PATH` via `FindTool("rustfmt")`                                    |
+| swift-format | Not bundled (PATH-only; ships with Swift 6+ toolchains)                                                                                                                        | Xcode 16+ / Swift 6+ toolchain; or `brew install swift-format`                                       | standalone `swift-format` on `PATH`, else `swift format`                                |
+| dart-format  | Not bundled (PATH-only; ships with the Dart SDK)                                                                                                                            | `brew install dart` / Dart SDK installer                                                          | `PATH` via `FindTool("dart")`                                       |
+| dotnet-format | Not bundled (PATH-only; ships in-box with the .NET SDK ≥ 6)                                                                                                            | [.NET SDK](https://dot.net/download) for your OS                                                     | `PATH` via `FindTool("dotnet")`                                   |
+| mix-format   | Not bundled (PATH-only; ships with Elixir)                                                                                                                                | [Elixir installer](https://elixir-lang.org/install.html) for your OS (ships `mix`; needs Erlang/OTP)   | `PATH` via `FindTool("mix")`                                        |
+| zig-fmt      | Not bundled (PATH-only; ships with the Zig toolchain)                                                                                                                    | `brew install zig` / [ziglang.org](https://ziglang.org/download/)                                  | `PATH` via `FindTool("zig")`                                        |
+| gleam-format | Not bundled (PATH-only; ships with the Gleam toolchain)                                                                                                                     | [Gleam installer](https://gleam.run/getting-started/installing-gleam/) for your OS                     | `PATH` via `FindTool("gleam")`                                      |
+| mojo-format  | Not bundled (PATH-only; Linux glibc ≥ 2.34 / macOS arm64 only; Windows via WSL)                                                                                              | Modular channel: `uv pip install mojo` or `pixi add mojo`                                           | `PATH` via `FindTool("mojo")`                                       |
+| odinfmt      | Not bundled (PATH-only; community tool; no release binaries; no Windows binary)                                                                                               | `brew install odinfmt` / build from `DanielGavin/ols` source                                      | `PATH` via `FindTool("odinfmt")`                                    |
+| forge-fmt    | Not bundled (PATH-only; ships with Foundry)                                                                                                                                | `foundryup` / `brew install foundry` / npm                                                         | `PATH` via `FindTool("forge")`                                       |
+| gnatformat   | Not bundled (PATH-only; ships with GNAT Pro or Alire)                                                                                                                       | GNAT Pro, or `alr install gnatformat` (Alire)                                                            | `PATH` via `FindTool("gnatformat")`                                  |
 
 Bundled versions are pinned by the `formatters/<tool>/update.sh` scripts for offline use in the release archives; see [Bundled tools](#bundled-tools) for the layout and refresh process.
 
@@ -441,6 +624,56 @@ Go 1.24+ must be on `PATH` on each host — the Checks step runs `make check` (w
 ## Project status
 
 Formattington is under active development. The core command-line interface and formatter integrations are being established, with additional languages, tools, distribution options, and workflow improvements planned.
+
+## Tool sources and licenses
+
+Formattington orchestrates third-party tools; they are never redistributed as part of the source distribution, and the bundled release binaries ship unmodified upstream executables with this attribution. Each tool belongs to its upstream project and remains under its own license:
+
+| Tool | Source | License | Distribution |
+| ---- | ------ | ------- | ------------ |
+| shfmt | https://github.com/mvdan/sh | BSD-3-Clause | Bundled |
+| clang-format | https://github.com/cpp-linter/clang-tools-static-binaries (LLVM via https://github.com/llvm/llvm-project) | Unlicense (repackaged LLVM binaries; upstream LLVM is Apache-2.0 WITH LLVM-exception) | Bundled |
+| black | https://github.com/psf/black | MIT | Bundled |
+| prettier | https://github.com/prettier/prettier | MIT | Bundled |
+| powershell (PSScriptAnalyzer) | https://github.com/PowerShell/PSScriptAnalyzer | MIT | PATH-only |
+| markdownlint | https://github.com/igorshubovych/markdownlint-cli | MIT | Bundled |
+| taplo | https://github.com/tamasfe/taplo | MIT | Bundled |
+| gofmt | https://github.com/golang/go (cmd/gofmt) | BSD-3-Clause | PATH-only |
+| goimports | https://github.com/golang/tools (cmd/goimports) | BSD-3-Clause | PATH-only |
+| stylua | https://github.com/JohnnyMorganz/StyLua | MPL-2.0 | Bundled |
+| nixfmt | https://github.com/NixOS/nixfmt | MPL-2.0 | PATH-only |
+| php-cs-fixer | https://github.com/PHP-CS-Fixer/PHP-CS-Fixer | MIT | PATH-only |
+| perltidy | https://github.com/perltidy/perltidy | GPL-2.0+ | PATH-only, never embedded |
+| fprettify | https://github.com/pseewald/fprettify | GPL-3.0+ | PATH-only, never embedded |
+| erlfmt | https://github.com/WhatsApp/erlfmt | Apache-2.0 | PATH-only |
+| sqlfluff | https://github.com/sqlfluff/sqlfluff | MIT | PATH-only |
+| gdformat | https://github.com/Scony/godot-gdscript-toolkit | MIT | PATH-only |
+| google-java-format | https://github.com/google/google-java-format | Apache-2.0 | Bundled |
+| ktfmt | https://github.com/Kotlin/ktfmt | Apache-2.0 | Bundled |
+| scalafmt | https://github.com/scalameta/scalafmt | Apache-2.0 | PATH-only |
+| npm-groovy-lint | https://github.com/nvuillam/npm-groovy-lint | MIT | PATH-only |
+| MicroPython (via black) | https://github.com/psf/black | MIT | (bundled, as black) |
+| cljfmt | https://github.com/weavejester/cljfmt | EPL-1.0 | Bundled (unmodified upstream binaries) |
+| fantomas | https://github.com/fsprojects/fantomas | Apache-2.0 | PATH-only |
+| rubocop | https://github.com/rubocop/rubocop | MIT | PATH-only |
+| styler | https://github.com/r-lib/styler | MIT | PATH-only |
+| jlfmt | https://github.com/JuliaEditorSupport/JuliaFormatter.jl | MIT | PATH-only |
+| elm-format | https://github.com/avh4/elm-format | BSD-3-Clause | Bundled |
+| fourmolu | https://github.com/fourmolu/fourmolu | BSD-3-Clause | Bundled |
+| ocamlformat | https://github.com/ocaml-ppx/ocamlformat | MIT | PATH-only |
+| rustfmt | https://github.com/rust-lang/rustfmt | Apache-2.0 | PATH-only |
+| swift-format | https://github.com/swiftlang/swift-format | Apache-2.0 | PATH-only |
+| dart-format | https://github.com/dart-lang/sdk | BSD-3-Clause | PATH-only |
+| dotnet-format | https://github.com/dotnet/sdk | MIT | PATH-only |
+| mix-format | https://github.com/elixir-lang/elixir | Apache-2.0 | PATH-only |
+| zig-fmt | https://github.com/ziglang/zig | MIT | PATH-only |
+| gleam-format | https://github.com/gleam-lang/gleam | Apache-2.0 | PATH-only |
+| mojo-format | https://github.com/modular/mojo | Apache-2.0 WITH LLVM-exception (compiler portions); some MAX components under the Modular MAX License | PATH-only |
+| odinfmt | https://github.com/DanielGavin/ols | MIT | PATH-only |
+| forge-fmt | https://github.com/foundry-rs/foundry | Apache-2.0 | PATH-only |
+| gnatformat | https://github.com/AdaCore/GNATformat | Apache-2.0 WITH LLVM-exception | PATH-only |
+
+Bundled tools are fetched from their upstream projects at release time and redistributed **unmodified**; the `formatters/<tool>/update.sh` scripts record the exact upstream location per tool. Bundled EPL-1.0 material (cljfmt) is redistributed unmodified, with this attribution. Tools available only from PATH are never redistributed by Formattington at all.
 
 ## License
 
