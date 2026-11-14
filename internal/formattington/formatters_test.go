@@ -2209,3 +2209,73 @@ func TestRustfmtArgv(t *testing.T) {
 		}
 	})
 }
+
+func TestSwiftFormatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default uses standalone -i when present", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"swift-format"}, func() (int, error) {
+			return runSwiftFormat(Options{})
+		})
+		want := []string{"-i", "--ignore-unparsable-files"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses strict lint", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"swift-format"}, func() (int, error) {
+			return runSwiftFormat(Options{Check: true})
+		})
+		want := []string{"lint", "--strict", "--ignore-unparsable-files"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"swift-format"}, func() (int, error) {
+			return runSwiftFormat(Options{DryRun: true})
+		})
+		want := []string{"lint", "--strict", "--ignore-unparsable-files"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("falls back to swift format subcommand when standalone missing", func(t *testing.T) {
+		binDir := t.TempDir()
+		writeFile(t, filepath.Join(binDir, "swift"), fakeExecutableScript)
+		if err := chmodExecutable(filepath.Join(binDir, "swift")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		argvFile := filepath.Join(t.TempDir(), "argv.txt")
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+		t.Setenv("FAKE_ARGV_FILE", argvFile)
+		t.Setenv("FAKE_CALLED_FILE", filepath.Join(t.TempDir(), "called"))
+
+		code := Main([]string{"--check", "swift", "some file.swift"})
+		_ = code
+		got := recordedArgv(t, argvFile)
+		want := []string{"format", "lint", "--strict", "--ignore-unparsable-files", "some file.swift"}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("argv = %v, want %v", got, want)
+		}
+	})
+}
+
+func TestSwiftFormatResolutionErrorsWhenBothMissing(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", t.TempDir()) // no executables at all
+
+	code, err := runSwiftFormat(Options{})
+	if err == nil {
+		t.Fatal("expected an error when neither swift-format nor swift is on PATH")
+	}
+	if code != ExitNotFound {
+		t.Errorf("exit = %d, want %d", code, ExitNotFound)
+	}
+}

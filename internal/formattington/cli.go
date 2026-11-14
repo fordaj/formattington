@@ -51,6 +51,7 @@ var registry = []Tool{
 	{Name: "fourmolu", Extensions: fourmoluExtensions, Run: runFourmolu},
 	{Name: "ocamlformat", Extensions: ocamlformatExtensions, Run: runOcamlformat},
 	{Name: "rustfmt", Extensions: rustfmtExtensions, Run: runRustfmt},
+	{Name: "swift-format", Extensions: swiftFormatExtensions, Run: runSwiftFormat},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -89,6 +90,7 @@ var languageAliases = map[string]string{
 	"haskell":     "fourmolu",
 	"ocaml":       "ocamlformat",
 	"rust":        "rustfmt",
+	"swift":       "swift-format",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
