@@ -1910,3 +1910,83 @@ func TestElmFormatArgv(t *testing.T) {
 		}
 	})
 }
+
+func TestFourmoluArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default uses mode inplace", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fourmolu"}, func() (int, error) {
+			return runFourmolu(Options{})
+		})
+		want := []string{"--mode", "inplace"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses mode check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fourmolu"}, func() (int, error) {
+			return runFourmolu(Options{Check: true})
+		})
+		want := []string{"--mode", "check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fourmolu"}, func() (int, error) {
+			return runFourmolu(Options{DryRun: true})
+		})
+		want := []string{"--mode", "check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fourmolu"}, func() (int, error) {
+			return runFourmolu(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+
+	t.Run("forwards args verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fourmolu"}, func() (int, error) {
+			return runFourmolu(Options{Args: []string{"--indentation", "2", "my file.hs"}})
+		})
+		want := []string{"--mode", "inplace", "--indentation", "2", "my file.hs"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
+
+func TestFourmoluExit100IsRemapped(t *testing.T) {
+	requirePOSIX(t)
+
+	for _, tc := range []struct{ native, want int }{
+		{100, ExitFormatRequired}, // formatting needed
+		{102, 102},                // other failures pass through
+		{101, 101},                // stdin/inplace conflict passes through
+		{0, 0},                    // clean
+	} {
+		binDir := filepath.Join(t.TempDir(), "bin")
+		writeFile(t, filepath.Join(binDir, "fourmolu"), "#!/bin/sh\nexit "+strconv.Itoa(tc.native)+"\n")
+		if err := chmodExecutable(filepath.Join(binDir, "fourmolu")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		code, err := runFourmolu(Options{Check: true})
+		if err != nil {
+			t.Fatalf("fourmolu exit %d: runFourmolu returned an error: %v", tc.native, err)
+		}
+		if code != tc.want {
+			t.Errorf("fourmolu exit %d: got %d, want %d", tc.native, code, tc.want)
+		}
+	}
+}
