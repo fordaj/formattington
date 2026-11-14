@@ -39,6 +39,7 @@ var registry = []Tool{
 	{Name: "sqlfluff", Extensions: sqlfluffExtensions, Run: runSqlfluff},
 	{Name: "gdformat", Extensions: gdformatExtensions, Run: runGdformat},
 	{Name: "google-java-format", Extensions: googleJavaFormatExtensions, Run: runGoogleJavaFormat},
+	{Name: "ktfmt", Extensions: ktfmtExtensions, Run: runKtfmt},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -64,6 +65,7 @@ var languageAliases = map[string]string{
 	"sql":      "sqlfluff",
 	"gdscript": "gdformat",
 	"java":     "google-java-format",
+	"kotlin":   "ktfmt",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per

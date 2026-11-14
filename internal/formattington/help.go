@@ -28,7 +28,8 @@ sqlfluff (SQL lint/format via SQLFluff; configure the dialect in the project
 or forward --dialect yourself). gdscript uses gdformat (Godot 4 GDScript
 formatting via gdformat, the gdtoolkit package; "pipx install gdtoolkit==4.*").
 java uses google-java-format (Java formatting via google-java-format; whitespace-only
-diffs by default via --cleanup=false).
+diffs by default via --cleanup=false). kotlin uses ktfmt (Kotlin formatting via
+ktfmt; pass --google-style/--kotlinlang-style verbatim as needed).
 
 markdownlint lints Markdown files; it never rewrites files without an
 explicit "--fix" argument, so every mode lints (findings exit 1, no
@@ -47,7 +48,7 @@ the "full" release binaries, inside the executable itself; use --verbose
 With 'all', formatters run concurrently by default; use --series (before or
 after 'all', e.g. 'formattington --series all' or 'formattington all
 --series') to run them sequentially in shfmt, clang-format, black, prettier,
-powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt, sqlfluff, gdformat, google-java-format order. Exit code is the
+powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt, sqlfluff, gdformat, google-java-format, ktfmt order. Exit code is the
 last non-zero code
 in that order (missing tool counts as 127, printed to stderr, and does not
 prevent remaining formatters from running); 0 only if all succeed.
