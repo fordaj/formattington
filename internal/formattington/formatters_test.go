@@ -2333,3 +2333,103 @@ func TestDartFormatArgv(t *testing.T) {
 		}
 	})
 }
+
+func TestDotnetFormatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default uses whitespace folder mode with include", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+			return runDotnetFormat(Options{Args: []string{"a.cs", "b.vb"}})
+		})
+		want := []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "b.vb"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check adds verify-no-changes", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+			return runDotnetFormat(Options{Check: true, Args: []string{"a.cs"}})
+		})
+		want := []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "--verify-no-changes"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+			return runDotnetFormat(Options{DryRun: true, Args: []string{"a.cs"}})
+		})
+		want := []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "--verify-no-changes"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough is forwarded verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+			return runDotnetFormat(Options{Args: []string{"--version"}})
+		})
+		want := []string{"format", "--version"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("style subcommand forwarded verbatim opt-in", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+			return runDotnetFormat(Options{Args: []string{"style", "--severity", "info", "src/app.csproj"}})
+		})
+		want := []string{"format", "style", "--severity", "info", "src/app.csproj"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("project path opts into verbatim mode", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+			return runDotnetFormat(Options{Args: []string{"src/app.csproj"}})
+		})
+		want := []string{"format", "src/app.csproj"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("valued flag is not mistaken for a file", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+			return runDotnetFormat(Options{Args: []string{"--severity", "warn", "a.cs"}})
+		})
+		want := []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "--severity", "warn"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
+
+func TestDotnetFormatExitTwoIsRemapped(t *testing.T) {
+	requirePOSIX(t)
+
+	for _, tc := range []struct{ native, want int }{
+		{2, ExitFormatRequired}, // files would be formatted
+		{0, 0},                  // clean
+		{13, 13},                // other failures pass through
+	} {
+		binDir := filepath.Join(t.TempDir(), "bin")
+		writeFile(t, filepath.Join(binDir, "dotnet"), "#!/bin/sh\nexit "+strconv.Itoa(tc.native)+"\n")
+		if err := chmodExecutable(filepath.Join(binDir, "dotnet")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		code, err := runDotnetFormat(Options{Check: true, Args: []string{"a.cs"}})
+		if err != nil {
+			t.Fatalf("dotnet exit %d: runDotnetFormat returned an error: %v", tc.native, err)
+		}
+		if code != tc.want {
+			t.Errorf("dotnet exit %d: got %d, want %d", tc.native, code, tc.want)
+		}
+	}
+}

@@ -50,7 +50,10 @@ rust uses rustfmt (Rust formatting via rustfmt; edition detected per file from t
 nearest Cargo.toml, nearest workspace.package edition honored). swift uses
 swift-format (Swift formatting — tries standalone swift-format, falls back to
 "swift format" from Swift 6+ toolchains). dart uses dart-format (Dart formatting via
-"dart format" from the Dart SDK; invoked as "dart format").
+"dart format" from the Dart SDK; invoked as "dart format"). csharp/vbnet use
+dotnet-format (C#/VB.NET whitespace formatting via "dotnet format whitespace
+--folder . --include <files>"; .NET SDK >= 6 required; --verify-no-changes exit 2
+is reported as 1).
 
 markdownlint lints Markdown files; it never rewrites files without an
 explicit "--fix" argument, so every mode lints (findings exit 1, no
@@ -69,7 +72,7 @@ the "full" release binaries, inside the executable itself; use --verbose
 With 'all', formatters run concurrently by default; use --series (before or
 after 'all', e.g. 'formattington --series all' or 'formattington all
 --series') to run them sequentially in shfmt, clang-format, black, prettier,
-powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt, sqlfluff, gdformat, google-java-format, ktfmt, scalafmt, npm-groovy-lint, cljfmt, fantomas, rubocop, styler, jlfmt, elm-format, fourmolu, ocamlformat, rustfmt, swift-format, dart-format order. Exit code is the
+powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt, sqlfluff, gdformat, google-java-format, ktfmt, scalafmt, npm-groovy-lint, cljfmt, fantomas, rubocop, styler, jlfmt, elm-format, fourmolu, ocamlformat, rustfmt, swift-format, dart-format, dotnet-format order. Exit code is the
 last non-zero code
 in that order (missing tool counts as 127, printed to stderr, and does not
 prevent remaining formatters from running); 0 only if all succeed.
