@@ -41,14 +41,14 @@ set -euo pipefail
 # entry point first: it pulls in the env cascade and defines log().
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 if [[ ! -f "$SCRIPT_DIR/scripts/entry.sh" ]]; then
-    printf 'demo.bash: error: script entry point not found: %s/scripts/entry.sh\n' "$SCRIPT_DIR" >&2
-    exit 1
+	printf 'demo.bash: error: script entry point not found: %s/scripts/entry.sh\n' "$SCRIPT_DIR" >&2
+	exit 1
 fi
 # shellcheck disable=SC1091
 . "$SCRIPT_DIR/scripts/entry.sh"
 
 usage() {
-    cat <<'EOF'
+	cat <<'EOF'
 Usage: ./demo.bash [--help]
 
 Run a non-destructive, single-pass tour of Formattington: logamuffin
@@ -71,25 +71,25 @@ EOF
 }
 
 while [[ $# -gt 0 ]]; do
-    case "$1" in
-    --help | -h)
-        usage
-        exit 0
-        ;;
-    *)
-        log ERROR "unknown argument: $1"
-        usage >&2
-        exit 2
-        ;;
-    esac
+	case "$1" in
+	--help | -h)
+		usage
+		exit 0
+		;;
+	*)
+		log ERROR "unknown argument: $1"
+		usage >&2
+		exit 2
+		;;
+	esac
 done
 
 die() {
-    log ERROR "$*" || true
-    exit 1
+	log ERROR "$*" || true
+	exit 1
 }
 need_cmd() {
-    command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"
+	command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"
 }
 
 # --- Launcher: the Go binary (explicit, built, then PATH). -------------
@@ -101,42 +101,42 @@ REPO_ROOT="$SCRIPT_DIR"
 cd "$REPO_ROOT"
 
 resolve_formattington() {
-    if [[ -n "${FORMATTINGTON_BIN:-}" ]]; then
-        if [[ -x "${FORMATTINGTON_BIN}" ]]; then
-            printf '%s' "$FORMATTINGTON_BIN"
-            return 0
-        fi
-        return 1
-    fi
-    local candidate
-    for candidate in "$REPO_ROOT/bin/formattington" "$REPO_ROOT/formattington"; do
-        if [[ -x "$candidate" ]]; then
-            printf '%s' "$candidate"
-            return 0
-        fi
-    done
-    if command -v formattington >/dev/null 2>&1; then
-        command -v formattington
-        return 0
-    fi
-    return 1
+	if [[ -n "${FORMATTINGTON_BIN:-}" ]]; then
+		if [[ -x "${FORMATTINGTON_BIN}" ]]; then
+			printf '%s' "$FORMATTINGTON_BIN"
+			return 0
+		fi
+		return 1
+	fi
+	local candidate
+	for candidate in "$REPO_ROOT/bin/formattington" "$REPO_ROOT/formattington"; do
+		if [[ -x "$candidate" ]]; then
+			printf '%s' "$candidate"
+			return 0
+		fi
+	done
+	if command -v formattington >/dev/null 2>&1; then
+		command -v formattington
+		return 0
+	fi
+	return 1
 }
 
 if ! FMT_BIN="$(resolve_formattington)"; then
-    if command -v go >/dev/null 2>&1; then
-        log INFO "no formattington binary found; building it with go build..."
-        mkdir -p "$REPO_ROOT/bin"
-        (cd "$REPO_ROOT" && go build -o "$REPO_ROOT/bin/formattington" ./cmd/formattington) ||
-            die "could not build formattington (install Go 1.24+ or set FORMATTINGTON_BIN)"
-        FMT_BIN="$REPO_ROOT/bin/formattington"
-    else
-        die "no formattington binary found (run 'make build', install formattington on PATH, or set FORMATTINGTON_BIN)"
-    fi
+	if command -v go >/dev/null 2>&1; then
+		log INFO "no formattington binary found; building it with go build..."
+		mkdir -p "$REPO_ROOT/bin"
+		(cd "$REPO_ROOT" && go build -o "$REPO_ROOT/bin/formattington" ./cmd/formattington) ||
+			die "could not build formattington (install Go 1.24+ or set FORMATTINGTON_BIN)"
+		FMT_BIN="$REPO_ROOT/bin/formattington"
+	else
+		die "no formattington binary found (run 'make build', install formattington on PATH, or set FORMATTINGTON_BIN)"
+	fi
 fi
 log INFO "formattington launcher: $FMT_BIN"
 
 fmt() {
-    "$FMT_BIN" "$@"
+	"$FMT_BIN" "$@"
 }
 
 # demo_run <formattington-args...> — log the command, run it without
@@ -144,50 +144,50 @@ fmt() {
 # (1 changes required, 2 usage, 127 missing), then log the exit code
 # with its meaning. Always returns 0 so the tour continues.
 demo_run() {
-    log INFO "run: formattington $*"
-    local rc=0
-    fmt "$@" || rc=$?
-    local meaning="tool error"
-    case "$rc" in
-    0) meaning="ok" ;;
-    1) meaning="formatting changes required" ;;
-    2) meaning="usage error" ;;
-    127) meaning="formatter not found (bundled missing and not on PATH)" ;;
-    *) meaning="formatter returned $rc (preserved)" ;;
-    esac
-    log INFO "exit: $rc ($meaning)"
-    return 0
+	log INFO "run: formattington $*"
+	local rc=0
+	fmt "$@" || rc=$?
+	local meaning="tool error"
+	case "$rc" in
+	0) meaning="ok" ;;
+	1) meaning="formatting changes required" ;;
+	2) meaning="usage error" ;;
+	127) meaning="formatter not found (bundled missing and not on PATH)" ;;
+	*) meaning="formatter returned $rc (preserved)" ;;
+	esac
+	log INFO "exit: $rc ($meaning)"
+	return 0
 }
 
 # demo_run_tmp <formattington-args...> — same as demo_run, but from the
 # sandbox so discovery is scoped to the demo files (relative paths) and
 # every `all`/no-file-args call stays inside the sandbox.
 demo_run_tmp() {
-    log INFO "run (cwd=$TMP_DIR): formattington $*"
-    local rc=0
-    (cd "$TMP_DIR" && fmt "$@") || rc=$?
-    local meaning="tool error"
-    case "$rc" in
-    0) meaning="ok" ;;
-    1) meaning="formatting changes required" ;;
-    2) meaning="usage error" ;;
-    127) meaning="formatter not found (bundled missing and not on PATH)" ;;
-    *) meaning="formatter returned $rc (preserved)" ;;
-    esac
-    log INFO "exit: $rc ($meaning)"
-    return 0
+	log INFO "run (cwd=$TMP_DIR): formattington $*"
+	local rc=0
+	(cd "$TMP_DIR" && fmt "$@") || rc=$?
+	local meaning="tool error"
+	case "$rc" in
+	0) meaning="ok" ;;
+	1) meaning="formatting changes required" ;;
+	2) meaning="usage error" ;;
+	127) meaning="formatter not found (bundled missing and not on PATH)" ;;
+	*) meaning="formatter returned $rc (preserved)" ;;
+	esac
+	log INFO "exit: $rc ($meaning)"
+	return 0
 }
 
 section() {
-    log INFO "=== $1 ==="
+	log INFO "=== $1 ==="
 }
 
 # --- Temp sandbox (explicit targets; path with spaces on purpose). ----
 TMP_DIR=""
 cleanup() {
-    if [[ -n "${TMP_DIR:-}" && -d "$TMP_DIR" ]]; then
-        rm -rf -- "$TMP_DIR"
-    fi
+	if [[ -n "${TMP_DIR:-}" && -d "$TMP_DIR" ]]; then
+		rm -rf -- "$TMP_DIR"
+	fi
 }
 trap cleanup EXIT
 
@@ -211,11 +211,11 @@ log INFO "env cascade: FORMATTINGTON_PLATFORM=${FORMATTINGTON_PLATFORM:-unknown}
 log INFO "LOGAMUFFIN_BIN=${LOGAMUFFIN_BIN:-<not found; log() falls back to printf>}"
 log INFO "versioner (direct call is versioner, not logamuffin): VERSIONER_BIN=${VERSIONER_BIN:-<not found>}"
 if [[ -n "${VERSIONER_BIN:-}" ]]; then
-    log INFO "run: versioner --version"
-    "$VERSIONER_BIN" --version
-    log INFO "versioner exit: 0 (ok)"
+	log INFO "run: versioner --version"
+	"$VERSIONER_BIN" --version
+	log INFO "versioner exit: 0 (ok)"
 else
-    log WARNING "versioner not found (run tools/versioner/update.bash, or set VERSIONER_BIN)"
+	log WARNING "versioner not found (run tools/versioner/update.bash, or set VERSIONER_BIN)"
 fi
 log INFO "threshold is LOG_LEVEL=${LOG_LEVEL:-INFO} by default: TRACE/DEBUG are suppressed, INFO and above show"
 log TRACE "suppressed TRACE: nothing printed above for this line"

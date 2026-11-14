@@ -125,12 +125,12 @@ Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`
 
 Config discovery precedence (highest first):
 
-| Priority | Source | Notes |
-| -------- | ------ | ----- |
-| 1 | `--config <path>` (before or after `all`) | Explicit path, relative paths resolve against the current directory; `--config` after `all` (e.g. `formattington all --config x.json`) is honored. |
-| 2 | `FORMATTINGTON_CONFIG_PATH` environment variable | Explicit path; an empty value counts as unset. |
-| 3 | `./.formattington.json` | Auto-discovered in the current directory only (no parent-directory or user-home search). |
-| 4 | No config file | `all` runs the full formatter registry as before (backwards compatible). |
+| Priority | Source                                           | Notes                                                                                                                                              |
+| -------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1        | `--config <path>` (before or after `all`)        | Explicit path, relative paths resolve against the current directory; `--config` after `all` (e.g. `formattington all --config x.json`) is honored. |
+| 2        | `FORMATTINGTON_CONFIG_PATH` environment variable | Explicit path; an empty value counts as unset.                                                                                                     |
+| 3        | `./.formattington.json`                          | Auto-discovered in the current directory only (no parent-directory or user-home search).                                                           |
+| 4        | No config file                                   | `all` runs the full formatter registry as before (backwards compatible).                                                                           |
 
 When a config is in effect, `all` runs exactly the listed commands. With no config, `all` keeps its current behavior (all eight formatters). The config only changes what `all` means: single-tool runs ignore the file and the environment variable, and `--config` before a single formatter (e.g. `formattington --config x.json black`) is a usage error (exit 2). `--config` after a single formatter is forwarded to that formatter, so native flags such as Prettier's `--config` keep working.
 
@@ -161,27 +161,27 @@ Formatting and linting are complementary: a file can be correctly formatted whil
 
 Formattington preserves underlying formatter exit codes and uses a fixed scheme for its own failures:
 
-| Code | Meaning                                                                                                                                            |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Success. Formatting applied (or nothing needed formatting).                                                                                        |
-| 1    | Formatting changes required in check mode.                                                                                                         |
+| Code | Meaning                                                                                                                                                                                                                                       |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | Success. Formatting applied (or nothing needed formatting).                                                                                                                                                                                   |
+| 1    | Formatting changes required in check mode.                                                                                                                                                                                                    |
 | 2    | Usage error (for example, unknown formatter, exclusive `--check` and `--dry-run` given together, unexpected arguments parsed by Formattington, or a missing/invalid `--config` / `FORMATTINGTON_CONFIG_PATH` / `./.formattington.json` file). |
-| 127  | Formatter executable not found (no bundled binary and nothing on `PATH`).                                                                          |
+| 127  | Formatter executable not found (no bundled binary and nothing on `PATH`).                                                                                                                                                                     |
 
 ### Mode semantics
 
 Formattington owns the mode flag before the formatter name; arguments after the formatter are forwarded verbatim.
 
-| Formatter    | `--check` (before formatter)                                          | `--dry-run` (before formatter)                                                                 | Default                                                                                                               |
-| ------------ | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| shfmt        | `shfmt -l` — list unformatted files; exit 1 if any listed, else 0     | `shfmt -d` — print diff, do not modify                                                         | `shfmt -w` — write in place                                                                                           |
-| clang-format | `clang-format --dry-run --Werror` — fail if any file needs formatting | `clang-format --dry-run` — validate without modifying                                          | `clang-format -i` — format in place (unless `-i`/`--in-place` already given)                                          |
-| black        | `black --check` — fail if any file needs formatting                   | `black --diff` — show diff, do not modify                                                      | `black` in place (no flag)                                                                                            |
-| prettier     | `prettier --check` — fail if any file needs formatting                | `prettier --list-different` — list files that differ, do not modify (Prettier has no `--diff`) | `prettier --write` — write in place (unless `--write`/`-w`, `--check`/`-c`, or `--list-different`/`-l` already given) |
-| powershell   | PSScriptAnalyzer lint (no in-place formatting); findings exit 1       | Same PSScriptAnalyzer lint invocation (check/dry-run are accepted for CLI uniformity)            | Same PSScriptAnalyzer lint invocation (findings exit 1)                                                                                    |
-| taplo        | `taplo fmt --check` — fail if any file needs formatting               | `taplo fmt --diff` — print diff, do not modify                         | `taplo fmt` in place (no flag)                                                                                   |
-| gofmt        | `gofmt -l` — list unformatted files; exit 1 if any listed, else 0     | `gofmt -d` — display diffs instead of rewriting files                                          | `gofmt -w` — write result to the source file instead of stdout (format in place)                                    |
-| goimports    | `goimports -l` — list files whose formatting differs; exit 1 if any listed, else 0 | `goimports -d` — display diffs instead of rewriting files                          | `goimports -w` — write result to the source file instead of stdout (format in place, fixing imports)                |
+| Formatter    | `--check` (before formatter)                                                       | `--dry-run` (before formatter)                                                                 | Default                                                                                                               |
+| ------------ | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| shfmt        | `shfmt -l` — list unformatted files; exit 1 if any listed, else 0                  | `shfmt -d` — print diff, do not modify                                                         | `shfmt -w` — write in place                                                                                           |
+| clang-format | `clang-format --dry-run --Werror` — fail if any file needs formatting              | `clang-format --dry-run` — validate without modifying                                          | `clang-format -i` — format in place (unless `-i`/`--in-place` already given)                                          |
+| black        | `black --check` — fail if any file needs formatting                                | `black --diff` — show diff, do not modify                                                      | `black` in place (no flag)                                                                                            |
+| prettier     | `prettier --check` — fail if any file needs formatting                             | `prettier --list-different` — list files that differ, do not modify (Prettier has no `--diff`) | `prettier --write` — write in place (unless `--write`/`-w`, `--check`/`-c`, or `--list-different`/`-l` already given) |
+| powershell   | PSScriptAnalyzer lint (no in-place formatting); findings exit 1                    | Same PSScriptAnalyzer lint invocation (check/dry-run are accepted for CLI uniformity)          | Same PSScriptAnalyzer lint invocation (findings exit 1)                                                               |
+| taplo        | `taplo fmt --check` — fail if any file needs formatting                            | `taplo fmt --diff` — print diff, do not modify                                                 | `taplo fmt` in place (no flag)                                                                                        |
+| gofmt        | `gofmt -l` — list unformatted files; exit 1 if any listed, else 0                  | `gofmt -d` — display diffs instead of rewriting files                                          | `gofmt -w` — write result to the source file instead of stdout (format in place)                                      |
+| goimports    | `goimports -l` — list files whose formatting differs; exit 1 if any listed, else 0 | `goimports -d` — display diffs instead of rewriting files                                      | `goimports -w` — write result to the source file instead of stdout (format in place, fixing imports)                  |
 
 These mode mappings are integration-specific. Future tools may support different operations or native flags, and their integrations should preserve those differences.
 
@@ -204,6 +204,7 @@ The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `
 The rule is deterministic regardless of completion order in the concurrent default.
 
 For example:
+
 - If `shfmt` returns `5` and `prettier` returns `1`, `all` exits `1`.
 - If `shfmt` returns `5` and the rest succeed, `all` exits `5`.
 
@@ -230,17 +231,17 @@ Either a bundled copy under `formatters/` (see [Bundled tools](#bundled-tools)) 
 
 Formattington integrates existing tools rather than reimplementing their functionality.
 
-| Tool                                                         | Category  | Status    | Typical use                                             |
-| ------------------------------------------------------------ | --------- | --------- | ------------------------------------------------------- |
-| [clang-format](https://clang.llvm.org/docs/ClangFormat.html) | Formatter | Available | C, C++, and related languages                           |
-| [shfmt](https://github.com/mvdan/sh)                         | Formatter | Available | Shell scripts                                           |
-| [Black](https://black.readthedocs.io/)                       | Formatter | Available | Python (`.py`)                                          |
-| [Prettier](https://prettier.io/)                             | Formatter | Available | JavaScript, TypeScript, JSON, HTML, CSS, Markdown, YAML |
-| [PSScriptAnalyzer](https://github.com/microsoft/PSScriptAnalyzer) | Linter | Available | PowerShell scripts (`.ps1`, `.psm1`) via `pwsh` |
-| [Taplo](https://taplo.tamasfe.dev/)                            | Formatter | Available | TOML (`.toml`) via `taplo fmt`                          |
-| [gofmt](https://pkg.go.dev/cmd/gofmt)                        | Formatter | Available | Go (`.go`)                                              |
-| [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) | Formatter | Available | Go (`.go`) with import fixing                           |
-| [markdownlint](https://github.com/DavidAnson/markdownlint)   | Linter    | Planned   | Markdown style and consistency                          |
+| Tool                                                              | Category  | Status    | Typical use                                             |
+| ----------------------------------------------------------------- | --------- | --------- | ------------------------------------------------------- |
+| [clang-format](https://clang.llvm.org/docs/ClangFormat.html)      | Formatter | Available | C, C++, and related languages                           |
+| [shfmt](https://github.com/mvdan/sh)                              | Formatter | Available | Shell scripts                                           |
+| [Black](https://black.readthedocs.io/)                            | Formatter | Available | Python (`.py`)                                          |
+| [Prettier](https://prettier.io/)                                  | Formatter | Available | JavaScript, TypeScript, JSON, HTML, CSS, Markdown, YAML |
+| [PSScriptAnalyzer](https://github.com/microsoft/PSScriptAnalyzer) | Linter    | Available | PowerShell scripts (`.ps1`, `.psm1`) via `pwsh`         |
+| [Taplo](https://taplo.tamasfe.dev/)                               | Formatter | Available | TOML (`.toml`) via `taplo fmt`                          |
+| [gofmt](https://pkg.go.dev/cmd/gofmt)                             | Formatter | Available | Go (`.go`)                                              |
+| [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports)  | Formatter | Available | Go (`.go`) with import fixing                           |
+| [markdownlint](https://github.com/DavidAnson/markdownlint)        | Linter    | Planned   | Markdown style and consistency                          |
 
 Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo`, `gofmt`, `goimports`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), and `all` are accepted by the CLI.
 
@@ -252,17 +253,17 @@ Additional tools may provide other capabilities, such as checking, linting, and 
 
 ### Prerequisites
 
-| Tool         | Install method (bundled)                                                          | Install method (PATH)                                                                                        | How Formattington finds it                                 |
-| ------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| shfmt        | Fetched by `formatters/shfmt/update.sh`; bundled in the full release archives    | `go install mvdan.cc/sh/v3/cmd/shfmt@latest` or your OS package manager                                      | Bundled (or embedded) first, then `PATH` via `FindTool("shfmt")`        |
-| clang-format | Fetched by `formatters/clang-format/update.sh`; bundled in the full release archives | Install LLVM/clang-tools for your OS (for example `brew install clang-format` or `apt install clang-format`) | Bundled (or embedded) first, then `PATH` via `FindTool("clang-format")` |
-| black        | Fetched by `formatters/black/update.sh`; bundled in the full release archives (the macOS x86_64 build is compiled by the release script) | `pip install black` or `uv tool install black`                                           | Bundled (or embedded) first, then `PATH` via `FindTool("black")`                            |
-| prettier     | Fetched by `formatters/prettier/update.sh`; bundled in the full release archives | `npm install -g prettier`                                                                                    | Bundled (or embedded) first, then `PATH` via `FindTool("prettier")`                         |
-| powershell   | Not bundled (PATH-only; PSScriptAnalyzer is a module)                             | PowerShell 7+ (`pwsh`) on `PATH` plus `Install-Module PSScriptAnalyzer` in `pwsh`                            | `PATH` via `FindTool("pwsh")`, then `FindTool("powershell")` |
-| taplo        | Fetched by `formatters/taplo/update.sh`; bundled in the full release archives    | Download taplo from https://github.com/tamasfe/taplo releases and put `taplo` on `PATH`                     | Bundled (or embedded) first, then `PATH` via `FindTool("taplo")`        |
-| gofmt        | Not bundled (PATH-only)                                                           | Install Go for your OS; `gofmt` comes with the Go installation                                               | `PATH` via `FindTool("gofmt")`                            |
-| goimports    | Not bundled (PATH-only)                                                           | `go install golang.org/x/tools/cmd/goimports@latest` (ensure `$(go env GOPATH)/bin` is on `PATH`)           | `PATH` via `FindTool("goimports")`                        |
-| markdownlint | Fetched by `formatters/markdownlint/update.sh`; bundled in the full release archives (not yet wired into the CLI) | `npm install -g markdownlint-cli`                                               | Not yet integrated                                          |
+| Tool         | Install method (bundled)                                                                                                                                                | Install method (PATH)                                                                                        | How Formattington finds it                                              |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| shfmt        | Fetched by `formatters/shfmt/update.sh`; bundled in the full release archives                                                                                           | `go install mvdan.cc/sh/v3/cmd/shfmt@latest` or your OS package manager                                      | Bundled (or embedded) first, then `PATH` via `FindTool("shfmt")`        |
+| clang-format | Fetched by `formatters/clang-format/update.sh`; bundled in the full release archives                                                                                    | Install LLVM/clang-tools for your OS (for example `brew install clang-format` or `apt install clang-format`) | Bundled (or embedded) first, then `PATH` via `FindTool("clang-format")` |
+| black        | Fetched by `formatters/black/update.sh` (its macOS x86_64 build is compiled from source by the same script on a native Intel Mac); bundled in the full release archives | `pip install black` or `uv tool install black`                                                               | Bundled (or embedded) first, then `PATH` via `FindTool("black")`        |
+| prettier     | Fetched by `formatters/prettier/update.sh`; bundled in the full release archives                                                                                        | `npm install -g prettier`                                                                                    | Bundled (or embedded) first, then `PATH` via `FindTool("prettier")`     |
+| powershell   | Not bundled (PATH-only; PSScriptAnalyzer is a module)                                                                                                                   | PowerShell 7+ (`pwsh`) on `PATH` plus `Install-Module PSScriptAnalyzer` in `pwsh`                            | `PATH` via `FindTool("pwsh")`, then `FindTool("powershell")`            |
+| taplo        | Fetched by `formatters/taplo/update.sh`; bundled in the full release archives                                                                                           | Download taplo from https://github.com/tamasfe/taplo releases and put `taplo` on `PATH`                      | Bundled (or embedded) first, then `PATH` via `FindTool("taplo")`        |
+| gofmt        | Not bundled (PATH-only)                                                                                                                                                 | Install Go for your OS; `gofmt` comes with the Go installation                                               | `PATH` via `FindTool("gofmt")`                                          |
+| goimports    | Not bundled (PATH-only)                                                                                                                                                 | `go install golang.org/x/tools/cmd/goimports@latest` (ensure `$(go env GOPATH)/bin` is on `PATH`)            | `PATH` via `FindTool("goimports")`                                      |
+| markdownlint | Fetched by `formatters/markdownlint/update.sh`; bundled in the full release archives (not yet wired into the CLI)                                                       | `npm install -g markdownlint-cli`                                                                            | Not yet integrated                                                      |
 
 Bundled versions are pinned by the `formatters/<tool>/update.sh` scripts for offline use in the release archives; see [Bundled tools](#bundled-tools) for the layout and refresh process.
 
@@ -397,18 +398,18 @@ Two archives are produced per platform — `formattington-full-<platform>` and `
 
 The cross-compile matrix (CGO disabled, so the binaries are statically linked and portable):
 
-| Platform      | `GOOS`/`GOARCH` | Binary in `dist/`                  | Release asset                          |
-| ------------- | --------------- | ---------------------------------- | -------------------------------------- |
-| `linux-x64`   | `linux`/`amd64` | `dist/{lite,full}/linux-x64/formattington` | `formattington-{lite,full}-linux-x64.tar.gz`   |
-| `linux-arm64` | `linux`/`arm64` | `dist/{lite,full}/linux-arm64/formattington` | `formattington-{lite,full}-linux-arm64.tar.gz`   |
-| `macos-x64`   | `darwin`/`amd64` | `dist/{lite,full}/macos-x64/formattington` | `formattington-{lite,full}-macos-x64.tar.gz`   |
-| `macos-arm64` | `darwin`/`arm64` | `dist/{lite,full}/macos-arm64/formattington` | `formattington-{lite,full}-macos-arm64.tar.gz`   |
-| `windows-x64` | `windows`/`amd64` | `dist/{lite,full}/windows-x64/formattington.exe` | `formattington-{lite,full}-windows-x64.zip` |
-| `windows-arm64` | `windows`/`arm64` | `dist/{lite,full}/windows-arm64/formattington.exe` | `formattington-{lite,full}-windows-arm64.zip` |
+| Platform        | `GOOS`/`GOARCH`   | Binary in `dist/`                                  | Release asset                                  |
+| --------------- | ----------------- | -------------------------------------------------- | ---------------------------------------------- |
+| `linux-x64`     | `linux`/`amd64`   | `dist/{lite,full}/linux-x64/formattington`         | `formattington-{lite,full}-linux-x64.tar.gz`   |
+| `linux-arm64`   | `linux`/`arm64`   | `dist/{lite,full}/linux-arm64/formattington`       | `formattington-{lite,full}-linux-arm64.tar.gz` |
+| `macos-x64`     | `darwin`/`amd64`  | `dist/{lite,full}/macos-x64/formattington`         | `formattington-{lite,full}-macos-x64.tar.gz`   |
+| `macos-arm64`   | `darwin`/`arm64`  | `dist/{lite,full}/macos-arm64/formattington`       | `formattington-{lite,full}-macos-arm64.tar.gz` |
+| `windows-x64`   | `windows`/`amd64` | `dist/{lite,full}/windows-x64/formattington.exe`   | `formattington-{lite,full}-windows-x64.zip`    |
+| `windows-arm64` | `windows`/`arm64` | `dist/{lite,full}/windows-arm64/formattington.exe` | `formattington-{lite,full}-windows-arm64.zip`  |
 
 Each archive contains a top-level `formattington-{lite,full}-<platform>/` directory holding the binary. The release version is stamped into every binary with `-ldflags -X`, so a binary downloaded from a release reports the version it was released as even outside the repository.
 
-`FORMATTER_VERSION` controls which formatter release to fetch (default `latest`, resolved independently per tool). Forms that publish no suitable asset for a platform (for example `shfmt` and Windows arm64) are built anyway for the platforms they do support; missing tools are omitted from that platform's full binary and reported with a warning. Black's macOS x86_64 build (no upstream standalone asset) is compiled from source on a native Intel Mac when one is available.
+`FORMATTER_VERSION` controls which formatter release to fetch (default `latest`, resolved independently per tool). Forms that publish no suitable asset for a platform (for example `shfmt` and Windows arm64) are built anyway for the platforms they do support; missing tools are omitted from that platform's full binary and reported with a warning. Black's macOS x86_64 build (no upstream standalone asset) is compiled from source by `formatters/black/update.sh` on a native Intel Mac when one is available.
 
 Before tagging, the freshly built full binary for the host is run under an empty `HOME` and a stripped `PATH`; every formatter embedded for the host platform's bundle is invoked with `--version`, which fails the release if the embedded formatters do not unpack and run on this host.
 

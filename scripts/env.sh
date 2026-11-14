@@ -12,20 +12,20 @@ source "$ENV_DIR/.common.env"
 # v* directory, prefer it, so updating a tool bundle does not require
 # editing every platform env file.
 resolve_version_dir() {
-    local tool_dir="$1" fallback="$2" newest=""
-    [[ -d "$tool_dir" ]] || {
-        printf '%s' "$fallback"
-        return 0
-    }
-    # The version directories are plain "v<number>" names, so a glob is
-    # safe here.
-    # shellcheck disable=SC2010
-    newest="$(ls -1 "$tool_dir" 2>/dev/null | grep -E '^v[0-9]' | sort -V 2>/dev/null | tail -n 1 || true)"
-    if [[ -n "$newest" && -d "$tool_dir/$newest" ]]; then
-        printf '%s' "$tool_dir/$newest"
-    else
-        printf '%s' "$fallback"
-    fi
+	local tool_dir="$1" fallback="$2" newest=""
+	[[ -d "$tool_dir" ]] || {
+		printf '%s' "$fallback"
+		return 0
+	}
+	# The version directories are plain "v<number>" names, so a glob is
+	# safe here.
+	# shellcheck disable=SC2010
+	newest="$(ls -1 "$tool_dir" 2>/dev/null | grep -E '^v[0-9]' | sort -V 2>/dev/null | tail -n 1 || true)"
+	if [[ -n "$newest" && -d "$tool_dir/$newest" ]]; then
+		printf '%s' "$tool_dir/$newest"
+	else
+		printf '%s' "$fallback"
+	fi
 }
 
 VERSIONER_VERSION_DIR="$(resolve_version_dir "$VERSIONER_DIR" "$VERSIONER_VERSION_DIR")"
@@ -43,11 +43,11 @@ Linux:aarch64) source "$ENV_DIR/.linux-arm64.env" ;;
 MINGW*:x86_64 | MSYS*:x86_64 | CYGWIN*:x86_64) source "$ENV_DIR/.windows-x86_64.env" ;;
 MINGW*:aarch64 | MSYS*:aarch64 | CYGWIN*:aarch64 | MINGW*:arm64 | MSYS*:arm64 | CYGWIN*:arm64) source "$ENV_DIR/.windows-arm64.env" ;;
 *)
-    echo "Unsupported platform: $(uname -s) $(uname -m)" >&2
-    set +a
-    # shellcheck disable=SC2317
-    return 1 2>/dev/null || exit 1
-    ;;
+	echo "Unsupported platform: $(uname -s) $(uname -m)" >&2
+	set +a
+	# shellcheck disable=SC2317
+	return 1 2>/dev/null || exit 1
+	;;
 esac
 
 # --- Anchor tool paths to the repository root -------------------------
@@ -56,11 +56,11 @@ esac
 # absolute so they keep resolving from any working directory.
 REPO_ROOT_DIR="$(cd -- "$ENV_DIR/.." && pwd)"
 absolutize_bin() {
-    local var="$1" value="${!1:-}"
-    case "$value" in
-    "" | /*) return 0 ;;
-    esac
-    printf -v "$var" '%s' "$REPO_ROOT_DIR/$value"
+	local var="$1" value="${!1:-}"
+	case "$value" in
+	"" | /*) return 0 ;;
+	esac
+	printf -v "$var" '%s' "$REPO_ROOT_DIR/$value"
 }
 
 absolutize_bin VERSIONER_BIN
@@ -73,13 +73,13 @@ absolutize_bin SEVENZZ_BIN
 # windows-arm64 build), so fall back to the same tool on PATH when the
 # bundled binary is not present in the working tree.
 fallback_to_path() {
-    local var="$1" cmd="$2" value="${!1:-}"
-    if [[ -n "$value" && -x "$value" ]]; then
-        return 0
-    fi
-    if command -v "$cmd" >/dev/null 2>&1; then
-        printf -v "$var" '%s' "$(command -v "$cmd")"
-    fi
+	local var="$1" cmd="$2" value="${!1:-}"
+	if [[ -n "$value" && -x "$value" ]]; then
+		return 0
+	fi
+	if command -v "$cmd" >/dev/null 2>&1; then
+		printf -v "$var" '%s' "$(command -v "$cmd")"
+	fi
 }
 
 fallback_to_path VERSIONER_BIN versioner
@@ -87,12 +87,12 @@ fallback_to_path LOGAMUFFIN_BIN logamuffin
 fallback_to_path RUNNER_SPAWNER_BIN runner-spawner
 
 if [[ -z "${SEVENZZ_BIN:-}" || ! -x "${SEVENZZ_BIN:-}" ]]; then
-    for sevenzip_cmd in 7zz 7z; do
-        if command -v "$sevenzip_cmd" >/dev/null 2>&1; then
-            SEVENZZ_BIN="$(command -v "$sevenzip_cmd")"
-            break
-        fi
-    done
+	for sevenzip_cmd in 7zz 7z; do
+		if command -v "$sevenzip_cmd" >/dev/null 2>&1; then
+			SEVENZZ_BIN="$(command -v "$sevenzip_cmd")"
+			break
+		fi
+	done
 fi
 
 # source "project.env"

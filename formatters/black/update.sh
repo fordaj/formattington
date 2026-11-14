@@ -9,8 +9,10 @@ set -euo pipefail
 #   ./update.bash latest
 #   ./update.bash 26.10.1
 #   ./update.bash latest windows-x86_64 macos-arm64
+#   ./update.bash latest macos-x86_64   (builds from source; needs a native Intel Mac)
 #
-# Requirements: curl, jq
+# Requirements: curl, jq (plus git, uv, xcrun, and lipo on a native
+# Intel Mac, for the locally built macOS x86_64 binary)
 
 VERSION="${1:-latest}"
 shift || true
@@ -18,6 +20,18 @@ shift || true
 # Resolve paths.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT_DIR="${OUTPUT_DIR:-$SCRIPT_DIR}"
+
+# Black publishes no standalone macOS x86_64 binary, so on a native Intel
+# Mac that target is built from source with build_macos-x64.sh instead of
+# downloaded.
+on_macos_x86_64_host() {
+    [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "x86_64" ]]
+}
+
+# Track whether the target list came from the command line or from the
+# default; only an explicit request must fail hard on a target this host
+# cannot provide.
+EXPLICIT=0
 
 # Default download targets.
 if [[ $# -eq 0 ]]; then
@@ -28,11 +42,16 @@ if [[ $# -eq 0 ]]; then
         windows-arm64
         windows-x86_64
     )
+    if on_macos_x86_64_host; then
+        TARGETS+=(macos-x86_64)
+    fi
 else
+    EXPLICIT=1
     TARGETS=("$@")
 fi
 
-# Map target names to GitHub asset matching patterns.
+# macos-x86_64 is intentionally absent from this map; it is built from
+# source by build_macos-x64.sh (see below).
 get_asset_name() {
     case "$1" in
     linux-arm64) echo "black_linux-arm" ;;
@@ -79,8 +98,38 @@ mkdir -p "$VERSION_DIR"
 echo "Black version: $RELEASE_VERSION"
 echo
 
-# Download each requested platform.
+# Build the standalone macOS x86_64 executable from source on a native
+# Intel Mac, into $VERSION_DIR/macos-x86_64/black.
+build_macos_x86_64() {
+    local platform="macos-x86_64"
+
+    if ! on_macos_x86_64_host; then
+        if [[ "$EXPLICIT" -eq 1 ]]; then
+            echo "Error: black does not publish a standalone macOS x86_64 binary; build_macos-x64.sh needs a native Intel Mac." >&2
+            exit 1
+        fi
+        echo "  -> macos-x86_64"
+        echo "     Skipping: black does not publish a macOS x86_64 binary; the build script needs a native Intel Mac."
+        return 0
+    fi
+
+    echo "  -> macos-x86_64 (building from source)"
+    OUTPUT_DIR="$OUTPUT_DIR" "$SCRIPT_DIR/build_macos-x64.sh" "$RELEASE_VERSION"
+
+    if [[ ! -x "$VERSION_DIR/$platform/black" ]]; then
+        echo "Error: the macos-x86_64 build did not produce $VERSION_DIR/$platform/black" >&2
+        exit 1
+    fi
+    echo "     Created: $VERSION_DIR/$platform/black"
+}
+
+# Download (or build, for macos-x86_64) each requested platform.
 for TARGET in "${TARGETS[@]}"; do
+
+    if [[ "$TARGET" == "macos-x86_64" ]]; then
+        build_macos_x86_64
+        continue
+    fi
 
     # Find exactly one matching standalone executable.
     ASSET_NAME="$(get_asset_name "$TARGET")"
