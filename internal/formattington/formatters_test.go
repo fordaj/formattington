@@ -1767,3 +1767,93 @@ func TestStylerCheckNonZeroIsRemapped(t *testing.T) {
 		t.Errorf("exit = %d, want %d", code, ExitFormatRequired)
 	}
 }
+
+func TestJlfmtArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"jlfmt"}, func() (int, error) {
+			return runJlfmt(Options{})
+		})
+		want := []string{"--inplace"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"jlfmt"}, func() (int, error) {
+			return runJlfmt(Options{Check: true})
+		})
+		want := []string{"--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run uses diff when git is present", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"jlfmt", "git"}, func() (int, error) {
+			return runJlfmt(Options{DryRun: true})
+		})
+		want := []string{"--diff"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run degrades to check when git is missing", func(t *testing.T) {
+		// The fake PATH holds only the jlfmt fake; git is unresolvable.
+		_, recorded := runFake(t, []string{"jlfmt"}, func() (int, error) {
+			return runJlfmt(Options{DryRun: true})
+		})
+		want := []string{"--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v (git absent must degrade to --check)", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"jlfmt"}, func() (int, error) {
+			return runJlfmt(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+
+	t.Run("config args are forwarded verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"jlfmt"}, func() (int, error) {
+			return runJlfmt(Options{Args: []string{"--config", "ci.toml", "my file.jl"}})
+		})
+		want := []string{"--inplace", "--config", "ci.toml", "my file.jl"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
+
+func TestJlfmtExitMapping(t *testing.T) {
+	requirePOSIX(t)
+
+	for _, tc := range []struct{ native, want int }{
+		{1, ExitFormatRequired},
+		{2, 2},
+		{0, 0},
+	} {
+		binDir := filepath.Join(t.TempDir(), "bin")
+		writeFile(t, filepath.Join(binDir, "jlfmt"), "#!/bin/sh\nexit "+strconv.Itoa(tc.native)+"\n")
+		if err := chmodExecutable(filepath.Join(binDir, "jlfmt")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		code, err := runJlfmt(Options{Check: true})
+		if err != nil {
+			t.Fatalf("jlfmt exit %d: runJlfmt returned an error: %v", tc.native, err)
+		}
+		if code != tc.want {
+			t.Errorf("jlfmt exit %d: got %d, want %d", tc.native, code, tc.want)
+		}
+	}
+}
