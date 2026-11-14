@@ -1590,3 +1590,91 @@ func TestFantomasExit99IsRemapped(t *testing.T) {
 		}
 	}
 }
+
+func TestRubocopArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default injects no modification flags", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"rubocop"}, func() (int, error) {
+			return runRubocop(Options{})
+		})
+		if contains(recorded, "-a") || contains(recorded, "-A") || contains(recorded, "-x") {
+			t.Errorf("argv = %v, must not inject fix flags", recorded)
+		}
+		if len(recorded) != 0 {
+			t.Errorf("argv = %v, want []", recorded)
+		}
+	})
+
+	t.Run("check lints without injecting flags", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"rubocop"}, func() (int, error) {
+			return runRubocop(Options{Check: true})
+		})
+		if contains(recorded, "-a") || contains(recorded, "-A") {
+			t.Errorf("argv = %v, must not inject fix flags", recorded)
+		}
+	})
+
+	t.Run("fix-layout passthrough is verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"rubocop"}, func() (int, error) {
+			return runRubocop(Options{Args: []string{"-x", "my file.rb"}})
+		})
+		want := []string{"-x", "my file.rb"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("all-corrections passthrough is verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"rubocop"}, func() (int, error) {
+			return runRubocop(Options{Args: []string{"-a", "--only", "Layout", "x.rb"}})
+		})
+		want := []string{"-a", "--only", "Layout", "x.rb"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"rubocop"}, func() (int, error) {
+			return runRubocop(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+}
+
+func TestRubocopCheckDoesNotModifyFixture(t *testing.T) {
+	requirePOSIX(t)
+
+	fixture := filepath.Join("testdata", "rubocop", "fixture.rb")
+	original, err := os.ReadFile(fixture)
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	before := string(original)
+
+	binDir := t.TempDir()
+	writeFile(t, filepath.Join(binDir, "rubocop"), "#!/bin/sh\nexit 1\n")
+	if err := chmodExecutable(filepath.Join(binDir, "rubocop")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	code, err := runRubocop(Options{Check: true, Args: []string{fixture}})
+	if err != nil {
+		t.Fatalf("runRubocop returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d", code, ExitFormatRequired)
+	}
+	after, err := os.ReadFile(fixture)
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	if string(after) != before {
+		t.Error("the fixture was modified in check mode")
+	}
+}
