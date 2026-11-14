@@ -106,6 +106,17 @@ When multiple tools support the same file type, selection should respect configu
 
 When modifying CLI behavior, preserve these public command patterns unless the change explicitly updates the interface.
 
+### List registered tools
+
+```bash
+formattington list
+```
+
+- `list` prints a pipe-separated table of every registered tool with its Bundled and PATH versions (`-` when either side does not exist).
+- The bundled side reports the newest host-platform bundle `FindTool` would resolve (or the one unpacked from a full release binary's embedded payload); the PATH side resolves the same executable the integration resolves and probes it at list time (`--version` where supported; `gofmt`/`goimports` via `go version <path>`, `zig` via `zig version`, `dotnet` via `dotnet format --version`, `Rscript` for the installed styler package version).
+- Probes are bounded by a short timeout and never modify files; a missing executable or an undeterminable version reports `-`.
+- `list` takes no arguments or mode flags — `--check`/`--dry-run`/`--series`/`--config` are usage errors (exit 2) — and exits 0.
+
 ## Architecture
 
 The program lives in `cmd/formattington/` (entry point) and `internal/formattington/` (the whole implementation).
@@ -114,6 +125,7 @@ Important files include:
 
 - `cmd/formattington/main.go` — process entry point; calls `formattington.Main(os.Args[1:])` and exits with its return code.
 - `internal/formattington/cli.go` — canonical command-line entry point and orchestration (sole `registry` of tools; `languageAliases` map).
+- `internal/formattington/list.go` — the `list` command; reports each registered tool's bundled and PATH versions.
 - `internal/formattington/tools.go` — shared tool discovery (`FindTool`, `FormattersDir`), platform detection (`PlatformDir`), and subprocess helpers (`runTool`).
 - `internal/formattington/embedded.go` — unpacks the formatter executables embedded in the "full" release binary into the per-user cache directory on first use.
 - `internal/formattington/embedded_full.go` / `internal/formattington/embedded_lite.go` — the `go:embed` payload (build tag `full`) and its lite-build stub.

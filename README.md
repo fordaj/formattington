@@ -203,6 +203,25 @@ Empty `commands: []` is valid; `all` then runs nothing and exits `0`.
 
 Shell-string entries (`"black --check"`), object-form entries (`{"tool": "black", "args": [...]}`), and bare top-level arrays (`[["black"]]`) are rejected, as are unknown top-level keys (only `commands` is supported): the validator exits `2` with a `formattington: ...` message naming the file and the offending entry rather than misinterpreting them. Missing files, malformed JSON, and schema violations (missing/non-list `commands`, non-list/non-string/empty entries, unknown formatter/alias in element 0) all exit `2` the same way. A present but malformed `./.formattington.json` also exits `2` and does not silently fall back to the full registry.
 
+### List tool availability
+
+```bash
+formattington list
+```
+
+Prints a pipe-separated table of every registered tool with two version columns: the version of the bundle Formattington would resolve for the host platform, and the version found on `PATH`. Either side shows `-` when it does not exist:
+
+```
+| Tool         | Bundled Version | PATH Version |
+| ------------ | --------------- | ------------ |
+| shfmt        | 3.14.1          | 3.13.1       |
+| powershell   | -               | -            |
+```
+
+- The bundled side is read from the bundle layout (`formatters/<name>/v<version>/<platform>/`, or the per-user cache directory the full release binary unpacks its embedded formatters into) and reports the newest bundle carrying a host-platform executable — the same copy `FindTool()` would select.
+- The PATH side is resolved the same way the integrations resolve it (for example, `swift-format` falls back to `swift format`; `powershell` tries `pwsh` then `powershell`) and is probed by invoking the tool's version flag at list time (`--version` where supported; `gofmt`/`goimports` are probed via `go version <path>`, `zig` via `zig version`, `dotnet` via `dotnet format --version`, and `Rscript` is asked for the installed styler package version). A missing executable or an undeterminable version reports `-`. The probe never modifies files and is bounded by a short timeout.
+- `list` takes no arguments or mode flags — `--check`, `--dry-run`, `--series`, and `--config` are usage errors — and exits `0`.
+
 ## Operations and capabilities
 
 Formattington orchestrates tools that may support different operations.
@@ -226,7 +245,7 @@ Formattington preserves underlying formatter exit codes and uses a fixed scheme 
 
 | Code | Meaning                                                                                                                                                                                                                                       |
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Success. Formatting applied (or nothing needed formatting).                                                                                                                                                                                   |
+| 0    | Success. Formatting applied (or nothing needed formatting); informational commands (`--help`, `--version`, `list`) also exit `0`.                                                                                                                                                                   |
 | 1    | Formatting changes required in check mode.                                                                                                                                                                                                    |
 | 2    | Usage error (for example, unknown formatter, exclusive `--check` and `--dry-run` given together, unexpected arguments parsed by Formattington, or a missing/invalid `--config` / `FORMATTINGTON_CONFIG_PATH` / `./.formattington.json` file). |
 | 127  | Formatter executable not found (no bundled binary and nothing on `PATH`).                                                                                                                                                                     |
@@ -306,7 +325,7 @@ With a config file, the same rule applies in config-command order: the last non-
 
 Use `--verbose` to see which executable was resolved when a tool is present.
 
-`formattington --help` and `formattington --version` do not require any formatter executables and continue to work when tools are absent.
+`formattington --help`, `formattington --version`, and `formattington list` do not require any formatter executables and continue to work when tools are absent.
 
 ### Install hints
 
@@ -532,7 +551,7 @@ Here, `<platform>` is the hyphenated `<os>-<arch>` name returned by `PlatformDir
 
 The release `formattington-full-<platform>` binaries embed their platform's `formatters/` tree as a zip inside the executable (Go `full` build tag + `go:embed`). On first use the tree is unpacked into the per-user cache directory (`formatters/` under `os.UserCacheDir()`, for example `~/Library/Caches/formattington/formatters` on macOS) and reused from then on; upgrading to a binary with different embedded formatters replaces the extraction wholesale. The `formattington-lite-<platform>` binaries embed nothing.
 
-Bundled tools are preferred; when none is found, lookup falls back to `PATH`.
+Bundled tools are preferred; when none is found, lookup falls back to `PATH`. `formattington list` reports which bundled and PATH versions Formattington sees.
 
 `gofmt` and `goimports` are PATH-only and are not bundled; install `gofmt` via the Go installation, and `goimports` via `go install golang.org/x/tools/cmd/goimports@latest`, placing the executables on `PATH`.
 

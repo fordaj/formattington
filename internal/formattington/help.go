@@ -103,7 +103,15 @@ top-level arrays are rejected; unknown top-level keys are rejected.
 Missing/invalid config exits 2 with a 'formattington: ...' message naming the
 file. Single-tool runs ignore the config file and environment variable;
 --config before a single formatter is a usage error (exit 2). Relative paths
-are resolved against the current directory.`
+are resolved against the current directory.
+
+'formattington list' prints a table of every registered tool with the
+version of the bundle Formattington would resolve for the host platform and
+the version found on PATH; a side shows '-' when it does not exist. The PATH
+version is probed by invoking the resolved tool (its version flag, or the
+equivalent the tool supports; gofmt and goimports are probed via 'go
+version'), so the probe runs at list time and never modifies files. 'list'
+takes no arguments or mode flags; the exit code is always 0.`
 
 // printHelp writes the help text.
 func printHelp(out io.Writer) {
@@ -123,7 +131,8 @@ func printHelp(out io.Writer) {
 	for _, tool := range registry {
 		fmt.Fprintf(out, "  %s\n", tool.Name)
 	}
-	fmt.Fprintf(out, "  all              run every registered formatter\n\n")
+	fmt.Fprintf(out, "  all              run every registered formatter\n")
+	fmt.Fprintf(out, "  list             show each registered tool's bundled and PATH versions\n\n")
 
 	fmt.Fprintf(out, "language aliases:\n")
 	for _, alias := range sortedAliasNames() {
