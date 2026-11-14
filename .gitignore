@@ -17,3 +17,6 @@ vendor/
 
 # Logs
 .logs/
+
+# Python tooling caches
+.ruff_cache/

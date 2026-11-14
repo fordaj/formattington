@@ -270,6 +270,58 @@ func TestConfigErrorsExitTwo(t *testing.T) {
 	})
 }
 
+func TestConfigAutoDiscoveryNotice(t *testing.T) {
+	requirePOSIX(t)
+
+	notice := "using auto-discovered configuration"
+
+	t.Run("auto-discovered config prints the notice naming the file", func(t *testing.T) {
+		root := isolateConfig(t)
+		fakeTools(t, "shfmt")
+		cfg := writeConfig(t, filepath.Join(root, configFilename), `{"commands": [["shfmt"]]}`)
+
+		code, _, stderr := runCLI(t, "all")
+		if code != ExitOK {
+			t.Fatalf("exit = %d, want %d (stderr: %s)", code, ExitOK, stderr)
+		}
+		if !strings.Contains(stderr, notice) {
+			t.Errorf("stderr = %q, must carry the auto-discovery notice", stderr)
+		}
+		if !strings.Contains(stderr, cfg) {
+			t.Errorf("stderr = %q, must name the config file %q", stderr, cfg)
+		}
+	})
+
+	t.Run("environment variable config prints no notice", func(t *testing.T) {
+		root := isolateConfig(t)
+		fakeTools(t, "shfmt")
+		cfg := writeConfig(t, filepath.Join(root, "env.json"), `{"commands": [["shfmt"]]}`)
+		t.Setenv(configEnvVar, cfg)
+
+		code, _, stderr := runCLI(t, "all")
+		if code != ExitOK {
+			t.Fatalf("exit = %d, want %d (stderr: %s)", code, ExitOK, stderr)
+		}
+		if strings.Contains(stderr, notice) {
+			t.Errorf("stderr = %q, must not carry the auto-discovery notice", stderr)
+		}
+	})
+
+	t.Run("explicit --config prints no notice", func(t *testing.T) {
+		root := isolateConfig(t)
+		fakeTools(t, "shfmt")
+		cfg := writeConfig(t, filepath.Join(root, "flag.json"), `{"commands": [["shfmt"]]}`)
+
+		code, _, stderr := runCLI(t, "all", "--config", cfg)
+		if code != ExitOK {
+			t.Fatalf("exit = %d, want %d (stderr: %s)", code, ExitOK, stderr)
+		}
+		if strings.Contains(stderr, notice) {
+			t.Errorf("stderr = %q, must not carry the auto-discovery notice", stderr)
+		}
+	})
+}
+
 func TestConfigSchemaValidation(t *testing.T) {
 	payloads := map[string]string{
 		"bad-json":           "not json at all",

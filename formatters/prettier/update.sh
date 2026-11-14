@@ -56,16 +56,33 @@ for command in pnpm bun; do
     fi
 done
 
+# Verify the requested version is the pinned one; the committed
+# pnpm-lock.yaml carries the SHA-512 integrity of every tarball that
+# makes up the bundle (prettier has no runtime dependencies).
+PINNED_VERSION="3.10.1"
+RESOLVED_VERSION="$VERSION"
+if [[ "$RESOLVED_VERSION" != "latest" && "$RESOLVED_VERSION" != "$PINNED_VERSION" ]]; then
+    echo "Error: this script pins prettier $PINNED_VERSION, got $RESOLVED_VERSION." >&2
+    echo "Re-pin package.json and pnpm-lock.yaml in this directory after auditing the new release." >&2
+    exit 1
+fi
+
 # Create an isolated temporary installation.
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
-echo "Installing Prettier@$VERSION..."
+echo "Installing Prettier@$PINNED_VERSION from the pinned lockfile..."
+
+cp "$SCRIPT_DIR/package.json" "$SCRIPT_DIR/pnpm-lock.yaml" "$WORK_DIR/"
 
 cd "$WORK_DIR"
-pnpm add --save-exact "prettier@$VERSION"
+pnpm install --frozen-lockfile
 
 PRETTIER_VERSION="$(pnpm exec prettier --version)"
+if [[ "$PRETTIER_VERSION" != "$PINNED_VERSION" ]]; then
+    echo "Error: installed prettier $PRETTIER_VERSION, expected $PINNED_VERSION." >&2
+    exit 1
+fi
 PRETTIER_DIR="$WORK_DIR/node_modules/prettier"
 CLI_MODULE="$PRETTIER_DIR/internal/legacy-cli.mjs"
 

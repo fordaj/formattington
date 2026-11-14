@@ -19,48 +19,50 @@ type Tool struct {
 }
 
 // registry is the canonical formatter registry. The order is the order
-// used by "all" and by the exit-code aggregation rule.
+// used by "all" and by the exit-code aggregation rule. The order follows
+// the Stack Overflow Developer Survey 2026 popularity ranking (see
+// AGENTS.md, "Presentation order"); it is not alphabetical.
 var registry = []Tool{
-	{Name: "shfmt", Extensions: shfmtExtensions, Run: runShfmt},
-	{Name: "clang-format", Extensions: clangFormatExtensions, Run: runClangFormat},
-	{Name: "black", Extensions: blackExtensions, Run: runBlack},
 	{Name: "prettier", Extensions: prettierExtensions, Run: runPrettier},
+	{Name: "sqlfluff", Extensions: sqlfluffExtensions, Run: runSqlfluff},
+	{Name: "black", Extensions: blackExtensions, Run: runBlack},
+	{Name: "shfmt", Extensions: shfmtExtensions, Run: runShfmt},
+	{Name: "google-java-format", Extensions: googleJavaFormatExtensions, Run: runGoogleJavaFormat},
+	{Name: "dotnet-format", Extensions: dotnetFormatExtensions, Run: runDotnetFormat},
 	{Name: "powershell", Extensions: powershellExtensions, Run: runPowerShell},
-	{Name: "markdownlint", Extensions: markdownlintExtensions, Run: runMarkdownlint},
-	{Name: "taplo", Extensions: taploExtensions, Run: runTaplo},
+	{Name: "clang-format", Extensions: clangFormatExtensions, Run: runClangFormat},
+	{Name: "rustfmt", Extensions: rustfmtExtensions, Run: runRustfmt},
+	{Name: "php-cs-fixer", Extensions: phpCsFixerExtensions, Run: runPhpCsFixer},
 	{Name: "gofmt", Extensions: gofmtExtensions, Run: runGofmt},
 	{Name: "goimports", Extensions: goimportsExtensions, Run: runGoimports},
+	{Name: "ktfmt", Extensions: ktfmtExtensions, Run: runKtfmt},
 	{Name: "stylua", Extensions: styluaExtensions, Run: runStylua},
+	{Name: "swift-format", Extensions: swiftFormatExtensions, Run: runSwiftFormat},
+	{Name: "rubocop", Extensions: rubocopExtensions, Run: runRubocop},
+	{Name: "dart-format", Extensions: dartFormatExtensions, Run: runDartFormat},
+	{Name: "styler", Extensions: stylerExtensions, Run: runStyler},
 	{Name: "nixfmt", Extensions: nixfmtExtensions, Run: runNixfmt},
-	{Name: "php-cs-fixer", Extensions: phpCsFixerExtensions, Run: runPhpCsFixer},
+	{Name: "gdformat", Extensions: gdformatExtensions, Run: runGdformat},
+	{Name: "npm-groovy-lint", Extensions: npmGroovyLintExtensions, Run: runNpmGroovyLint},
 	{Name: "perltidy", Extensions: perltidyExtensions, Run: runPerltidy},
+	{Name: "zig-fmt", Extensions: zigFmtExtensions, Run: runZigFmt},
+	{Name: "mix-format", Extensions: mixFormatExtensions, Run: runMixFormat},
+	{Name: "fourmolu", Extensions: fourmoluExtensions, Run: runFourmolu},
+	{Name: "scalafmt", Extensions: scalafmtExtensions, Run: runScalafmt},
 	{Name: "fprettify", Extensions: fprettifyExtensions, Run: runFprettify},
 	{Name: "erlfmt", Extensions: erlfmtExtensions, Run: runErlfmt},
-	{Name: "sqlfluff", Extensions: sqlfluffExtensions, Run: runSqlfluff},
-	{Name: "gdformat", Extensions: gdformatExtensions, Run: runGdformat},
-	{Name: "google-java-format", Extensions: googleJavaFormatExtensions, Run: runGoogleJavaFormat},
-	{Name: "ktfmt", Extensions: ktfmtExtensions, Run: runKtfmt},
-	{Name: "scalafmt", Extensions: scalafmtExtensions, Run: runScalafmt},
-	{Name: "npm-groovy-lint", Extensions: npmGroovyLintExtensions, Run: runNpmGroovyLint},
-	{Name: "cljfmt", Extensions: cljfmtExtensions, Run: runCljfmt},
-	{Name: "fantomas", Extensions: fantomasExtensions, Run: runFantomas},
-	{Name: "rubocop", Extensions: rubocopExtensions, Run: runRubocop},
-	{Name: "styler", Extensions: stylerExtensions, Run: runStyler},
 	{Name: "jlfmt", Extensions: jlfmtExtensions, Run: runJlfmt},
-	{Name: "elm-format", Extensions: elmFormatExtensions, Run: runElmFormat},
-	{Name: "fourmolu", Extensions: fourmoluExtensions, Run: runFourmolu},
-	{Name: "ocamlformat", Extensions: ocamlformatExtensions, Run: runOcamlformat},
-	{Name: "rustfmt", Extensions: rustfmtExtensions, Run: runRustfmt},
-	{Name: "swift-format", Extensions: swiftFormatExtensions, Run: runSwiftFormat},
-	{Name: "dart-format", Extensions: dartFormatExtensions, Run: runDartFormat},
-	{Name: "dotnet-format", Extensions: dotnetFormatExtensions, Run: runDotnetFormat},
-	{Name: "mix-format", Extensions: mixFormatExtensions, Run: runMixFormat},
-	{Name: "zig-fmt", Extensions: zigFmtExtensions, Run: runZigFmt},
+	{Name: "cljfmt", Extensions: cljfmtExtensions, Run: runCljfmt},
 	{Name: "gleam-format", Extensions: gleamFormatExtensions, Run: runGleamFormat},
+	{Name: "gnatformat", Extensions: gnatformatExtensions, Run: runGnatformat},
+	{Name: "fantomas", Extensions: fantomasExtensions, Run: runFantomas},
+	{Name: "ocamlformat", Extensions: ocamlformatExtensions, Run: runOcamlformat},
+	{Name: "forge-fmt", Extensions: forgeFmtExtensions, Run: runForgeFmt},
 	{Name: "mojo-format", Extensions: mojoFormatExtensions, Run: runMojoFormat},
 	{Name: "odinfmt", Extensions: odinfmtExtensions, Run: runOdinfmt},
-	{Name: "forge-fmt", Extensions: forgeFmtExtensions, Run: runForgeFmt},
-	{Name: "gnatformat", Extensions: gnatformatExtensions, Run: runGnatformat},
+	{Name: "elm-format", Extensions: elmFormatExtensions, Run: runElmFormat},
+	{Name: "markdownlint", Extensions: markdownlintExtensions, Run: runMarkdownlint},
+	{Name: "taplo", Extensions: taploExtensions, Run: runTaplo},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -193,12 +195,19 @@ func Main(argv []string) int {
 		}
 		formatterArgs = nil
 
-		commands, found, err := loadConfig(opts.config, opts.hasConfig)
+		commands, found, source, raw, err := loadConfig(opts.config, opts.hasConfig)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "formattington: %s\n", err)
 			return ExitUsage
 		}
 		if found {
+			// An auto-discovered ./.formattington.json runs repo-declared
+			// argv on a bare 'formattington all' in an untrusted clone, so
+			// name the file in effect (not for --config or the environment
+			// variable, which are explicit).
+			if source == "auto-discovered .formattington.json" {
+				fmt.Fprintf(os.Stderr, "formattington: using auto-discovered configuration %s\n", raw)
+			}
 			runOpts := Options{
 				Check:   opts.check,
 				DryRun:  opts.dryRun,

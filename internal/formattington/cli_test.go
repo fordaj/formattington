@@ -604,10 +604,24 @@ func TestExitAggregationFollowsRegistrationOrder(t *testing.T) {
 	t.Setenv("PATH", binDir)
 	t.Chdir(t.TempDir())
 
-	// shfmt=5, black=2: the last non-zero in registration order wins.
+	// The aggregation rule reports the last non-zero code in registration
+	// order. black now registers earlier than shfmt (SO Survey 2026
+	// popularity order), so shfmt's code wins even though black exits
+	// non-zero too. Derive the winner from the registry so the fixture
+	// stays honest if the order ever changes again.
+	pos := map[string]int{}
+	for i, tool := range registry {
+		pos[tool.Name] = i
+	}
+	winner := "black"
+	if pos["shfmt"] > pos["black"] {
+		winner = "shfmt"
+	}
+	want := map[string]int{"shfmt": 5, "black": 2}[winner]
+
 	code, _, _ := runCLI(t, "all", "--series")
-	if code != 2 {
-		t.Errorf("exit = %d, want 2", code)
+	if code != want {
+		t.Errorf("exit = %d, want %d (%s registers later and wins)", code, want, winner)
 	}
 }
 

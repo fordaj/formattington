@@ -110,9 +110,9 @@ const formattersDirEnv = "FORMATTINGTON_FORMATTERS_DIR"
 // Resolution order: the FORMATTINGTON_FORMATTERS_DIR environment variable,
 // then the per-user cache directory the "full" release binary unpacks its
 // embedded formatters into, then the "formatters" directory of the nearest
-// ancestor of the running executable or of the current directory. A
-// self-contained bundle keeps its formatters inside the program, so a
-// downloaded full release needs no neighbouring directory.
+// ancestor of the running executable. A self-contained bundle keeps its
+// formatters inside the program, so a downloaded full release needs no
+// neighbouring directory.
 func FormattersDir() string {
 	if override := strings.TrimSpace(os.Getenv(formattersDirEnv)); override != "" {
 		return override
@@ -128,18 +128,15 @@ func FormattersDir() string {
 	return filepath.Join(repoRoot(), "formatters")
 }
 
-// repoRoot returns the nearest ancestor directory (starting from the
-// running executable, then the working directory) that contains a
-// "formatters" or "tools" directory. It falls back to the working
-// directory.
+// repoRoot returns the nearest ancestor directory of the running
+// executable that contains a "formatters" or "tools" directory. It falls
+// back to the working directory. Intentionally NOT anchored to the current
+// directory: a lite or source-built binary run inside an unrelated
+// project that happens to contain a "formatters/" directory must never
+// pick up that project's executables over the user's PATH tools.
 func repoRoot() string {
 	if exe, err := os.Executable(); err == nil {
 		if root, ok := findRootWithBundles(filepath.Dir(exe)); ok {
-			return root
-		}
-	}
-	if wd, err := os.Getwd(); err == nil {
-		if root, ok := findRootWithBundles(wd); ok {
 			return root
 		}
 	}

@@ -11,6 +11,31 @@ set -euo pipefail
 #
 # Requirements: curl, jq, tar, unzip, sha256sum or shasum
 #
+# Pinned SHA-256 of every asset this script fetches (of the archives
+# themselves). Release bumps must re-pin: audit the new upstream release,
+# update PINNED_VERSION, and replace the hashes below with `shasum -a
+# 256 <asset>`. The script refuses any version other than PINNED_VERSION
+# and hard-fails on a hash mismatch, so an unverifiable binary is never
+# fetched into a release. (Upstream signs assets with GPG, but no keyring
+# is pinned here; the embedded SHA-256 hashes give equivalent integrity.)
+PINNED_VERSION="0.8.8"
+PINNED_SHA256_linux_arm64="0be0046a81432e6e16340b8093cafa35a454e84956522d53f6a28f815dceac23"
+PINNED_SHA256_linux_x86_64="ee749898a07871e5dcbe7adf77a6c3d95de2fcde2e15de30e4fa7457faf05a71"
+PINNED_SHA256_macos_arm64="230bbf3777191f631bb592dfe85c06ebdcff6f56e8f5ed8b29804f8938961a79"
+PINNED_SHA256_macos_x86_64="e2a1fcf041ee12fc5d24a99520531e98c28358c8b7e62ecdccb9dd64b51fe084"
+PINNED_SHA256_windows_x86_64="4a2d0eb0529944fbfb7974943df5a03881ec4b67501a631e1272aa9fd746bc82"
+
+sha256_check() { # <file> <expected>
+    local actual
+    actual="$(shasum -a 256 "$1" | awk '{print $1}')"
+    if [[ "$actual" != "$2" ]]; then
+        echo "Error: SHA-256 verification failed for $1" >&2
+        echo "  expected: $2" >&2
+        echo "  actual:   $actual" >&2
+        return 1
+    fi
+}
+#
 # elm-format ships static Haskell binaries for five of six targets:
 # Linux x86_64, Linux arm64, macOS x86_64, macOS arm64, and Windows
 # x86_64. There is no Windows arm64 asset; that platform keeps the
@@ -63,15 +88,6 @@ for command in curl jq tar unzip; do
     fi
 done
 
-if command -v sha256sum >/dev/null 2>&1; then
-    SHA256_COMMAND="sha256sum"
-elif command -v shasum >/dev/null 2>&1; then
-    SHA256_COMMAND="shasum"
-else
-    echo "Error: sha256sum or shasum is required." >&2
-    exit 1
-fi
-
 REPO="avh4/elm-format"
 
 # Prefer the authenticated gh CLI (unauthenticated api.github.com
@@ -93,6 +109,12 @@ fi
 
 TAG_NAME="$(jq -er '.tag_name' <<<"$RELEASE_JSON")"
 ELM_FORMAT_VERSION="${TAG_NAME#v}"
+
+if [[ "$ELM_FORMAT_VERSION" != "$PINNED_VERSION" ]]; then
+    echo "Error: this script pins elm-format $PINNED_VERSION, but the release resolved to $ELM_FORMAT_VERSION." >&2
+    echo "Re-pin PINNED_VERSION and the hashes in this script after auditing the new release." >&2
+    exit 1
+fi
 VERSION_NUMBER="$ELM_FORMAT_VERSION"
 
 # Create version-specific output directory.
@@ -125,12 +147,9 @@ for TARGET in "${TARGETS[@]}"; do
 
     curl -fL --retry 3 "$DOWNLOAD_URL" -o "$ARCHIVE"
 
-    if [[ "$SHA256_COMMAND" == "sha256sum" ]]; then
-        ACTUAL_SHA256="$(sha256sum "$ARCHIVE" | awk '{print $1}')"
-    else
-        ACTUAL_SHA256="$(shasum -a 256 "$ARCHIVE" | awk '{print $1}')"
-    fi
-    echo "     sha256: $ACTUAL_SHA256  $ASSET_NAME"
+    local_key="${TARGET//-/_}"
+    local_var="PINNED_SHA256_${local_key}"
+    sha256_check "$ARCHIVE" "${!local_var}" || exit 1
 
     # Extract the single elm-format executable.
     EXTRACT_DIR="$WORK_DIR/extract-$TARGET"

@@ -1,0 +1,10 @@
+{
+  "name": "formattington-markdownlint-bundle",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pinned dependency manifest for the Formattington markdownlint bundle build. The release build installs with --frozen-lockfile so every tarball is verified against this lockfile's documented SHA-512 integrity hashes.",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "markdownlint-cli": "0.50.0"
+  }
+}

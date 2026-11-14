@@ -52,7 +52,7 @@
 # re-running it attaches the assets instead of failing.
 #
 # Env:
-#   FORMATTER_VERSION  Version of the bundled formatters to fetch (default: latest).
+#   FORMATTER_VERSION  Version of the bundled formatters to fetch (default: latest, refused for releases unless --allow-latest is passed).
 
 set -euo pipefail
 
@@ -69,6 +69,7 @@ fi
 
 DRY_RUN=0
 BUILD_ONLY=0
+ALLOW_LATEST=0
 
 # The cross-compile matrix:
 # "<release platform> <goos> <goarch> <bundle platform> <binary name>".
@@ -114,13 +115,14 @@ binary, so it is a single, self-contained executable).
 Flags:
   --build-only    Cross-compile into dist/ and stop (no tag/push/release).
   --dry-run, -n   Compute + verify + build, but do not tag/push/release.
+  --allow-latest  Fetch the formatters with FORMATTER_VERSION=latest (refused for releases otherwise).
   --help, -h      Show this help.
 
 Env:
   FORMATTINGTON_BIN  Path to the formattington binary (default: ./bin/formattington, then PATH).
   VERSIONER_BIN   Path to versioner (default: via scripts/entry.sh, then PATH).
   LOGAMUFFIN_BIN  Path to logamuffin for log() (default: via scripts/entry.sh, then PATH).
-  FORMATTER_VERSION  Version of the bundled formatters to fetch (default: latest).
+  FORMATTER_VERSION  Version of the bundled formatters to fetch (default: latest, refused for releases unless --allow-latest is passed).
 EOF
 }
 
@@ -134,6 +136,10 @@ while [[ $# -gt 0 ]]; do
 		BUILD_ONLY=1
 		shift
 		;;
+	--allow-latest)
+		ALLOW_LATEST=1
+		shift
+		;;
 	--help | -h)
 		usage
 		exit 0
@@ -145,6 +151,17 @@ while [[ $# -gt 0 ]]; do
 		;;
 	esac
 done
+
+# A real release may not be built from unpinned "latest" formatters: every
+# bundled tool is either verified against upstream checksums or against a
+# pinned hash embedded in its update.sh, and an unverifiable bundle must
+# not ship. --build-only and --dry-run are exempt (local rehearsal only,
+# nothing is tagged or published); a real release requires the operator to
+# pass --allow-latest explicitly if they really want latest.
+if [[ "$BUILD_ONLY" -eq 0 && "$DRY_RUN" -eq 0 && "$FORMATTER_VERSION" == "latest" && "$ALLOW_LATEST" -eq 0 ]]; then
+	printf 'release.bash: FORMATTER_VERSION=latest is refused for releases; pass --allow-latest to override, or pin a version explicitly.\n' >&2
+	exit 2
+fi
 
 die() {
 	log ERROR "$*" || true
@@ -395,6 +412,7 @@ fetch_formatters() {
 		platforms+=("$bundle")
 	done
 
+	local zero_fetch=()
 	for tool_dir in "$REPO_ROOT"/formatters/*/; do
 		[[ -d "$tool_dir" ]] || continue
 		tool="$(basename "$tool_dir")"
@@ -409,17 +427,39 @@ fetch_formatters() {
 			fi
 		done
 
+		local fetched=0
 		local missing=""
 		for platform in "${platforms[@]}"; do
-			if ! formatter_present "$tool" "$platform"; then
+			if formatter_present "$tool" "$platform"; then
+				fetched=$((fetched + 1))
+			else
 				missing="$missing $platform"
 			fi
 		done
 		if [[ -z "$missing" ]]; then
 			log INFO "  fetched $tool for ${#platforms[@]} platforms"
+		elif [[ "$fetched" -eq 0 ]]; then
+			zero_fetch+=("$tool")
+			log ERROR "  $tool could not be fetched for any platform (pins mismatch or network failure)"
 		else
 			log WARNING "$tool is not available for:$missing (it will be missing from those full bundles)"
 		fi
+	done
+
+	# A tool that failed everywhere means the release would ship without
+	# it on every platform — almost always a pins/version mismatch or a
+	# network failure, not an upstream packaging gap. Refuse to continue.
+	if [[ "${#zero_fetch[@]}" -ne 0 ]]; then
+		die "no bundles fetched for: ${zero_fetch[*]}; refusing to build a release without them"
+	fi
+
+	# Record the exact resolved versions in the release log.
+	log INFO "Bundled formatter versions:"
+	for dir in "$STAGE_DIR"/formatters/*/v*/; do
+		[[ -d "$dir" ]] || continue
+		tool="$(basename "$(dirname "$dir")")"
+		version="$(basename "$dir")"
+		log INFO "  $tool $version"
 	done
 }
 
@@ -504,20 +544,24 @@ package_binaries() {
 			extension="tar.gz"
 		fi
 
-		# Lite: the program alone.
+		# Lite: the program alone, plus the redistribution notices.
 		lite_tree="$STAGE_DIR/pkg/formattington-$platform-lite"
 		mkdir -p "$lite_tree"
 		cp "$DIST_DIR/lite/$platform/$binary" "$lite_tree/$binary"
+		cp "$REPO_ROOT/NOTICE.md" "$lite_tree/NOTICE.md"
+		cp -a "$REPO_ROOT/LICENSES" "$lite_tree/LICENSES"
 		archive="$DIST_DIR/formattington-$platform-lite.$extension"
 		package_tree "$lite_tree" "$archive"
 		log INFO "  packaged $(basename "$archive")"
 		RELEASE_ASSETS+=("$archive")
 
 		# Full: the self-contained program (the bundled formatters are
-		# embedded inside the binary).
+		# embedded inside the binary), plus the redistribution notices.
 		full_tree="$STAGE_DIR/pkg/formattington-$platform-full"
 		mkdir -p "$full_tree"
 		cp "$DIST_DIR/full/$platform/$binary" "$full_tree/$binary"
+		cp "$REPO_ROOT/NOTICE.md" "$full_tree/NOTICE.md"
+		cp -a "$REPO_ROOT/LICENSES" "$full_tree/LICENSES"
 		archive="$DIST_DIR/formattington-$platform-full.$extension"
 		package_tree "$full_tree" "$archive"
 		log INFO "  packaged $(basename "$archive")"
@@ -601,7 +645,7 @@ smoke_full_binary() {
 
 	# The formatters registered in the CLI. Every bundled tool is exercised
 	# through the CLI here; the direct check below covers all of them too.
-	local cli_tools=(shfmt clang-format black prettier taplo markdownlint stylua google-java-format ktfmt cljfmt elm-format fourmolu)
+	local cli_tools=(prettier black shfmt google-java-format clang-format ktfmt stylua fourmolu cljfmt elm-format markdownlint taplo)
 
 	local smoke_home
 	smoke_home="$(mktemp -d)"
