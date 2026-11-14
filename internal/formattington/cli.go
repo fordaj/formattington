@@ -33,6 +33,7 @@ var registry = []Tool{
 	{Name: "stylua", Extensions: styluaExtensions, Run: runStylua},
 	{Name: "nixfmt", Extensions: nixfmtExtensions, Run: runNixfmt},
 	{Name: "php-cs-fixer", Extensions: phpCsFixerExtensions, Run: runPhpCsFixer},
+	{Name: "perltidy", Extensions: perltidyExtensions, Run: runPerltidy},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -52,6 +53,7 @@ var languageAliases = map[string]string{
 	"lua":      "stylua",
 	"nix":      "nixfmt",
 	"php":      "php-cs-fixer",
+	"perl":     "perltidy",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per

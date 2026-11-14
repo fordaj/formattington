@@ -20,7 +20,8 @@ additionally fixes imports, so use it via the goimports name or a config
 command for import-aware formatting); lua uses stylua (Lua formatting via
 StyLua); nix uses nixfmt (Nix formatting via nixfmt, RFC 166 "rfc style"); php uses
 php-cs-fixer (PHP formatting; "php-cs-fixer check" is non-modifying, exit 8
-is reported as 1).
+is reported as 1). perl uses perltidy (Perl formatting; PATH-only and GPL-2.0+; check mode
+uses "perltidy --assert-tidy").
 
 markdownlint lints Markdown files; it never rewrites files without an
 explicit "--fix" argument, so every mode lints (findings exit 1, no
@@ -39,7 +40,7 @@ the "full" release binaries, inside the executable itself; use --verbose
 With 'all', formatters run concurrently by default; use --series (before or
 after 'all', e.g. 'formattington --series all' or 'formattington all
 --series') to run them sequentially in shfmt, clang-format, black, prettier,
-powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer order. Exit code is the
+powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy order. Exit code is the
 last non-zero code
 in that order (missing tool counts as 127, printed to stderr, and does not
 prevent remaining formatters from running); 0 only if all succeed.
