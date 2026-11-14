@@ -1008,11 +1008,11 @@ func TestSqlfluffArgv(t *testing.T) {
 		}
 	})
 
-	t.Run("dry run shows a diff without writing", func(t *testing.T) {
+	t.Run("dry run validates without modifying", func(t *testing.T) {
 		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
 			return runSqlfluff(Options{DryRun: true})
 		})
-		want := []string{"fix", "--disable-progress-bar", "--dry-run", "--diff"}
+		want := []string{"lint", "--disable-progress-bar"}
 		if !reflect.DeepEqual(recorded, want) {
 			t.Errorf("argv = %v, want %v", recorded, want)
 		}

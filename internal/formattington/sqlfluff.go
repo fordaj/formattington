@@ -15,9 +15,10 @@ var sqlfluffExtensions = []string{".sql"}
 //
 // "sqlfluff lint" exits 1 on violations, 2 on error; exit 1 is reported as
 // ExitFormatRequired and exit 2 passes through untouched. "sqlfluff fix"
-// rewrites files in place. "--dry-run --diff" prints a diff without
-// writing (git-style patch via SQLFluff). Arguments are forwarded
-// verbatim; "--config", "--dialect" and friends all work natively.
+// rewrites files in place. SQLFluff has no diff mode (the old
+// "fix --dry-run --diff" flags were removed in SQLFluff 3.x), so --dry-run
+// maps to the same read-only lint invocation as --check. Arguments are
+// forwarded verbatim; "--config", "--dialect" and friends all work natively.
 func runSqlfluff(opts Options) (int, error) {
 	executable, err := FindTool("sqlfluff", "", opts.Verbose)
 	if err != nil {
@@ -42,8 +43,8 @@ func runSqlfluff(opts Options) (int, error) {
 		}
 		return code, nil
 	case opts.DryRun:
-		// Show a diff without modifying files.
-		return runTool(executable, withArgs([]string{"fix", "--disable-progress-bar", "--dry-run", "--diff"}, forwarded), false)
+		// SQLFluff has no diff mode; validate without modifying files.
+		return runTool(executable, withArgs([]string{"lint", "--disable-progress-bar"}, forwarded), false)
 	default:
 		// Format in place.
 		return runTool(executable, withArgs([]string{"fix", "--disable-progress-bar"}, forwarded), false)
