@@ -41,7 +41,8 @@ enable the "format" preset in .groovylintrc or layout findings are not reported)
 fantomas; needs the .NET SDK >= 8; exit 99 means formatting needed, reported as 1).
 ruby uses rubocop (Ruby linting with layout cops; every mode lints — pass -x
 for layout-only fixes; findings exit 1). r uses styler (R formatting via the
-styler package through Rscript; check mode uses dry = "fail").
+styler package through Rscript; check mode uses dry = "fail"). julia uses
+jlfmt (Julia formatting via the JuliaFormatter.jl app; install with Pkg.Apps.add).
 
 markdownlint lints Markdown files; it never rewrites files without an
 explicit "--fix" argument, so every mode lints (findings exit 1, no
@@ -60,7 +61,7 @@ the "full" release binaries, inside the executable itself; use --verbose
 With 'all', formatters run concurrently by default; use --series (before or
 after 'all', e.g. 'formattington --series all' or 'formattington all
 --series') to run them sequentially in shfmt, clang-format, black, prettier,
-powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt, sqlfluff, gdformat, google-java-format, ktfmt, scalafmt, npm-groovy-lint, cljfmt, fantomas, rubocop, styler order. Exit code is the
+powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt, sqlfluff, gdformat, google-java-format, ktfmt, scalafmt, npm-groovy-lint, cljfmt, fantomas, rubocop, styler, jlfmt order. Exit code is the
 last non-zero code
 in that order (missing tool counts as 127, printed to stderr, and does not
 prevent remaining formatters from running); 0 only if all succeed.
