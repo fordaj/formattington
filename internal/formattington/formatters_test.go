@@ -1149,3 +1149,70 @@ func TestGdformatArgv(t *testing.T) {
 		}
 	})
 }
+
+func TestGoogleJavaFormatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default replaces in place with cleanup disabled", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"google-java-format"}, func() (int, error) {
+			return runGoogleJavaFormat(Options{})
+		})
+		want := []string{"--replace", "--cleanup=false"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses dry-run with exit-if-changed", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"google-java-format"}, func() (int, error) {
+			return runGoogleJavaFormat(Options{Check: true})
+		})
+		want := []string{"--dry-run", "--set-exit-if-changed", "--cleanup=false"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"google-java-format"}, func() (int, error) {
+			return runGoogleJavaFormat(Options{DryRun: true})
+		})
+		want := []string{"--dry-run", "--set-exit-if-changed", "--cleanup=false"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("user cleanup value wins over the default", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"google-java-format"}, func() (int, error) {
+			return runGoogleJavaFormat(Options{Args: []string{"--cleanup=true", "File.java"}})
+		})
+		// The user's --cleanup=true must survive; --cleanup=false is not added.
+		if contains(recorded, "--cleanup=false") {
+			t.Errorf("argv = %v, must not contain the forced --cleanup=false", recorded)
+		}
+		for _, arg := range []string{"--cleanup=true", "File.java", "--replace"} {
+			if !contains(recorded, arg) {
+				t.Errorf("argv = %v, missing %q", recorded, arg)
+			}
+		}
+	})
+
+	t.Run("bare cleanup flag suppresses the default too", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"google-java-format"}, func() (int, error) {
+			return runGoogleJavaFormat(Options{Args: []string{"--cleanup", "File.java"}})
+		})
+		if contains(recorded, "--cleanup=false") {
+			t.Errorf("argv = %v, must not contain the forced --cleanup=false", recorded)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"google-java-format"}, func() (int, error) {
+			return runGoogleJavaFormat(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+}
