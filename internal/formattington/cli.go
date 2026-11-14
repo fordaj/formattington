@@ -56,6 +56,7 @@ var registry = []Tool{
 	{Name: "dotnet-format", Extensions: dotnetFormatExtensions, Run: runDotnetFormat},
 	{Name: "mix-format", Extensions: mixFormatExtensions, Run: runMixFormat},
 	{Name: "zig-fmt", Extensions: zigFmtExtensions, Run: runZigFmt},
+	{Name: "gleam-format", Extensions: gleamFormatExtensions, Run: runGleamFormat},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -100,6 +101,7 @@ var languageAliases = map[string]string{
 	"vbnet":       "dotnet-format",
 	"elixir":      "mix-format",
 	"zig":         "zig-fmt",
+	"gleam":       "gleam-format",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per

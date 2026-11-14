@@ -2599,3 +2599,96 @@ func TestZigFmtArgv(t *testing.T) {
 		}
 	})
 }
+
+func TestGleamFormatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"gleam"}, func() (int, error) {
+			return runGleamFormat(Options{})
+		})
+		want := []string{"format"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"gleam"}, func() (int, error) {
+			return runGleamFormat(Options{Check: true})
+		})
+		want := []string{"format", "--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"gleam"}, func() (int, error) {
+			return runGleamFormat(Options{DryRun: true})
+		})
+		want := []string{"format", "--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"gleam"}, func() (int, error) {
+			return runGleamFormat(Options{Args: []string{"--version"}})
+		})
+		want := []string{"format", "--version"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("fixture check does not modify", func(t *testing.T) {
+		fixture := filepath.Join("testdata", "gleam-format", "fixture.gleam")
+		original, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		before := string(original)
+
+		binDir := t.TempDir()
+		writeFile(t, filepath.Join(binDir, "gleam"), fakeExecutableScript)
+		if err := chmodExecutable(filepath.Join(binDir, "gleam")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		_, err = runGleamFormat(Options{Check: true, Args: []string{fixture}})
+		if err != nil {
+			t.Fatalf("runGleamFormat returned an error: %v", err)
+		}
+		after, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		if string(after) != before {
+			t.Error("the fixture was modified in check mode")
+		}
+	})
+}
+
+func TestGleamFormatCheckNonZeroIsRemapped(t *testing.T) {
+	requirePOSIX(t)
+
+	binDir := t.TempDir()
+	writeFile(t, filepath.Join(binDir, "gleam"), "#!/bin/sh\nexit 1\n")
+	if err := chmodExecutable(filepath.Join(binDir, "gleam")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	code, err := runGleamFormat(Options{Check: true})
+	if err != nil {
+		t.Fatalf("runGleamFormat returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d", code, ExitFormatRequired)
+	}
+}

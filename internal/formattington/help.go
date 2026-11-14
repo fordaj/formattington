@@ -55,7 +55,8 @@ dotnet-format (C#/VB.NET whitespace formatting via "dotnet format whitespace
 --folder . --include <files>"; .NET SDK >= 6 required; --verify-no-changes exit 2
 is reported as 1). elixir uses mix-format (Elixir formatting via mix format from
 the Elixir/OTP installation; --no-compile is passed by default). zig uses zig-fmt (Zig formatting via
-"zig fmt" from the Zig toolchain).
+"zig fmt" from the Zig toolchain). gleam uses gleam-format (Gleam formatting via
+"gleam format" from the Gleam toolchain).
 
 markdownlint lints Markdown files; it never rewrites files without an
 explicit "--fix" argument, so every mode lints (findings exit 1, no
@@ -74,7 +75,7 @@ the "full" release binaries, inside the executable itself; use --verbose
 With 'all', formatters run concurrently by default; use --series (before or
 after 'all', e.g. 'formattington --series all' or 'formattington all
 --series') to run them sequentially in shfmt, clang-format, black, prettier,
-powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt, sqlfluff, gdformat, google-java-format, ktfmt, scalafmt, npm-groovy-lint, cljfmt, fantomas, rubocop, styler, jlfmt, elm-format, fourmolu, ocamlformat, rustfmt, swift-format, dart-format, dotnet-format, mix-format, zig-fmt order. Exit code is the
+powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt, sqlfluff, gdformat, google-java-format, ktfmt, scalafmt, npm-groovy-lint, cljfmt, fantomas, rubocop, styler, jlfmt, elm-format, fourmolu, ocamlformat, rustfmt, swift-format, dart-format, dotnet-format, mix-format, zig-fmt, gleam-format order. Exit code is the
 last non-zero code
 in that order (missing tool counts as 127, printed to stderr, and does not
 prevent remaining formatters from running); 0 only if all succeed.
