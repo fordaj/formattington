@@ -61,7 +61,9 @@ the Elixir/OTP installation; --no-compile is passed by default). zig uses zig-fm
 tree is never modified; Linux glibc >= 2.34 and macOS arm64 only).
 odin uses odinfmt (Odin formatting via odinfmt; check mode is synthesized by
 byte-comparing stdout against the original). solidity uses forge-fmt (Solidity
-formatting via "forge fmt" from Foundry).
+formatting via "forge fmt" from Foundry). ada uses gnatformat (Ada formatting via
+GNATformat; when no .gpr project exists in the cwd, --no-project is passed
+automatically for standalone files).
 
 markdownlint lints Markdown files; it never rewrites files without an
 explicit "--fix" argument, so every mode lints (findings exit 1, no
@@ -80,7 +82,7 @@ the "full" release binaries, inside the executable itself; use --verbose
 With 'all', formatters run concurrently by default; use --series (before or
 after 'all', e.g. 'formattington --series all' or 'formattington all
 --series') to run them sequentially in shfmt, clang-format, black, prettier,
-powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt, sqlfluff, gdformat, google-java-format, ktfmt, scalafmt, npm-groovy-lint, cljfmt, fantomas, rubocop, styler, jlfmt, elm-format, fourmolu, ocamlformat, rustfmt, swift-format, dart-format, dotnet-format, mix-format, zig-fmt, gleam-format, mojo-format, odinfmt, forge-fmt order. Exit code is the
+powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt, sqlfluff, gdformat, google-java-format, ktfmt, scalafmt, npm-groovy-lint, cljfmt, fantomas, rubocop, styler, jlfmt, elm-format, fourmolu, ocamlformat, rustfmt, swift-format, dart-format, dotnet-format, mix-format, zig-fmt, gleam-format, mojo-format, odinfmt, forge-fmt, gnatformat order. Exit code is the
 last non-zero code
 in that order (missing tool counts as 127, printed to stderr, and does not
 prevent remaining formatters from running); 0 only if all succeed.

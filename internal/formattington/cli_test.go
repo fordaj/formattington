@@ -128,6 +128,7 @@ func TestLanguageAliasSelection(t *testing.T) {
 		"mojo":        "mojo-format",
 		"odin":        "odinfmt",
 		"solidity":    "forge-fmt",
+		"ada":         "gnatformat",
 	}
 
 	for alias, formatter := range cases {
@@ -308,7 +309,7 @@ func TestHelpListsOptionsAndAliases(t *testing.T) {
 		"markdownlint",
 		"toml", "taplo",
 		"go uses gofmt", "goimports",
-		"lua", "stylua", "nix", "nixfmt", "php", "php-cs-fixer", "perl", "perltidy", "fortran", "fprettify", "erlang", "erlfmt", "sql", "sqlfluff", "gdscript", "gdformat", "java", "google-java-format", "kotlin", "ktfmt", "scala", "scalafmt", "groovy", "npm-groovy-lint", "micropython", "black", "clojure", "cljfmt", "fsharp", "fantomas", "ruby", "rubocop", "r", "styler", "julia", "jlfmt", "elm", "elm-format", "haskell", "fourmolu", "ocaml", "ocamlformat", "rust", "rustfmt", "swift", "swift-format", "dart", "dart-format", "csharp", "vbnet", "dotnet-format", "elixir", "mix-format", "zig", "zig-fmt", "gleam", "gleam-format", "mojo", "mojo-format", "odin", "odinfmt", "solidity", "forge-fmt",
+		"lua", "stylua", "nix", "nixfmt", "php", "php-cs-fixer", "perl", "perltidy", "fortran", "fprettify", "erlang", "erlfmt", "sql", "sqlfluff", "gdscript", "gdformat", "java", "google-java-format", "kotlin", "ktfmt", "scala", "scalafmt", "groovy", "npm-groovy-lint", "micropython", "black", "clojure", "cljfmt", "fsharp", "fantomas", "ruby", "rubocop", "r", "styler", "julia", "jlfmt", "elm", "elm-format", "haskell", "fourmolu", "ocaml", "ocamlformat", "rust", "rustfmt", "swift", "swift-format", "dart", "dart-format", "csharp", "vbnet", "dotnet-format", "elixir", "mix-format", "zig", "zig-fmt", "gleam", "gleam-format", "mojo", "mojo-format", "odin", "odinfmt", "solidity", "forge-fmt", "ada", "gnatformat",
 		"concurrently", "last non-zero",
 		"FORMATTINGTON_CONFIG_PATH", ".formattington.json",
 	} {

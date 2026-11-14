@@ -2922,3 +2922,94 @@ func TestForgeFmtArgv(t *testing.T) {
 		}
 	})
 }
+
+func TestGnatformatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default uses no-project when no gpr exists", func(t *testing.T) {
+		t.Chdir(t.TempDir()) // empty dir: no .gpr files
+		_, recorded := runFake(t, []string{"gnatformat"}, func() (int, error) {
+			return runGnatformat(Options{Args: []string{"a.adb"}})
+		})
+		want := []string{"--no-project", "a.adb"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses check with no-project when no gpr exists", func(t *testing.T) {
+		t.Chdir(t.TempDir())
+		_, recorded := runFake(t, []string{"gnatformat"}, func() (int, error) {
+			return runGnatformat(Options{Check: true, Args: []string{"a.adb"}})
+		})
+		want := []string{"--no-project", "--check", "a.adb"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("exactly one gpr: tool auto-loads it, no --no-project", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, "proj.gpr"), "project Proj is end Proj;\n")
+		t.Chdir(dir)
+		_, recorded := runFake(t, []string{"gnatformat"}, func() (int, error) {
+			return runGnatformat(Options{Args: []string{"a.adb"}})
+		})
+		want := []string{"a.adb"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("user --no-project wins; -P passes through", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, "p.gpr"), "project P is end P;\n")
+		writeFile(t, filepath.Join(dir, "q.gpr"), "project Q is end Q;\n")
+		t.Chdir(dir)
+		_, recorded := runFake(t, []string{"gnatformat"}, func() (int, error) {
+			return runGnatformat(Options{Args: []string{"-P", "p.gpr", "a.adb"}})
+		})
+		want := []string{"-P", "p.gpr", "a.adb"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"gnatformat"}, func() (int, error) {
+			return runGnatformat(Options{Args: []string{"--help"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--help"}) {
+			t.Errorf("argv = %v, want [--help]", recorded)
+		}
+	})
+
+	t.Run("fixture check does not modify", func(t *testing.T) {
+		fixture := filepath.Join("testdata", "gnatformat", "fixture.adb")
+		original, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		before := string(original)
+
+		binDir := t.TempDir()
+		writeFile(t, filepath.Join(binDir, "gnatformat"), fakeExecutableScript)
+		if err := chmodExecutable(filepath.Join(binDir, "gnatformat")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		_, err = runGnatformat(Options{Check: true, Args: []string{fixture}})
+		if err != nil {
+			t.Fatalf("runGnatformat returned an error: %v", err)
+		}
+		after, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		if string(after) != before {
+			t.Error("the fixture was modified in check mode")
+		}
+	})
+}

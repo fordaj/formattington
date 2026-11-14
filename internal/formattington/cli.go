@@ -60,6 +60,7 @@ var registry = []Tool{
 	{Name: "mojo-format", Extensions: mojoFormatExtensions, Run: runMojoFormat},
 	{Name: "odinfmt", Extensions: odinfmtExtensions, Run: runOdinfmt},
 	{Name: "forge-fmt", Extensions: forgeFmtExtensions, Run: runForgeFmt},
+	{Name: "gnatformat", Extensions: gnatformatExtensions, Run: runGnatformat},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -108,6 +109,7 @@ var languageAliases = map[string]string{
 	"mojo":        "mojo-format",
 	"odin":        "odinfmt",
 	"solidity":    "forge-fmt",
+	"ada":         "gnatformat",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
