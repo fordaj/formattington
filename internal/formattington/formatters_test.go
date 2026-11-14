@@ -1072,3 +1072,80 @@ func TestSqlfluffCheckExitMapping(t *testing.T) {
 		}
 	}
 }
+
+func TestGdformatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"gdformat"}, func() (int, error) {
+			return runGdformat(Options{})
+		})
+		if len(recorded) != 0 {
+			t.Errorf("argv = %v, want []", recorded)
+		}
+	})
+
+	t.Run("check uses -c", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"gdformat"}, func() (int, error) {
+			return runGdformat(Options{Check: true})
+		})
+		want := []string{"-c"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run uses -d and implies check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"gdformat"}, func() (int, error) {
+			return runGdformat(Options{DryRun: true})
+		})
+		want := []string{"-d"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"gdformat"}, func() (int, error) {
+			return runGdformat(Options{Args: []string{"--help"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--help"}) {
+			t.Errorf("argv = %v, want [--help]", recorded)
+		}
+	})
+
+	t.Run("forwards args verbatim and never injects --fast", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"gdformat"}, func() (int, error) {
+			return runGdformat(Options{Args: []string{"--line-length", "100", "my file.gd"}})
+		})
+		want := []string{"--line-length", "100", "my file.gd"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+		if contains(recorded, "--fast") {
+			t.Error("argv must not contain --fast (safety checks stay on)")
+		}
+	})
+
+	t.Run("fixture is not modified in check mode", func(t *testing.T) {
+		fixture := filepath.Join("testdata", "gdformat", "fixture.gd")
+		original, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		_, recorded := runFake(t, []string{"gdformat"}, func() (int, error) {
+			return runGdformat(Options{Check: true, Args: []string{fixture}})
+		})
+		want := []string{"-c", fixture}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+		after, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		if string(after) != string(original) {
+			t.Error("the fixture was modified in check mode")
+		}
+	})
+}
