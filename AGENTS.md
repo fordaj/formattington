@@ -142,6 +142,7 @@ Important files include:
 - `internal/formattington/ktfmt.go` — ktfmt (Kotlin) integration (`.kt`/`.kts` files; bundled for Linux x86_64, macOS arm64, Windows x86_64; PATH-only on the rest). The `kotlin` language alias resolves to `ktfmt` in `cli.go`. No style flag is ever injected.
 - `internal/formattington/scalafmt.go` — scalafmt (Scala) integration (`.scala`/`.sbt`/`.sc` files; PATH-only — the upstream natives fail hard on any `.scalafmt.conf` whose `version =` differs from the compiled-in one, so no bundle is shipped). The `scala` language alias resolves to `scalafmt` in `cli.go`.
 - `internal/formattington/npm_groovy_lint.go` — npm-groovy-lint (Groovy) integration (`.groovy`/`.gradle` files; PATH-only; needs Node >= 18 and Java 11+; layout-only). The `groovy` language alias resolves to `npm-groovy-lint` in `cli.go`. Check mode is linter-flavored (`--failon error`), not a byte comparison; the `format` preset must be enabled in `.groovylintrc`.
+- MicroPython: no dedicated integration; the `micropython` language alias resolves to `black` in `cli.go` (MicroPython is a Python 3 subset and parses/formats cleanly under black; statement-level asm labels do not parse).
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 
