@@ -59,7 +59,7 @@ formattington all --series
 - `all` runs all configured formatter integrations against their matching files.
 - By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
-- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop` order (missing tool = 127); `0` only if all succeed.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
 
 Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
@@ -146,6 +146,7 @@ Important files include:
 - `internal/formattington/cljfmt.go` — cljfmt (Clojure) integration (`.clj`/`.cljs`/`.cljc`/`.edn` files; bundled for macOS arm64, Linux arm64, Linux x86_64 static, Windows x86_64; EPL-1.0, unmodified upstream binaries). The `clojure` language alias resolves to `cljfmt` in `cli.go`. Subcommand-shaped (`cljfmt fix`/`cljfmt check`); `check` exits 1 on unformatted files, 2 on error.
 - `internal/formattington/fantomas.go` — Fantomas (F#) integration (`.fs`/`.fsi`/`.fsx` files; PATH-only — ships only as a .NET global tool). The `fsharp` language alias resolves to `fantomas` in `cli.go`. `--check` exit 99 is reported as `ExitFormatRequired`; 1 (error) passes through.
 - `internal/formattington/rubocop.go` — RuboCop (Ruby) integration (`.rb`/`.rake`/`.gemspec`/`.ru` files; PATH-only). The `ruby` language alias resolves to `rubocop` in `cli.go`. A linter with layout cops — every mode lints (no writes); `-x` (--fix-layout) is passed verbatim by the user for the format-like path.
+- `internal/formattington/styler.go` — styler (R) integration (`.R`/`.r` files; PATH-only; needs `Rscript` + the styler package). The `r` language alias resolves to `styler` in `cli.go`. The R expression is built from the file list; forwarded flags are a usage error; check uses `dry = "fail"`.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 

@@ -22,11 +22,7 @@ func allFakeTools(t *testing.T, skip ...string) (argvFile string) {
 		if excluded[tool.Name] {
 			continue
 		}
-		if tool.Name == "powershell" {
-			names = append(names, "pwsh")
-			continue
-		}
-		names = append(names, tool.Name)
+		names = append(names, fakeNameFor(tool.Name))
 	}
 	_, argvFile, _ = fakeTools(t, names...)
 	return argvFile
@@ -56,6 +52,9 @@ func TestSingleToolSelection(t *testing.T) {
 func fakeNameFor(formatter string) string {
 	if formatter == "powershell" {
 		return "pwsh"
+	}
+	if formatter == "styler" {
+		return "Rscript"
 	}
 	return formatter
 }
@@ -92,6 +91,7 @@ func TestLanguageAliasSelection(t *testing.T) {
 		"clojure":     "cljfmt",
 		"fsharp":      "fantomas",
 		"ruby":        "rubocop",
+		"r":           "styler",
 	}
 
 	for alias, formatter := range cases {
@@ -176,7 +176,7 @@ func TestAllPreservesTheLastNonZeroExitCode(t *testing.T) {
 	if err := chmodExecutable(filepath.Join(binDir, "shfmt")); err != nil {
 		t.Fatalf("chmod: %v", err)
 	}
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop"} {
+	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript"} {
 		writeFakeExecutable(t, binDir, name)
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
@@ -269,7 +269,7 @@ func TestHelpListsOptionsAndAliases(t *testing.T) {
 		"markdownlint",
 		"toml", "taplo",
 		"go uses gofmt", "goimports",
-		"lua", "stylua", "nix", "nixfmt", "php", "php-cs-fixer", "perl", "perltidy", "fortran", "fprettify", "erlang", "erlfmt", "sql", "sqlfluff", "gdscript", "gdformat", "java", "google-java-format", "kotlin", "ktfmt", "scala", "scalafmt", "groovy", "npm-groovy-lint", "micropython", "black", "clojure", "cljfmt", "fsharp", "fantomas", "ruby", "rubocop",
+		"lua", "stylua", "nix", "nixfmt", "php", "php-cs-fixer", "perl", "perltidy", "fortran", "fprettify", "erlang", "erlfmt", "sql", "sqlfluff", "gdscript", "gdformat", "java", "google-java-format", "kotlin", "ktfmt", "scala", "scalafmt", "groovy", "npm-groovy-lint", "micropython", "black", "clojure", "cljfmt", "fsharp", "fantomas", "ruby", "rubocop", "r", "styler",
 		"concurrently", "last non-zero",
 		"FORMATTINGTON_CONFIG_PATH", ".formattington.json",
 	} {
@@ -411,7 +411,7 @@ func TestAllReturnsOneTwentySevenWhenAnyToolIsMissing(t *testing.T) {
 
 	// Only shfmt is missing; the others are present.
 	binDir := filepath.Join(t.TempDir(), "bin")
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop"} {
+	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript"} {
 		writeFakeExecutable(t, binDir, name)
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
@@ -445,10 +445,7 @@ func TestSeriesOrderIsRegistrationOrder(t *testing.T) {
 	orderFile := filepath.Join(t.TempDir(), "order.txt")
 	binDir := filepath.Join(t.TempDir(), "bin")
 	for _, tool := range registry {
-		name := tool.Name
-		if name == "powershell" {
-			name = "pwsh"
-		}
+		name := fakeNameFor(tool.Name)
 		writeFile(t, filepath.Join(binDir, name),
 			"#!/bin/sh\nprintf '%s\\n' \""+tool.Name+"\" >> \"$FAKE_ORDER_FILE\"\nexit 0\n")
 		if err := chmodExecutable(filepath.Join(binDir, name)); err != nil {
@@ -570,6 +567,7 @@ func TestExitAggregationFollowsRegistrationOrder(t *testing.T) {
 	writeFakeExecutable(t, binDir, "cljfmt")
 	writeFakeExecutable(t, binDir, "fantomas")
 	writeFakeExecutable(t, binDir, "rubocop")
+	writeFakeExecutable(t, binDir, "Rscript")
 	for _, name := range []string{"shfmt", "black"} {
 		if err := chmodExecutable(filepath.Join(binDir, name)); err != nil {
 			t.Fatalf("chmod: %v", err)

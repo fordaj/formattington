@@ -45,6 +45,7 @@ var registry = []Tool{
 	{Name: "cljfmt", Extensions: cljfmtExtensions, Run: runCljfmt},
 	{Name: "fantomas", Extensions: fantomasExtensions, Run: runFantomas},
 	{Name: "rubocop", Extensions: rubocopExtensions, Run: runRubocop},
+	{Name: "styler", Extensions: stylerExtensions, Run: runStyler},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -77,6 +78,7 @@ var languageAliases = map[string]string{
 	"clojure":     "cljfmt",
 	"fsharp":      "fantomas",
 	"ruby":        "rubocop",
+	"r":           "styler",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
