@@ -403,6 +403,31 @@ That is a thin wrapper around `go test ./...`. Tests live next to the code in `i
 
 `make check` additionally runs `go vet ./...` and verifies that `gofmt` has nothing to change.
 
+## Releases
+
+`release.bash` computes the next version with [versioner](https://github.com/fordaj/Versioner) (the bundled binary, selected via `scripts/entry.sh`), cross-compiles the program for every supported platform, tags the commit, pushes the tag, and creates a GitHub release with the per-platform archives attached.
+
+```bash
+./release.bash                # version, build, tag, push, release + upload
+./release.bash --build-only   # cross-compile into dist/ only
+./release.bash --dry-run      # compute + verify + build, touch nothing remote
+```
+
+The cross-compile matrix (CGO disabled, so the binaries are statically linked and portable):
+
+| Platform      | `GOOS`/`GOARCH` | Binary in `dist/`              | Release asset                        |
+| ------------- | --------------- | ------------------------------ | ------------------------------------ |
+| `linux-x64`   | `linux`/`amd64` | `dist/linux-x64/formattington` | `formattington-linux-x64.tar.gz`     |
+| `linux-arm64` | `linux`/`arm64` | `dist/linux-arm64/formattington` | `formattington-linux-arm64.tar.gz` |
+| `macos-x64`   | `darwin`/`amd64` | `dist/macos-x64/formattington` | `formattington-macos-x64.tar.gz`     |
+| `macos-arm64` | `darwin`/`arm64` | `dist/macos-arm64/formattington` | `formattington-macos-arm64.tar.gz` |
+| `windows-x64` | `windows`/`amd64` | `dist/windows-x64/formattington.exe` | `formattington-windows-x64.zip` |
+| `windows-arm64` | `windows`/`arm64` | `dist/windows-arm64/formattington.exe` | `formattington-windows-arm64.zip` |
+
+Each archive contains the platform directory with its binary. The release version is stamped into every binary with `-ldflags -X`, so a binary downloaded from a release reports the version it was released as even outside the repository.
+
+`make dist` runs the same cross-compilation without tagging or releasing.
+
 ## Continuous integration
 
 CI runs on self-hosted runners managed by [runner-spawner](https://github.com/fordaj/runner-spawner): the bundled binary under `tools/runner-spawner/v<version>/<platform>/` installs repository-scoped runners at `$HOME/.runners/formattington/` (one checkout per run) with auto labels `self-hosted`, `<os>` (`windows`/`macos`), arch, hostname, and `<hostname>-<runner-name>`. The workflows under `.github/` (callers `pull_request_caller.yml` and `nightly_caller.yml`, reusable `pull_request.yml`/`nightly.yml`) use those labels to pin `Setup` (checkout) and `Checks` (format + tests) to the same host.

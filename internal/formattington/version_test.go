@@ -14,23 +14,33 @@ func TestVersionUsesTheEnvironmentOverride(t *testing.T) {
 	}
 }
 
-func TestVersionUsesPkgInfo(t *testing.T) {
-	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "PKG-INFO"), "Metadata-Version: 2.1\nVersion: 9.8.7\n")
-	t.Chdir(root)
-	t.Setenv(versionEnv, "")
+func TestVersionUsesTheBuildStamp(t *testing.T) {
+	original := buildVersion
+	t.Cleanup(func() { buildVersion = original })
 
-	// The working directory is checked before the repository root.
-	if got := resolveVersion(); got != "9.8.7" && got != "0.0.0" {
-		t.Errorf("resolveVersion = %q, want the PKG-INFO version", got)
+	buildVersion = "254.0.0.0.42"
+	t.Setenv(versionEnv, "")
+	if got := resolveVersion(); got != "254.0.0.0.42" {
+		t.Errorf("resolveVersion = %q, want the stamped version", got)
+	}
+
+	// An explicit runtime override still wins over the stamp.
+	t.Setenv(versionEnv, "9.9.9")
+	if got := resolveVersion(); got != "9.9.9" {
+		t.Errorf("resolveVersion = %q, want the environment override", got)
 	}
 }
 
-func TestVersionFallsBackToZero(t *testing.T) {
+func TestVersionFallsBackToVersioner(t *testing.T) {
+	original := buildVersion
+	t.Cleanup(func() { buildVersion = original })
+
+	buildVersion = ""
+	t.Setenv(versionEnv, "")
 	root := t.TempDir()
 	t.Chdir(root)
-	t.Setenv(versionEnv, "")
-	// Point the resolver at an empty tree so no versioner is found.
+	// Point the resolver at an empty tree so no versioner is found and
+	// the fallback is exercised instead.
 	t.Setenv("FORMATTINGTON_TOOLS_DIR", filepath.Join(root, "empty-tools"))
 	t.Setenv("PATH", root)
 
@@ -43,6 +53,18 @@ func TestVersionFallsBackToZero(t *testing.T) {
 
 	if !strings.Contains(stderr, "versioner unavailable") {
 		t.Errorf("stderr = %q, must warn about the missing versioner", stderr)
+	}
+}
+
+func TestVersionUsesPkgInfo(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "PKG-INFO"), "Metadata-Version: 2.1\nVersion: 9.8.7\n")
+	t.Chdir(root)
+	t.Setenv(versionEnv, "")
+
+	// The working directory is checked before the repository root.
+	if got := resolveVersion(); got != "9.8.7" && got != "0.0.0" {
+		t.Errorf("resolveVersion = %q, want the PKG-INFO version", got)
 	}
 }
 

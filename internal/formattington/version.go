@@ -14,6 +14,15 @@ import (
 // versionEnv overrides the computed version (for example in CI builds).
 const versionEnv = "FORMATTINGTON_VERSION"
 
+// buildVersion is stamped into release binaries at link time so a binary
+// distributed outside the repository still reports the version it was
+// released as. It is empty for ordinary local builds.
+//
+// The stamp is set with:
+//
+//	-ldflags "-X github.com/fordaj/formattington/internal/formattington.buildVersion=<version>"
+var buildVersion = ""
+
 var (
 	versionOnce  sync.Once
 	versionValue string
@@ -23,11 +32,12 @@ var (
 //
 // Resolution order:
 //  1. The FORMATTINGTON_VERSION environment variable (explicit override).
-//  2. The "Version:" line of a PKG-INFO file in the working directory or
+//  2. The version stamped in at link time (release binaries).
+//  3. The "Version:" line of a PKG-INFO file in the working directory or
 //     the repository root (sdist-style builds).
-//  3. The bundled "versioner" binary (or "versioner" on PATH) run against
+//  4. The bundled "versioner" binary (or "versioner" on PATH) run against
 //     the repository root.
-//  4. The fallback "0.0.0" with a warning on stderr.
+//  5. The fallback "0.0.0" with a warning on stderr.
 func Version() string {
 	versionOnce.Do(func() {
 		versionValue = resolveVersion()
@@ -38,6 +48,10 @@ func Version() string {
 func resolveVersion() string {
 	if override := strings.TrimSpace(os.Getenv(versionEnv)); override != "" {
 		return override
+	}
+
+	if stamped := strings.TrimSpace(buildVersion); stamped != "" {
+		return stamped
 	}
 
 	if version := versionFromPkgInfo(); version != "" {

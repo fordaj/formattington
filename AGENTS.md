@@ -154,6 +154,8 @@ make check
 
 `make build` writes the binary to `./bin/formattington`; `make test` runs `go test ./...`; `make check` runs `go vet ./...`, verifies `gofmt` has nothing to change, and runs the test suite.
 
+`make dist` (equivalently `./release.bash --build-only`) cross-compiles the release binaries into `dist/<platform>/` and packages the per-platform archives; `./release.bash` additionally verifies the version against versioner, tags, pushes, and creates the GitHub release with those archives attached.
+
 Go 1.24 or newer is required (`go.mod` declares the language version).
 
 When adding dependencies, prefer the Go standard library; a new module requires updating `go.mod` and `go.sum` with `go get` / `go mod tidy`.
