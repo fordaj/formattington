@@ -2,8 +2,8 @@
 // code-quality tool orchestrator.
 //
 // It provides a unified command-line interface for invoking existing tools
-// (shfmt, clang-format, black, prettier, PSScriptAnalyzer, taplo, gofmt and
-// goimports) across multidisciplinary projects.
+// (40 registered tools — formatters, linters, and other quality tools)
+// across multidisciplinary projects.
 package main
 
 import (

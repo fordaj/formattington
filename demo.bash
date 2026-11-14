@@ -268,7 +268,7 @@ section "5/8 modes: --check lists (exit 1) vs --dry-run diffs (never -w)"
 log INFO "--check before the tool is Formattington-owned (shfmt -l below); after the tool is forwarded verbatim (shfmt --version in section 3)"
 demo_run --check shfmt "$MESSY_SH"
 demo_run --dry-run shfmt "$MESSY_SH"
-log INFO "per-tool mappings (same flags, different natives): shfmt -l/-d, clang-format --dry-run --Werror / --dry-run, black --check / --diff, prettier --check / --list-different, taplo fmt --check / --diff, powershell lint (no in-place)"
+log INFO "per-tool mappings (same flags, different natives): prettier --check / --list-different, black --check / --diff, shfmt -l/-d, powershell lint (no in-place), clang-format --dry-run --Werror / --dry-run, taplo fmt --check / --diff"
 demo_run --dry-run black "$MESSY_PY"
 
 section "6/8 all, --series, discovery, and exit aggregation (sandbox-scoped)"
@@ -276,7 +276,7 @@ log INFO "no-file-args discovery walks cwd, skipping hidden dirs and __pycache__
 demo_run_tmp --dry-run shfmt
 log INFO "default all is concurrent (output may interleave)"
 demo_run_tmp --check all
-log INFO "--series (before or after all) runs shfmt, clang-format, black, prettier, powershell, taplo, gofmt, goimports in order"
+log INFO "--series (before or after all) runs the registered tools sequentially in registry order (SO Survey 2026 popularity order; see AGENTS.md)"
 demo_run_tmp --check --series all
 log INFO "exit is the last non-zero in that order (missing = 127) or 0; a missing formatter never stops the others (watch powershell 127 above if pwsh is absent)"
 
