@@ -59,7 +59,7 @@ formattington all --series
 - `all` runs all configured formatter integrations against their matching files.
 - By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
-- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua` order (missing tool = 127); `0` only if all succeed.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
 
 Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
@@ -131,6 +131,7 @@ Important files include:
 - `internal/formattington/taplo.go` — Taplo (TOML) integration (`.toml` files; resolved from PATH or the bundled formatters; respects `taplo.toml`). The `toml` language alias resolves to `taplo` in `cli.go`.
 - `internal/formattington/gofmt.go` and `internal/formattington/goimports.go` — Go integrations (`.go` files; PATH-only, no bundle). The `go` language alias resolves to `gofmt` in `cli.go`.
 - `internal/formattington/stylua.go` — StyLua (Lua) integration (`.lua` files; resolved from PATH or the bundled formatters; respects `stylua.toml` / `.stylua.toml`). The `lua` language alias resolves to `stylua` in `cli.go`.
+- `internal/formattington/nixfmt.go` — nixfmt (Nix) integration (`.nix` files; PATH-only; no bundleable release matrix upstream). The `nix` language alias resolves to `nixfmt` in `cli.go`.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 
