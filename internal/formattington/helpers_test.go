@@ -53,7 +53,7 @@ func fakeTools(t *testing.T, names ...string) (binDir, argvFile, calledFile stri
 		t.Fatalf("mkdir %s: %v", emptyTools, err)
 	}
 
-	t.Setenv("FORMATTINGTON_TOOLS_DIR", emptyTools)
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", emptyTools)
 	t.Setenv("FORMATTINGTON_VERBOSE", "")
 	t.Setenv("FAKE_ARGV_FILE", argvFile)
 	t.Setenv("FAKE_CALLED_FILE", calledFile)

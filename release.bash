@@ -1,13 +1,31 @@
 #!/usr/bin/env bash
 # release.bash — compute the next version with versioner (dogfooding),
-# cross-compile the binaries, tag HEAD, push the tag, and create a GitHub
-# release with the binaries attached.
+# fetch the bundled formatters, cross-compile the binaries, tag HEAD,
+# push the tag, and create a GitHub release with the archives attached.
 #
-# The release carries one archive per platform (dist/<platform>/ holds the
-# raw cross-compiled binary; the uploaded asset is
-# formattington-<platform>.tar.gz, or .zip on Windows). Formattington is a
-# Go program, so the binaries are produced with CGO disabled and are
-# statically linked and portable.
+# Two archives are produced per platform:
+#
+#   formattington-lite-<platform>  the program alone
+#   formattington-full-<platform>  the program with the bundled formatter
+#                                  executables for that platform embedded
+#                                  inside it, so the binary is a single,
+#                                  self-contained executable (the archive
+#                                  holds just that one binary)
+#
+# The full build embeds a zip of the platform's formatter executables in
+# the binary (Go "full" build tag + go:embed). On first use the archive is
+# unpacked into the per-user cache directory (formattington/formatters
+# inside os.UserCacheDir()); the FORMATTINGTON_FORMATTERS_DIR environment
+# variable still overrides formatter resolution, and lite builds resolve
+# from a checkout or PATH.
+#
+# The bundled formatter executables are fetched with the per-tool
+# formatters/<tool>/update.sh scripts and land in a staging directory as
+# formatters/<tool>/v<version>/<platform>/, which is exactly the layout
+# the program resolves at runtime.
+#
+# Formattington is a Go program, so the binaries are produced with CGO
+# disabled and are statically linked and portable.
 #
 # The program version is dynamic via versioner
 # (internal/formattington/version.go + .versioner.json); the version is
@@ -24,12 +42,17 @@
 # (refresh with tools/versioner/update.bash and tools/logamuffin/update.bash;
 # select with scripts/entry.sh). Logging uses log <level> <message> from
 # scripts/entry.sh (logamuffin, with printf fallback until
-# tools/logamuffin is populated).
+# tools/logamuffin is populated). Fetching the formatters additionally
+# needs curl, jq, and zip (and pnpm plus bun for the tools that are built
+# from source).
 # Working tree must be clean for a real release; HEAD should be pushed.
 #
 # The script is idempotent: an existing tag is reused, and an existing
-# GitHub release receives the binaries through "gh release upload", so
+# GitHub release receives the archives through "gh release upload", so
 # re-running it attaches the assets instead of failing.
+#
+# Env:
+#   FORMATTER_VERSION  Version of the bundled formatters to fetch (default: latest).
 
 set -euo pipefail
 
@@ -47,16 +70,26 @@ fi
 DRY_RUN=0
 BUILD_ONLY=0
 
-# The cross-compile matrix: "<platform> <goos> <goarch> <binary name>".
-# The platform label names the dist/ subdirectory and the release asset.
+# The cross-compile matrix:
+# "<release platform> <goos> <goarch> <bundle platform> <binary name>".
+#
+# The release platform names the dist/ directory and the release asset
+# (for example "windows-x64"). The bundle platform is the name the
+# bundled formatter executables use in their directory layout (for
+# example "windows-x86_64"); it is the name the program resolves at
+# runtime, so the two differ on purpose.
 PLATFORMS=(
-    "linux-x64 linux amd64 formattington"
-    "linux-arm64 linux arm64 formattington"
-    "macos-x64 darwin amd64 formattington"
-    "macos-arm64 darwin arm64 formattington"
-    "windows-x64 windows amd64 formattington.exe"
-    "windows-arm64 windows arm64 formattington.exe"
+    "linux-x64 linux amd64 linux-x86_64 formattington"
+    "linux-arm64 linux arm64 linux-arm64 formattington"
+    "macos-x64 darwin amd64 macos-x86_64 formattington"
+    "macos-arm64 darwin arm64 macos-arm64 formattington"
+    "windows-x64 windows amd64 windows-x86_64 formattington.exe"
+    "windows-arm64 windows arm64 windows-arm64 formattington.exe"
 )
+
+# The version of the bundled formatters to fetch. "latest" resolves the
+# newest upstream release of each tool.
+FORMATTER_VERSION="${FORMATTER_VERSION:-latest}"
 
 # The Go package path of the variable that carries the stamped version.
 VERSION_PACKAGE="github.com/fordaj/formattington/internal/formattington"
@@ -67,10 +100,16 @@ usage() {
 Usage: ./release.bash [--build-only | --dry-run]
 
 Compute the next VERSION/TAG with versioner itself (dogfooding, bundled
-binary selected via scripts/entry.sh), cross-compile the binaries for
-every supported platform into dist/, verify the program's version
-matches, create an annotated tag, push it, and create a GitHub release
-with the per-platform archives attached.
+binary selected via scripts/entry.sh), fetch the bundled formatters with
+formatters/<tool>/update.sh, cross-compile the program for every
+supported platform into dist/, verify the program's version matches,
+create an annotated tag, push it, and create a GitHub release with the
+per-platform archives attached.
+
+Two archives are produced per platform: formattington-lite-<platform>
+(the program alone) and formattington-full-<platform> (the program with
+the bundled formatter executables for that platform embedded inside the
+binary, so it is a single, self-contained executable).
 
 Flags:
   --build-only    Cross-compile into dist/ and stop (no tag/push/release).
@@ -81,6 +120,7 @@ Env:
   FORMATTINGTON_BIN  Path to the formattington binary (default: ./bin/formattington, then PATH).
   VERSIONER_BIN   Path to versioner (default: via scripts/entry.sh, then PATH).
   LOGAMUFFIN_BIN  Path to logamuffin for log() (default: via scripts/entry.sh, then PATH).
+  FORMATTER_VERSION  Version of the bundled formatters to fetch (default: latest).
 EOF
 }
 
@@ -116,6 +156,10 @@ need_cmd() {
 
 need_cmd git
 need_cmd go
+need_cmd curl
+need_cmd jq
+need_cmd zip
+need_cmd tar
 
 if [[ "$DRY_RUN" -ne 1 && "$BUILD_ONLY" -ne 1 ]]; then
     need_cmd gh
@@ -229,11 +273,31 @@ if [[ "$PKG_VERSION" != "$VERSION" ]]; then
 fi
 
 # --- Cross-compile the release binaries -------------------------------
-# dist/<platform>/formattington[.exe] holds the raw binary; the release
-# asset for a platform is formattington-<platform>.tar.gz (or .zip on
-# Windows) so every asset name is unique.
+# Two variants are produced per platform:
+#
+#   formattington-lite-<platform>  the program alone (dist/lite/)
+#   formattington-full-<platform>  the program with the bundled formatter
+#                                  executables for that platform embedded
+#                                  inside the binary (dist/full/), so the
+#                                  archive is a single self-contained
+#                                  executable
+#
+# dist/lite/<platform>/ and dist/full/<platform>/ hold the cross-compiled
+# programs; the archives are built from a staging tree and land in dist/.
 DIST_DIR="$REPO_ROOT/dist"
+# The full build embeds the payload from here (see embedded_full.go);
+# release.bash stages it per platform and removes it again on exit.
+ASSETS_DIR="$REPO_ROOT/internal/formattington/assets"
 RELEASE_ASSETS=()
+STAGE_DIR=""
+
+cleanup_stage() {
+    rm -rf -- "$ASSETS_DIR"
+    if [[ -n "${STAGE_DIR:-}" && -d "$STAGE_DIR" ]]; then
+        rm -rf -- "$STAGE_DIR"
+    fi
+}
+trap cleanup_stage EXIT
 
 build_binaries() {
     local version="$1"
@@ -241,48 +305,374 @@ build_binaries() {
 
     log INFO "cross-compiling ${#PLATFORMS[@]} platforms into dist/..."
     rm -rf "$DIST_DIR"
-    mkdir -p "$DIST_DIR"
+    rm -rf "$ASSETS_DIR"
+    mkdir -p "$DIST_DIR/lite" "$DIST_DIR/full"
 
-    local entry platform goos goarch binary outdir
+    local entry platform goos goarch bundle binary lite_out full_out
     for entry in "${PLATFORMS[@]}"; do
-        read -r platform goos goarch binary <<<"$entry"
-        outdir="$DIST_DIR/$platform"
-        mkdir -p "$outdir"
-        log INFO "  $platform ($goos/$goarch) -> dist/$platform/$binary"
+        read -r platform goos goarch bundle binary <<<"$entry"
+
+        # The lite build never touches the embed staging area.
+        lite_out="$DIST_DIR/lite/$platform/$binary"
+        mkdir -p "$(dirname "$lite_out")"
+        log INFO "  $platform ($goos/$goarch) lite -> dist/lite/$platform/$binary"
         (
             cd "$REPO_ROOT" &&
                 CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
                     go build -trimpath -ldflags "$ldflags" \
-                    -o "$outdir/$binary" ./cmd/formattington
-        ) || die "cross-compile failed for $platform ($goos/$goarch)"
+                    -o "$lite_out" ./cmd/formattington
+        ) || die "cross-compile failed for $platform ($goos/$goarch) lite"
+
+        # Stage this platform's formatter payload, then the full build.
+        stage_formatter_payload "$bundle"
+
+        full_out="$DIST_DIR/full/$platform/$binary"
+        mkdir -p "$(dirname "$full_out")"
+        log INFO "  $platform ($goos/$goarch) full -> dist/full/$platform/$binary"
+        (
+            cd "$REPO_ROOT" &&
+                CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+                    go build -trimpath -tags full -ldflags "$ldflags" \
+                    -o "$full_out" ./cmd/formattington
+        ) || die "cross-compile failed for $platform ($goos/$goarch) full"
+
+        rm -rf "$ASSETS_DIR"
     done
 }
 
-package_binaries() {
-    local entry platform goos goarch binary archive
+# stage_formatter_payload <bundle platform>
+# Fill the embed staging area with a zip of the fetched formatter
+# executables for one bundle platform, ready for the "-tags full" build.
+# A valid empty archive is written when no formatter was fetched for the
+# platform, so the embed pattern always matches; an empty archive is
+# treated as "no embedded formatters" at runtime.
+stage_formatter_payload() {
+    local platform="$1"
+    local staging="$STAGE_DIR/payload-$platform"
+    local zip_file="$ASSETS_DIR/formatters.zip"
+
+    rm -rf "$staging" "$ASSETS_DIR"
+    mkdir -p "$staging" "$ASSETS_DIR"
+    copy_formatters "$platform" "$staging"
+
+    local count
+    count="$(find "$staging" -type f | wc -l | tr -d ' ')"
+    if [[ "$count" -gt 0 ]]; then
+        # Archive the payload with clean relative names at the root:
+        # <tool>/v<version>/<platform>/<executable>.
+        (
+            cd "$staging" &&
+                find . -type f -print | sed 's|^\./||' | LC_ALL=C sort |
+                zip -q -X "$zip_file" -@
+        ) || die "could not stage the embedded formatters for $platform"
+        log INFO "  embedded $count formatter executable(s) in the $platform full binary"
+    else
+        log WARNING "no bundled formatters for $platform; the full binary will match lite"
+        printf 'PK\005\006' >"$zip_file"
+        # An empty zip archive is exactly the 22-byte end-of-central-directory record.
+        head -c 18 /dev/zero >>"$zip_file"
+    fi
+}
+
+# fetch_formatters
+# Run every formatters/<tool>/update.sh once per tool. The scripts
+# download the upstream executables into
+# <stage>/formatters/<tool>/v<version>/<platform>/, which is exactly the
+# layout the program resolves at runtime.
+#
+# A script stops at the first target it cannot provide, so the platforms
+# that are still missing afterwards are retried one by one.
+fetch_formatters() {
+    local tool_dir tool update_script platform
+    local platforms=()
+    local entry release_platform goos goarch bundle binary
+
     for entry in "${PLATFORMS[@]}"; do
-        read -r platform goos goarch binary <<<"$entry"
-        if [[ "$goos" == "windows" ]] && command -v zip >/dev/null 2>&1; then
-            archive="$DIST_DIR/formattington-$platform.zip"
-            (
-                cd "$DIST_DIR" && zip -q -r "formattington-$platform.zip" "$platform"
-            ) || die "could not package $platform"
-        else
-            if [[ "$goos" == "windows" ]]; then
-                log WARNING "zip is not available; packaging the Windows binary as a tar.gz"
+        # shellcheck disable=SC2034 # only the bundle platform is needed here
+        read -r release_platform goos goarch bundle binary <<<"$entry"
+        platforms+=("$bundle")
+    done
+
+    for tool_dir in "$REPO_ROOT"/formatters/*/; do
+        [[ -d "$tool_dir" ]] || continue
+        tool="$(basename "$tool_dir")"
+        update_script="$tool_dir/update.sh"
+        [[ -f "$update_script" ]] || continue
+
+        run_update "$tool" "$update_script" "${platforms[@]}" || true
+
+        for platform in "${platforms[@]}"; do
+            if ! formatter_present "$tool" "$platform"; then
+                run_update "$tool" "$update_script" "$platform" || true
             fi
-            archive="$DIST_DIR/formattington-$platform.tar.gz"
-            tar -czf "$archive" -C "$DIST_DIR" "$platform" ||
-                die "could not package $platform"
+        done
+
+        local missing=""
+        for platform in "${platforms[@]}"; do
+            if ! formatter_present "$tool" "$platform"; then
+                missing="$missing $platform"
+            fi
+        done
+        if [[ -z "$missing" ]]; then
+            log INFO "  fetched $tool for ${#platforms[@]} platforms"
+        else
+            log WARNING "$tool is not available for:$missing (it will be missing from those full bundles)"
         fi
+    done
+
+    # Black publishes no standalone macOS x86_64 binary; the repository
+    # ships a build script for it instead.
+    build_black_macos_x64
+}
+
+# run_update <tool> <update-script> <platform>...
+run_update() {
+    local tool="$1" update_script="$2"
+    shift 2
+    if OUTPUT_DIR="$STAGE_DIR/formatters/$tool" \
+        "$update_script" "$FORMATTER_VERSION" "$@" \
+        >"$STAGE_DIR/$tool.log" 2>&1; then
+        return 0
+    fi
+    log WARNING "$tool: formatters/$tool/update.sh $FORMATTER_VERSION $* failed; last log lines:"
+    tail -n 10 "$STAGE_DIR/$tool.log" 2>/dev/null | sed 's/^/release.bash:   /' || true
+    return 1
+}
+
+# formatter_present <tool> <platform>
+# Whether the tool was downloaded for a platform, that is whether
+# <stage>/formatters/<tool>/v<version>/<platform>/ exists.
+formatter_present() {
+    local tool="$1" platform="$2"
+    local dir
+    for dir in "$STAGE_DIR/formatters/$tool"/v*/"$platform"; do
+        if [[ -d "$dir" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# build_black_macos_x64
+# Best effort: build Black's macOS x86_64 executable when the repository
+# ships a build script for it. It needs a native Intel Mac, so it is
+# skipped elsewhere.
+build_black_macos_x64() {
+    local build_script="$REPO_ROOT/formatters/black/build_macos-x64.sh"
+    [[ -f "$build_script" ]] || return 0
+    if formatter_present "black" "macos-x86_64"; then
+        return 0
+    fi
+    if [[ "$(uname -s)" != "Darwin" || "$(uname -m)" != "x86_64" ]]; then
+        log WARNING "black has no macOS x86_64 build here (the build script needs a native Intel Mac)"
+        return 0
+    fi
+    log INFO "  building black for macos-x86_64 (native build)..."
+    if OUTPUT_DIR="$STAGE_DIR/formatters/black" "$build_script" \
+        >"$STAGE_DIR/black-macos-x86_64.log" 2>&1; then
+        log INFO "  built black for macos-x86_64"
+    else
+        log WARNING "could not build black for macos-x86_64; last log lines:"
+        tail -n 10 "$STAGE_DIR/black-macos-x86_64.log" 2>/dev/null | sed 's/^/release.bash:   /' || true
+        rm -rf "${STAGE_DIR:?}/formatters/black/v26.10.1/macos-x86_64"
+    fi
+}
+
+# copy_formatters <bundle-platform> <destination>
+# Copy the formatter executables for one platform into a staging tree.
+# The tree layout (<tool>/v<version>/<platform>/<executable>) becomes the
+# archive members and, after extraction, the runtime layout.
+copy_formatters() {
+    local platform="$1"
+    local destination="$2"
+    local source="$STAGE_DIR/formatters"
+    local dir tool version
+
+    [[ -d "$source" ]] || return 0
+
+    for dir in "$source"/*/v*/"$platform"; do
+        [[ -d "$dir" ]] || continue
+        tool="$(basename "$(dirname "$(dirname "$dir")")")"
+        version="$(basename "$(dirname "$dir")")"
+        mkdir -p "$destination/$tool/$version/$platform"
+        cp -a "$dir/." "$destination/$tool/$version/$platform/"
+    done
+}
+
+# package_tree <directory> <archive>
+# Package a directory as a zip (Windows) or a gzipped tar (everything
+# else), keeping the directory itself as the archive's top-level entry.
+package_tree() {
+    local directory="$1"
+    local archive="$2"
+    local parent base
+    parent="$(dirname "$directory")"
+    base="$(basename "$directory")"
+
+    if [[ "$archive" == *.zip ]]; then
+        (
+            cd "$parent" && zip -q -r "$archive" "$base"
+        ) || die "could not package $archive"
+    else
+        tar -czf "$archive" -C "$parent" "$base" ||
+            die "could not package $archive"
+    fi
+}
+
+package_binaries() {
+    local entry platform goos goarch _ binary extension
+    local lite_tree full_tree archive
+
+    for entry in "${PLATFORMS[@]}"; do
+        read -r platform goos goarch _ binary <<<"$entry"
+        if [[ "$goos" == "windows" ]]; then
+            extension="zip"
+        else
+            extension="tar.gz"
+        fi
+
+        # Lite: the program alone.
+        lite_tree="$STAGE_DIR/pkg/formattington-lite-$platform"
+        mkdir -p "$lite_tree"
+        cp "$DIST_DIR/lite/$platform/$binary" "$lite_tree/$binary"
+        archive="$DIST_DIR/formattington-lite-$platform.$extension"
+        package_tree "$lite_tree" "$archive"
+        log INFO "  packaged $(basename "$archive")"
+        RELEASE_ASSETS+=("$archive")
+
+        # Full: the self-contained program (the bundled formatters are
+        # embedded inside the binary).
+        full_tree="$STAGE_DIR/pkg/formattington-full-$platform"
+        mkdir -p "$full_tree"
+        cp "$DIST_DIR/full/$platform/$binary" "$full_tree/$binary"
+        archive="$DIST_DIR/formattington-full-$platform.$extension"
+        package_tree "$full_tree" "$archive"
         log INFO "  packaged $(basename "$archive")"
         RELEASE_ASSETS+=("$archive")
     done
 }
 
+# smoke_full_binary
+# Run the freshly built full binary for this host under an empty HOME, so
+# the embedded formatters must be unpacked from the binary itself. Passes
+# when every fetched tool for the host bundle platform answers
+# "--version" — through the CLI for the tools that are registered, and by
+# direct invocation of the unpacked executable for the ones that are not
+# (markdownlint). Fails the build otherwise. Skipped on platforms the
+# matrix does not cover and when no formatter was fetched for the host.
+smoke_full_binary() {
+    local host_system host_machine host_bundle host_full entry release_platform bundle binary tool output
+
+    host_system="$(uname -s)"
+    host_machine="$(uname -m)"
+    case "$host_system" in
+    Darwin) host_system="macos" ;;
+    Linux) host_system="linux" ;;
+    MINGW* | MSYS* | CYGWIN*) host_system="windows" ;;
+    *)
+        log WARNING "smoke test skipped (unsupported host: $host_system)"
+        return 0
+        ;;
+    esac
+    case "$host_machine" in
+    x86_64 | amd64) host_machine="x86_64" ;;
+    arm64 | aarch64) host_machine="arm64" ;;
+    *)
+        log WARNING "smoke test skipped (unsupported host architecture: $host_machine)"
+        return 0
+        ;;
+    esac
+    host_bundle="$host_system-$host_machine"
+
+    host_full=""
+    for entry in "${PLATFORMS[@]}"; do
+        # shellcheck disable=SC2034 # only the release platform, bundle and binary are needed
+        read -r release_platform _ _ bundle binary <<<"$entry"
+        if [[ "$bundle" == "$host_bundle" ]]; then
+            host_full="$DIST_DIR/full/$release_platform/$binary"
+            break
+        fi
+    done
+    if [[ -z "$host_full" ]]; then
+        log WARNING "smoke test skipped (no matrix entry for $host_bundle)"
+        return 0
+    fi
+
+    local tools=()
+    for tool_dir in "$STAGE_DIR"/formatters/*/v*/"$host_bundle"; do
+        [[ -d "$tool_dir" ]] || continue
+        tools+=("$(basename "$(dirname "$(dirname "$tool_dir")")")")
+    done
+    if [[ "${#tools[@]}" -eq 0 ]]; then
+        log WARNING "smoke test skipped (no formatters were fetched for $host_bundle)"
+        return 0
+    fi
+
+    # The formatters registered in the CLI. markdownlint is bundled but not
+    # yet integrated, so it is exercised through its unpacked binary below.
+    local cli_tools=(shfmt clang-format black prettier taplo)
+
+    local smoke_home
+    smoke_home="$(mktemp -d)"
+    trap 'rm -rf "$smoke_home"' RETURN
+    local failed=() exe exe_name direct_output
+    for tool in "${tools[@]}"; do
+        case " ${cli_tools[*]} " in
+        *" $tool "*)
+            # PATH intentionally excludes every location a formatter could
+            # hide in, so a passing run proves the embedded bundle resolved.
+            output="$(
+                env -u FORMATTINGTON_FORMATTERS_DIR \
+                    HOME="$smoke_home" XDG_CACHE_HOME="$smoke_home/xdg" \
+                    PATH=/usr/bin:/bin "$host_full" "$tool" --version 2>&1
+            )" || failed+=("$tool")
+            log INFO "  $tool (via formattington): $(head -n 1 <<<"$output")"
+            ;;
+        *)
+            log INFO "  $tool is not integrated into the CLI; checking the unpacked binary"
+            ;;
+        esac
+
+        # Direct check: the unpacked executable must run on this host,
+        # whether or not the CLI knows about it.
+        exe_name="$tool"
+        if [[ "$host_full" == *.exe ]]; then
+            exe_name="$tool.exe"
+        fi
+        exe="$(find "$smoke_home" -type f -path "*/$tool/v*/$host_bundle/$exe_name" -print -quit)"
+        if [[ -z "$exe" ]]; then
+            failed+=("$tool (unpacked binary not found)")
+            continue
+        fi
+        if direct_output="$("$exe" --version 2>&1)"; then
+            log INFO "  $tool (direct): $(head -n 1 <<<"$direct_output")"
+        else
+            failed+=("$tool (unpacked binary exited non-zero)")
+        fi
+    done
+    trap - RETURN
+    rm -rf "$smoke_home"
+
+    if [[ "${#failed[@]}" -ne 0 ]]; then
+        die "smoke test failed for: ${failed[*]} (the embedded formatters do not run on this host)"
+    fi
+    log INFO "smoke test passed: the embedded formatters unpack and run on this host"
+}
+
+STAGE_DIR="$(mktemp -d)"
+
+# Fetch the bundled formatter executables first: the full build embeds
+# them, so the payload must be in place before cross-compiling.
+log INFO "fetching the bundled formatters..."
+fetch_formatters
+
 build_binaries "$VERSION"
 package_binaries
 log INFO "built ${#RELEASE_ASSETS[@]} release assets in dist/"
+
+# The freshly built full binary must run its embedded formatters on this
+# host; a broken bundle must never ship.
+smoke_full_binary
 
 if [[ "$BUILD_ONLY" -eq 1 ]]; then
     log INFO "build only: stopping before tag/push/release"

@@ -20,7 +20,7 @@ func installBundled(t *testing.T, name, version, platform, exe string) (toolsDir
 	argvFile = filepath.Join(root, "argv.txt")
 	writeFile(t, argvFile, "")
 
-	t.Setenv("FORMATTINGTON_TOOLS_DIR", toolsDir)
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", toolsDir)
 	t.Setenv("FORMATTINGTON_VERBOSE", "")
 	t.Setenv("FAKE_ARGV_FILE", argvFile)
 	t.Setenv("FAKE_CALLED_FILE", filepath.Join(root, "called"))

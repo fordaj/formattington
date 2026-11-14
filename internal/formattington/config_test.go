@@ -468,7 +468,7 @@ func TestConfigExecution(t *testing.T) {
 		if err := chmodExecutable(filepath.Join(binDir, "black")); err != nil {
 			t.Fatalf("chmod: %v", err)
 		}
-		t.Setenv("FORMATTINGTON_TOOLS_DIR", t.TempDir())
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
 		t.Setenv("PATH", binDir)
 		cfg := writeConfig(t, filepath.Join(root, "cfg.json"), `{"commands": [["black"], ["shfmt"]]}`)
 
@@ -505,7 +505,7 @@ func TestConfigExecution(t *testing.T) {
 				t.Fatalf("chmod: %v", err)
 			}
 		}
-		t.Setenv("FORMATTINGTON_TOOLS_DIR", t.TempDir())
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
 		t.Setenv("PATH", binDir)
 		cfg := writeConfig(t, filepath.Join(root, "cfg.json"), `{"commands": [["black"], ["shfmt"]]}`)
 

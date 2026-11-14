@@ -165,6 +165,7 @@ func TestFormatterExtensionsAreDistinct(t *testing.T) {
 func TestIgnoredDirectoryNames(t *testing.T) {
 	for _, name := range []string{
 		"__pycache__", "node_modules", "vendor", "venv", "dist", "build", "tools",
+		"formatters",
 	} {
 		if !ignoredDirNames[name] {
 			t.Errorf("%q must be ignored by discovery", name)

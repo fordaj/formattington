@@ -29,8 +29,9 @@ const (
 // ignoredDirNames are directory names discovery never descends into.
 // Besides version-control metadata, these are the usual places generated,
 // vendored, minified, or dependency files live. Hidden directories
-// (starting with ".") are also skipped, along with the bundled-tools
-// directory, which holds pinned binaries rather than user source.
+// (starting with ".") are also skipped, along with the bundled-formatters
+// directory, which holds downloaded formatter executables rather than
+// user source.
 var ignoredDirNames = map[string]bool{
 	"__pycache__":  true,
 	"node_modules": true,
@@ -39,6 +40,7 @@ var ignoredDirNames = map[string]bool{
 	"dist":         true,
 	"build":        true,
 	"tools":        true,
+	"formatters":   true,
 }
 
 // informationalArgs are bare help/version tokens that pass through to the
@@ -99,43 +101,60 @@ func isWindows() bool {
 	return runtime.GOOS == "windows"
 }
 
-// toolsDirEnv overrides the bundled-tools directory.
-const toolsDirEnv = "FORMATTINGTON_TOOLS_DIR"
+// formattersDirEnv overrides the bundled formatter directory.
+const formattersDirEnv = "FORMATTINGTON_FORMATTERS_DIR"
 
-// ToolsDir returns the directory holding bundled tool executables.
+// FormattersDir returns the directory holding bundled formatter
+// executables.
 //
-// Resolution order: the FORMATTINGTON_TOOLS_DIR environment variable, then
-// the "tools" directory of the nearest ancestor of the running executable
-// or of the current directory.
-func ToolsDir() string {
-	if override := strings.TrimSpace(os.Getenv(toolsDirEnv)); override != "" {
+// Resolution order: the FORMATTINGTON_FORMATTERS_DIR environment variable,
+// then the per-user cache directory the "full" release binary unpacks its
+// embedded formatters into, then the "formatters" directory of the nearest
+// ancestor of the running executable or of the current directory. A
+// self-contained bundle keeps its formatters inside the program, so a
+// downloaded full release needs no neighbouring directory.
+func FormattersDir() string {
+	if override := strings.TrimSpace(os.Getenv(formattersDirEnv)); override != "" {
 		return override
 	}
-	return filepath.Join(repoRoot(), "tools")
+	root, err := embeddedFormattersRoot()
+	if err != nil {
+		if verboseEnv() {
+			fmt.Fprintf(os.Stderr, "formattington: could not unpack the embedded formatters: %v\n", err)
+		}
+	} else if root != "" {
+		return root
+	}
+	return filepath.Join(repoRoot(), "formatters")
 }
 
 // repoRoot returns the nearest ancestor directory (starting from the
-// running executable, then the working directory) that contains a "tools"
-// directory. It falls back to the working directory.
+// running executable, then the working directory) that contains a
+// "formatters" or "tools" directory. It falls back to the working
+// directory.
 func repoRoot() string {
 	if exe, err := os.Executable(); err == nil {
-		if root, ok := findRootWithTools(filepath.Dir(exe)); ok {
+		if root, ok := findRootWithBundles(filepath.Dir(exe)); ok {
 			return root
 		}
 	}
 	if wd, err := os.Getwd(); err == nil {
-		if root, ok := findRootWithTools(wd); ok {
+		if root, ok := findRootWithBundles(wd); ok {
 			return root
 		}
 	}
 	return "."
 }
 
-func findRootWithTools(start string) (string, bool) {
+// findRootWithBundles returns the nearest ancestor that holds bundled
+// formatters, or the helper tools directory.
+func findRootWithBundles(start string) (string, bool) {
 	dir := start
 	for {
-		if info, err := os.Stat(filepath.Join(dir, "tools")); err == nil && info.IsDir() {
-			return dir, true
+		for _, name := range []string{"formatters", "tools"} {
+			if info, err := os.Stat(filepath.Join(dir, name)); err == nil && info.IsDir() {
+				return dir, true
+			}
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {
@@ -224,7 +243,7 @@ func bundledVersions(toolDir string) []string {
 // matching bundle exists. A non-nil error means the platform itself is
 // unsupported.
 func findBundledExecutable(name, version, executable string) (string, error) {
-	toolDir := filepath.Join(ToolsDir(), name)
+	toolDir := filepath.Join(FormattersDir(), name)
 
 	var versions []string
 	if version != "" {
@@ -297,10 +316,14 @@ func FindTool(name, version string, verbose bool) (string, error) {
 	if platformErr != nil {
 		return "", platformErr
 	}
-	expected := filepath.Join(ToolsDir(), name, "<version>", platform, executable)
+	expected := filepath.Join(FormattersDir(), name, "<version>", platform, executable)
+	hint := ""
+	if embeddedErr != nil {
+		hint = fmt.Sprintf(" (the embedded formatters could not be unpacked: %v)", embeddedErr)
+	}
 	return "", fmt.Errorf(
-		"Could not find '%s'. Expected a bundled executable under %s or an installation on PATH.",
-		name, expected,
+		"Could not find '%s'. Expected a bundled executable under %s or an installation on PATH.%s",
+		name, expected, hint,
 	)
 }
 

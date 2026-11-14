@@ -2,6 +2,8 @@
 /bin/
 /dist/
 /formattington
+# Scratch directory for the embedded formatters staged per release build
+/internal/formattington/assets/
 
 # Go
 *.exe

@@ -272,7 +272,7 @@ log INFO "per-tool mappings (same flags, different natives): shfmt -l/-d, clang-
 demo_run --dry-run black "$MESSY_PY"
 
 section "6/8 all, --series, discovery, and exit aggregation (sandbox-scoped)"
-log INFO "no-file-args discovery walks cwd, skipping hidden dirs and __pycache__/node_modules/vendor/venv/dist/build/tools/"
+log INFO "no-file-args discovery walks cwd, skipping hidden dirs and __pycache__/node_modules/vendor/venv/dist/build/tools/formatters/"
 demo_run_tmp --dry-run shfmt
 log INFO "default all is concurrent (output may interleave)"
 demo_run_tmp --check all

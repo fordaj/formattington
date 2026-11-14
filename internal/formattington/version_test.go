@@ -41,7 +41,7 @@ func TestVersionFallsBackToVersioner(t *testing.T) {
 	t.Chdir(root)
 	// Point the resolver at an empty tree so no versioner is found and
 	// the fallback is exercised instead.
-	t.Setenv("FORMATTINGTON_TOOLS_DIR", filepath.Join(root, "empty-tools"))
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", filepath.Join(root, "empty-tools"))
 	t.Setenv("PATH", root)
 
 	_, _, stderr := captureOutput(t, func() int {
@@ -82,7 +82,7 @@ func TestBundledVersionerIsResolved(t *testing.T) {
 		t.Skipf("unsupported platform: %v", err)
 	}
 	writeFile(t, filepath.Join(toolsDir, "v0.0.3.0.5", platform, "versioner"), "#!/bin/sh\nexit 0\n")
-	t.Setenv("FORMATTINGTON_TOOLS_DIR", filepath.Join(root, "tools"))
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", filepath.Join(root, "tools"))
 
 	got := bundledVersioner(root)
 	if got == "" {
@@ -109,26 +109,26 @@ func TestVersionerOutputIsParsed(t *testing.T) {
 	}
 }
 
-func TestToolsDirUsesTheEnvironmentOverride(t *testing.T) {
-	override := filepath.Join(t.TempDir(), "custom-tools")
-	t.Setenv(toolsDirEnv, override)
-	if got := ToolsDir(); got != override {
-		t.Errorf("ToolsDir = %q, want %q", got, override)
+func TestFormattersDirUsesTheEnvironmentOverride(t *testing.T) {
+	override := filepath.Join(t.TempDir(), "custom-formatters")
+	t.Setenv(formattersDirEnv, override)
+	if got := FormattersDir(); got != override {
+		t.Errorf("FormattersDir = %q, want %q", got, override)
 	}
 }
 
-func TestToolsDirFallsBackToTheRepositoryTools(t *testing.T) {
-	t.Setenv(toolsDirEnv, "")
+func TestFormattersDirFallsBackToTheRepositoryFormatters(t *testing.T) {
+	t.Setenv(formattersDirEnv, "")
 	root := repoRoot()
-	got := ToolsDir()
-	if got != filepath.Join(root, "tools") {
-		t.Errorf("ToolsDir = %q, want %q", got, filepath.Join(root, "tools"))
+	got := FormattersDir()
+	if got != filepath.Join(root, "formatters") {
+		t.Errorf("FormattersDir = %q, want %q", got, filepath.Join(root, "formatters"))
 	}
 }
 
-func TestFindRootWithTools(t *testing.T) {
+func TestFindRootWithBundles(t *testing.T) {
 	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Join(root, "tools"), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Join(root, "formatters"), 0o755); err != nil {
 		t.Fatalf("mkdir: %v", err)
 	}
 	nested := filepath.Join(root, "a", "b")
@@ -136,15 +136,32 @@ func TestFindRootWithTools(t *testing.T) {
 		t.Fatalf("mkdir: %v", err)
 	}
 
-	got, ok := findRootWithTools(nested)
+	got, ok := findRootWithBundles(nested)
 	if !ok {
-		t.Fatal("expected the ancestor with the tools directory to be found")
+		t.Fatal("expected the ancestor with the formatters directory to be found")
 	}
 	if got != root {
-		t.Errorf("findRootWithTools = %q, want %q", got, root)
+		t.Errorf("findRootWithBundles = %q, want %q", got, root)
 	}
 
-	if _, ok := findRootWithTools(filepath.Join(root, "a", "missing")); !ok {
-		t.Error("expected the search to keep walking up to the tools directory")
+	if _, ok := findRootWithBundles(filepath.Join(root, "a", "missing")); !ok {
+		t.Error("expected the search to keep walking up to the formatters directory")
+	}
+}
+
+// A self-contained release bundle keeps "formatters/" next to the program
+// and has no "tools/" directory; the lookup must still find the root.
+func TestFindRootWithBundlesFindsALayoutWithoutTools(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "formatters"), 0o755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+
+	got, ok := findRootWithBundles(root)
+	if !ok {
+		t.Fatal("expected the bundle root to be found")
+	}
+	if got != root {
+		t.Errorf("findRootWithBundles = %q, want %q", got, root)
 	}
 }

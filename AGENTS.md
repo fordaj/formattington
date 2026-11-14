@@ -114,7 +114,9 @@ Important files include:
 
 - `cmd/formattington/main.go` — process entry point; calls `formattington.Main(os.Args[1:])` and exits with its return code.
 - `internal/formattington/cli.go` — canonical command-line entry point and orchestration (sole `registry` of tools; `languageAliases` map).
-- `internal/formattington/tools.go` — shared tool discovery (`FindTool`), platform detection (`PlatformDir`), and subprocess helpers (`runTool`).
+- `internal/formattington/tools.go` — shared tool discovery (`FindTool`, `FormattersDir`), platform detection (`PlatformDir`), and subprocess helpers (`runTool`).
+- `internal/formattington/embedded.go` — unpacks the formatter executables embedded in the "full" release binary into the per-user cache directory on first use.
+- `internal/formattington/embedded_full.go` / `internal/formattington/embedded_lite.go` — the `go:embed` payload (build tag `full`) and its lite-build stub.
 - `internal/formattington/discovery.go` — recursive file discovery (`DiscoverFiles`).
 - `internal/formattington/config.go` — `.formattington.json` loading and validation.
 - `internal/formattington/help.go` — usage text and the help output.
@@ -122,10 +124,10 @@ Important files include:
 - `internal/formattington/formatter.go` — the `Formatter` and `Options` types shared by the integrations.
 - `internal/formattington/shfmt.go` — shfmt integration.
 - `internal/formattington/clang_format.go` — clang-format integration.
-- `internal/formattington/black.go` — Black (Python) integration (`.py` files; PATH-only, no bundle; respects `[tool.black]` / `pyproject.toml`).
-- `internal/formattington/prettier.go` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`, `.markdown`; PATH-only, no bundle; respects `.prettierrc`). Prettier is the sole owner of Markdown formatting; `md`/`markdown` are entries in `languageAliases` for `prettier`, and there is no separate Markdown module.
+- `internal/formattington/black.go` — Black (Python) integration (`.py` files; resolved from PATH or the bundled formatters; respects `[tool.black]` / `pyproject.toml`).
+- `internal/formattington/prettier.go` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`, `.markdown`; resolved from PATH or the bundled formatters; respects `.prettierrc`). Prettier is the sole owner of Markdown formatting; `md`/`markdown` are entries in `languageAliases` for `prettier`, and there is no separate Markdown module.
 - `internal/formattington/powershell.go` — PowerShell integration (`.ps1`, `.psm1`; PATH-only, no bundle). Lints via PSScriptAnalyzer (`Invoke-ScriptAnalyzer`) through `pwsh` (PowerShell 7+, falling back to `powershell.exe` on Windows); there is no in-place formatting, so check/dry-run/default all lint and findings exit 1. The `ps1` language alias resolves to `powershell` in `cli.go`.
-- `internal/formattington/taplo.go` — Taplo (TOML) integration (`.toml` files; bundled under `tools/taplo/<version>/<platform>/`; respects `taplo.toml`). The `toml` language alias resolves to `taplo` in `cli.go`.
+- `internal/formattington/taplo.go` — Taplo (TOML) integration (`.toml` files; resolved from PATH or the bundled formatters; respects `taplo.toml`). The `toml` language alias resolves to `taplo` in `cli.go`.
 - `internal/formattington/gofmt.go` and `internal/formattington/goimports.go` — Go integrations (`.go` files; PATH-only, no bundle). The `go` language alias resolves to `gofmt` in `cli.go`.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
@@ -154,7 +156,7 @@ make check
 
 `make build` writes the binary to `./bin/formattington`; `make test` runs `go test ./...`; `make check` runs `go vet ./...`, verifies `gofmt` has nothing to change, and runs the test suite.
 
-`make dist` (equivalently `./release.bash --build-only`) cross-compiles the release binaries into `dist/<platform>/` and packages the per-platform archives; `./release.bash` additionally verifies the version against versioner, tags, pushes, and creates the GitHub release with those archives attached.
+`make dist` (equivalently `./release.bash --build-only`) fetches the bundled formatters, cross-compiles the lite and full release binaries into `dist/`, smoke-tests the host's full binary, and packages the per-platform `formattington-lite-<platform>` / `formattington-full-<platform>` archives; `./release.bash` additionally verifies the version against versioner, tags, pushes, and creates the GitHub release with those archives attached.
 
 Go 1.24 or newer is required (`go.mod` declares the language version).
 
@@ -221,9 +223,7 @@ Examples of native configuration files include:
 - `.markdownlint.json`
 - `pyproject.toml`
 
-Bundled formatter binaries under `tools/` are pinned and tracked by design (see `tools/README.md` and the README bundled-tools policy).
-
-`FindTool()` prefers bundled copies, then falls back to `PATH`.
+Bundled formatter binaries are not committed. `release.bash` fetches them at release time with `formatters/<tool>/update.sh` and the `formattington-full-<platform>` binaries embed them (`go:embed`, build tag `full`); on first use they are unpacked into the per-user cache directory. The `formattington-lite-<platform>` binaries embed none. `tools/` only holds the bundled build/helper tools (versioner, logamuffin, runner-spawner), which are pinned and tracked. `FORMATTINGTON_FORMATTERS_DIR` overrides the formatter lookup; `FindTool()` prefers bundled (or embedded) copies, then falls back to `PATH`.
 
 ## Testing and Validation
 

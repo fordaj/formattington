@@ -163,7 +163,7 @@ func TestAllPreservesTheLastNonZeroExitCode(t *testing.T) {
 	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "taplo", "gofmt", "goimports"} {
 		writeFakeExecutable(t, binDir, name)
 	}
-	t.Setenv("FORMATTINGTON_TOOLS_DIR", t.TempDir())
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
 	t.Setenv("PATH", binDir)
 	t.Chdir(t.TempDir())
 
@@ -396,7 +396,7 @@ func TestAllReturnsOneTwentySevenWhenAnyToolIsMissing(t *testing.T) {
 	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "taplo", "gofmt", "goimports"} {
 		writeFakeExecutable(t, binDir, name)
 	}
-	t.Setenv("FORMATTINGTON_TOOLS_DIR", t.TempDir())
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
 	t.Setenv("PATH", binDir)
 	t.Chdir(t.TempDir())
 
@@ -437,7 +437,7 @@ func TestSeriesOrderIsRegistrationOrder(t *testing.T) {
 			t.Fatalf("chmod: %v", err)
 		}
 	}
-	t.Setenv("FORMATTINGTON_TOOLS_DIR", t.TempDir())
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
 	t.Setenv("PATH", binDir)
 	t.Setenv("FAKE_ORDER_FILE", orderFile)
 	t.Chdir(t.TempDir())
@@ -479,7 +479,7 @@ func TestDefaultAllRunsConcurrently(t *testing.T) {
 			t.Fatalf("chmod: %v", err)
 		}
 	}
-	t.Setenv("FORMATTINGTON_TOOLS_DIR", t.TempDir())
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
 	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	t.Chdir(t.TempDir())
 
@@ -515,7 +515,7 @@ func TestSeriesDoesNotOverlap(t *testing.T) {
 			t.Fatalf("chmod: %v", err)
 		}
 	}
-	t.Setenv("FORMATTINGTON_TOOLS_DIR", t.TempDir())
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
 	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	t.Setenv("FAKE_LOCK", lock)
 	t.Chdir(t.TempDir())
@@ -541,7 +541,7 @@ func TestExitAggregationFollowsRegistrationOrder(t *testing.T) {
 			t.Fatalf("chmod: %v", err)
 		}
 	}
-	t.Setenv("FORMATTINGTON_TOOLS_DIR", t.TempDir())
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
 	t.Setenv("PATH", binDir)
 	t.Chdir(t.TempDir())
 

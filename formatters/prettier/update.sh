@@ -74,12 +74,9 @@ if [[ ! -f "$CLI_MODULE" ]]; then
     exit 1
 fi
 
-# Create a static CLI entry point for Bun.
-# cat >"$WORK_DIR/prettier-entry.mjs" <<'EOF'
-# import { run } from "./node_modules/prettier/internal/legacy-cli.mjs";
-
-# await run();
-# EOF
+# Use the entry point shipped in this repository. It lives next to
+# node_modules so that "import ... from 'prettier/...'" resolves.
+cp "$SCRIPT_DIR/prettier-entry.mjs" "$WORK_DIR/prettier-entry.mjs"
 
 # Create version-specific output directory.
 VERSION_DIR="$OUTPUT_DIR/v$PRETTIER_VERSION"
