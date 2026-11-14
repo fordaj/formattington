@@ -1678,3 +1678,92 @@ func TestRubocopCheckDoesNotModifyFixture(t *testing.T) {
 		t.Error("the fixture was modified in check mode")
 	}
 }
+
+func TestStylerExpressionConstruction(t *testing.T) {
+	requirePOSIX(t)
+
+	binDir := t.TempDir()
+	writeFile(t, filepath.Join(binDir, "Rscript"),
+		"#!/bin/sh\nprintf '%s\\n' \"$@\" > \"$FAKE_ARGV_FILE\"\nexit 0\n")
+	if err := chmodExecutable(filepath.Join(binDir, "Rscript")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	argvFile := filepath.Join(t.TempDir(), "argv.txt")
+	t.Setenv("FAKE_ARGV_FILE", argvFile)
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	// Paths with spaces and a double-quote-style adversarial name.
+	files := []string{"plain.R", "dir with spaces/my file.R"}
+	code, err := runStyler(Options{Args: files})
+	if err != nil {
+		t.Fatalf("runStyler returned an error: %v", err)
+	}
+	if code != ExitOK {
+		t.Fatalf("exit = %d, want %d", code, ExitOK)
+	}
+	data, err := os.ReadFile(argvFile)
+	if err != nil {
+		t.Fatalf("read argv: %v", err)
+	}
+	got := string(data)
+	want := "-e\nstyler::style_file(c(\"plain.R\", \"dir with spaces/my file.R\"), dry = \"off\")\n"
+	if got != want {
+		t.Errorf("argv = %q, want %q", got, want)
+	}
+
+	// Check mode maps dry = "fail".
+	_, err = runStyler(Options{Check: true, Args: files})
+	if err != nil {
+		t.Fatalf("runStyler returned an error: %v", err)
+	}
+	data, err = os.ReadFile(argvFile)
+	if err != nil {
+		t.Fatalf("read argv: %v", err)
+	}
+	got = string(data)
+	want = "-e\nstyler::style_file(c(\"plain.R\", \"dir with spaces/my file.R\"), dry = \"fail\")\n"
+	if got != want {
+		t.Errorf("argv = %q, want %q", got, want)
+	}
+}
+
+func TestStylerRejectsForwardedFlags(t *testing.T) {
+	requirePOSIX(t)
+
+	binDir := t.TempDir()
+	writeFile(t, filepath.Join(binDir, "Rscript"), "#!/bin/sh\nexit 0\n")
+	if err := chmodExecutable(filepath.Join(binDir, "Rscript")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	code, err := runStyler(Options{Args: []string{"--line-width", "100"}})
+	if err != nil {
+		t.Fatalf("runStyler returned an error: %v", err)
+	}
+	if code != ExitUsage {
+		t.Errorf("exit = %d, want %d", code, ExitUsage)
+	}
+}
+
+func TestStylerCheckNonZeroIsRemapped(t *testing.T) {
+	requirePOSIX(t)
+
+	binDir := t.TempDir()
+	writeFile(t, filepath.Join(binDir, "Rscript"), "#!/bin/sh\nexit 1\n")
+	if err := chmodExecutable(filepath.Join(binDir, "Rscript")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	code, err := runStyler(Options{Check: true, Args: []string{"fixture.R"}})
+	if err != nil {
+		t.Fatalf("runStyler returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d", code, ExitFormatRequired)
+	}
+}
