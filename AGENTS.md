@@ -6,7 +6,7 @@ Formattington is a cross-platform, multi-language formatting and code-quality to
 
 The goal is to bring project formatting and automated quality checks under one interface without reimplementing the underlying tools.
 
-Formattington is written in Python and managed with `uv`.
+Formattington is written in Go and has no third-party dependencies.
 
 ## Core Principles
 
@@ -57,7 +57,7 @@ formattington all --series
 ```
 
 - `all` runs all configured formatter integrations against their matching files.
-- By default, formatters run concurrently via `concurrent.futures.ThreadPoolExecutor`.
+- By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
 - Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
@@ -108,25 +108,31 @@ When modifying CLI behavior, preserve these public command patterns unless the c
 
 ## Architecture
 
-The package currently lives in `src/formattington/`.
+The program lives in `cmd/formattington/` (entry point) and `internal/formattington/` (the whole implementation).
 
-Important modules include:
+Important files include:
 
-- `cli.py` — canonical command-line entry point and orchestration (sole `FORMATTERS` registry; `pyproject.toml` declares `formattington.cli:main`).
-- `__main__.py` — `python -m formattington` entry point (re-exports `cli.main`).
-- `_tools.py` — shared tool discovery (`find_tool`) and subprocess helpers.
-- `shfmt.py` — shfmt integration.
-- `clang_format.py` — clang-format integration.
-- `format_python.py` — Black (Python) integration (`.py` files; PATH-only, no bundle; respects `[tool.black]` / `pyproject.toml`).
-- `prettier.py` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`, `.markdown`; PATH-only, no bundle; respects `.prettierrc`). Prettier is the sole owner of Markdown formatting; `md`/`markdown` are `LANGUAGE_ALIASES` for `prettier` in `cli.py`, and there is no `markdown_format.py`.
-- `powershell.py` — PowerShell integration (`.ps1`, `.psm1`; PATH-only, no bundle). Lints via PSScriptAnalyzer (`Invoke-ScriptAnalyzer`) through `pwsh` (PowerShell 7+, falling back to `powershell.exe` on Windows); there is no in-place formatting, so check/dry-run/default all lint and findings exit 1. The `ps1` language alias resolves to `powershell` in `cli.py`.
-- `taplo.py` — Taplo (TOML) integration (`.toml` files; bundled under `tools/taplo/<version>/<platform>/`; respects `taplo.toml`). The `toml` language alias resolves to `taplo` in `cli.py`.
+- `cmd/formattington/main.go` — process entry point; calls `formattington.Main(os.Args[1:])` and exits with its return code.
+- `internal/formattington/cli.go` — canonical command-line entry point and orchestration (sole `registry` of tools; `languageAliases` map).
+- `internal/formattington/tools.go` — shared tool discovery (`FindTool`), platform detection (`PlatformDir`), and subprocess helpers (`runTool`).
+- `internal/formattington/discovery.go` — recursive file discovery (`DiscoverFiles`).
+- `internal/formattington/config.go` — `.formattington.json` loading and validation.
+- `internal/formattington/help.go` — usage text and the help output.
+- `internal/formattington/version.go` — dynamic version resolution (versioner, `FORMATTINGTON_VERSION`).
+- `internal/formattington/formatter.go` — the `Formatter` and `Options` types shared by the integrations.
+- `internal/formattington/shfmt.go` — shfmt integration.
+- `internal/formattington/clang_format.go` — clang-format integration.
+- `internal/formattington/black.go` — Black (Python) integration (`.py` files; PATH-only, no bundle; respects `[tool.black]` / `pyproject.toml`).
+- `internal/formattington/prettier.go` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`, `.markdown`; PATH-only, no bundle; respects `.prettierrc`). Prettier is the sole owner of Markdown formatting; `md`/`markdown` are entries in `languageAliases` for `prettier`, and there is no separate Markdown module.
+- `internal/formattington/powershell.go` — PowerShell integration (`.ps1`, `.psm1`; PATH-only, no bundle). Lints via PSScriptAnalyzer (`Invoke-ScriptAnalyzer`) through `pwsh` (PowerShell 7+, falling back to `powershell.exe` on Windows); there is no in-place formatting, so check/dry-run/default all lint and findings exit 1. The `ps1` language alias resolves to `powershell` in `cli.go`.
+- `internal/formattington/taplo.go` — Taplo (TOML) integration (`.toml` files; bundled under `tools/taplo/<version>/<platform>/`; respects `taplo.toml`). The `toml` language alias resolves to `taplo` in `cli.go`.
+- `internal/formattington/gofmt.go` and `internal/formattington/goimports.go` — Go integrations (`.go` files; PATH-only, no bundle). The `go` language alias resolves to `gofmt` in `cli.go`.
 
-`cli.py` is the single canonical entry point and the sole `FORMATTERS` registry.
+`cli.go` is the single canonical entry point and the sole tool registry.
 
-The Bash formatter module (`format_bash.py`) is planned but not yet present. Do not reference it as an existing file. `format_python.py` and `prettier.py` exist and are not part of the planned set. Markdown formatting is provided by Prettier via the `md`/`markdown` aliases; Markdown linting (for example `markdownlint`) is a separate operation outside this scope and is not yet integrated.
+Markdown formatting is provided by Prettier via the `md`/`markdown` aliases; Markdown linting (for example `markdownlint`) is a separate operation outside this scope and is not yet integrated.
 
-Before modifying a module, inspect its current implementation and callers. Keep responsibilities separated and avoid duplicating tool-specific logic across the orchestration layer.
+Before modifying a file, inspect its current implementation and callers. Keep responsibilities separated and avoid duplicating tool-specific logic across the orchestration layer.
 
 New integrations should follow established patterns where appropriate, while allowing for differences in tool capabilities and behavior.
 
@@ -136,40 +142,35 @@ Do not introduce unnecessary abstractions or a generalized plugin architecture w
 
 ## Development Environment
 
-This is a Python project managed with `uv`.
-
-Use the project environment and declared dependencies rather than installing packages globally.
+This is a Go project with no third-party dependencies.
 
 Typical development commands:
 
 ```bash
-uv sync
-uv run python -m formattington
-uv run formattington
+make build
+make test
+make check
 ```
 
-Both `uv run python -m formattington` (via `src/formattington/__main__.py`, which re-exports `cli.main`) and the `uv run formattington` console script work.
+`make build` writes the binary to `./bin/formattington`; `make test` runs `go test ./...`; `make check` runs `go vet ./...`, verifies `gofmt` has nothing to change, and runs the test suite.
 
-`uv.lock` is checked in for reproducible installs; `uv sync` installs exactly the locked versions.
+Go 1.24 or newer is required (`go.mod` declares the language version).
 
-Python 3.14 or newer is required (`requires-python = ">=3.14"` in `pyproject.toml`; `.python-version` pins 3.14).
-
-When adding dependencies, update the project configuration and lockfile using `uv` rather than manually editing resolved dependency versions.
+When adding dependencies, prefer the Go standard library; a new module requires updating `go.mod` and `go.sum` with `go get` / `go mod tidy`.
 
 ## Implementation Guidelines
 
-### Python
+### Go
 
-- Follow the existing code style and project conventions.
-- Use `pathlib.Path` for filesystem paths.
-- Use `subprocess.run` or an appropriate subprocess API for external commands.
-- Pass subprocess arguments as a sequence rather than constructing shell command strings.
-- Convert `Path` instances to strings when required by subprocess APIs.
-- Avoid `shell=True` unless shell semantics are explicitly required.
+- Follow the existing code style and project conventions (`gofmt` is enforced by `make fmt-check`).
+- Use `path/filepath` for filesystem paths and `os`/`io/fs` for filesystem access.
+- Use `os/exec` for external commands.
+- Pass subprocess arguments as a slice rather than constructing shell command strings.
+- Avoid `sh -c` unless shell semantics are explicitly required.
 - Handle missing executables, failed subprocesses, and invalid arguments clearly.
 - Preserve useful stdout, stderr, and exit codes.
-- Use type hints where they improve clarity.
-- Prefer the Python standard library unless an additional dependency provides clear value.
+- Return errors instead of panicking; the CLI turns a missing tool into exit 127 and a usage error into exit 2.
+- Keep exported identifiers documented; unexported helpers carry a short comment explaining their contract.
 
 ### File Discovery
 
@@ -192,7 +193,7 @@ When adding dependencies, update the project configuration and lockfile using `u
 ### Cross-Platform Compatibility
 
 - Do not assume Unix-only path syntax or shell behavior.
-- Use `pathlib` and platform-aware process invocation.
+- Use `path/filepath` and platform-aware process invocation.
 - Account for differences in executable names and discovery on Windows.
 - Avoid relying on a particular user's machine, absolute paths, or globally installed tools.
 - Keep platform-specific behavior isolated when possible.
@@ -220,27 +221,26 @@ Examples of native configuration files include:
 
 Bundled formatter binaries under `tools/` are pinned and tracked by design (see `tools/README.md` and the README bundled-tools policy).
 
-`find_tool()` prefers bundled copies, then falls back to `PATH`.
+`FindTool()` prefers bundled copies, then falls back to `PATH`.
 
 ## Testing and Validation
 
 Run the test suite with:
 
 ```bash
-uv sync
-uv run pytest
+make test
 ```
 
-Tests live in `tests/` and are configured via `[tool.pytest.ini_options]` in `pyproject.toml`.
+That is a thin wrapper around `go test ./...`. Tests live next to the code in `internal/formattington/` and use the standard `testing` package (no third-party test dependencies).
 
 The suite runs without network access or installed formatter binaries:
 
-- Unit tests mock `platform`, `shutil.which`, and `subprocess.run`.
+- Unit tests point tool discovery at empty temporary trees and stub `PATH`.
 - Integration tests use fake executable scripts in temporary directories.
 
 Before considering a change complete:
 
-1. Run `uv run pytest` using the project's configured workflow.
+1. Run `make check` using the project's configured workflow.
 2. Verify CLI argument parsing and exit behavior.
 3. Test paths containing spaces where filesystem or subprocess behavior changes.
 4. Test missing executables and tool failures when relevant.

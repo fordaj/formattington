@@ -187,7 +187,7 @@ These mode mappings are integration-specific. Future tools may support different
 
 ### Missing executables
 
-When a formatter executable cannot be found, Formattington does not raise a Python traceback. It prints a single line to stderr (for example:
+When a formatter executable cannot be found, Formattington does not crash with a stack trace. It prints a single line to stderr (for example:
 
 ```text
 formattington: Could not find 'shfmt'. Expected a bundled executable under tools/shfmt/<version>/<platform>/shfmt or an installation on PATH.
@@ -224,7 +224,7 @@ Use `--verbose` to see which executable was resolved when a tool is present.
 - `gofmt` is part of the [Go](https://go.dev/) installation (install Go for your OS; `gofmt` comes with it).
 - `goimports` formats like `gofmt` and also fixes import grouping; install with `go install golang.org/x/tools/cmd/goimports@latest`.
 
-Either a bundled copy under `tools/` (see [Bundled tools](#bundled-tools)) or an installation on `PATH` satisfies `find_tool()`. `black`, `prettier`, `gofmt`, and `goimports` are PATH-only (not bundled) and are found via `PATH`.
+Either a bundled copy under `tools/` (see [Bundled tools](#bundled-tools)) or an installation on `PATH` satisfies `FindTool()`. `black`, `prettier`, `gofmt`, and `goimports` are PATH-only (not bundled) and are found via `PATH`.
 
 ## Supported tools
 
@@ -244,7 +244,7 @@ Formattington integrates existing tools rather than reimplementing their functio
 
 Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `taplo`, `gofmt`, `goimports`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), and `all` are accepted by the CLI.
 
-Prettier is the sole owner of Markdown formatting. There is no dedicated `markdown_format.py` or separate Markdown formatter; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown-specific linting (for example `markdownlint`) is a distinct operation and is out of scope for this change; it can be integrated separately in the future if needed. Unrecognized names still report a usage error (exit 2).
+Prettier is the sole owner of Markdown formatting. There is no dedicated Markdown formatter module; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown-specific linting (for example `markdownlint`) is a distinct operation and is out of scope for this change; it can be integrated separately in the future if needed. Unrecognized names still report a usage error (exit 2).
 
 Go has two formatters covering the same `.go` files: `gofmt` (canonical formatting) and `goimports` (formatting plus import grouping). `formattington go` resolves to `gofmt`; use `formattington goimports` or a config command listing `goimports` when imports should also be fixed. Use `--series` with `all` to run them sequentially (`gofmt` then `goimports`) instead of concurrently, or list only one in a config file to avoid running both against the same files. Per AGENTS.md, when multiple tools support the same file type, selection should respect configured tool choices.
 
@@ -254,14 +254,14 @@ Additional tools may provide other capabilities, such as checking, linting, and 
 
 | Tool         | Install method (bundled)                                                          | Install method (PATH)                                                                                        | How Formattington finds it                                 |
 | ------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| shfmt        | Comes under `tools/shfmt/v3.14.1/<platform>/shfmt` in a fresh clone               | `go install mvdan.cc/sh/v3/cmd/shfmt@latest` or your OS package manager                                      | Bundled first, then `PATH` via `find_tool("shfmt")`        |
-| clang-format | Comes under `tools/clang-format/v23.1.3/<platform>/clang-format` in a fresh clone | Install LLVM/clang-tools for your OS (for example `brew install clang-format` or `apt install clang-format`) | Bundled first, then `PATH` via `find_tool("clang-format")` |
-| black        | Not bundled (PATH-only)                                                           | `pip install black` or `uv tool install black`                                                               | `PATH` via `find_tool("black")`                            |
-| prettier     | Not bundled (PATH-only)                                                           | `npm install -g prettier`                                                                                    | `PATH` via `find_tool("prettier")`                         |
-| powershell   | Not bundled (PATH-only; PSScriptAnalyzer is a module)                             | PowerShell 7+ (`pwsh`) on `PATH` plus `Install-Module PSScriptAnalyzer` in `pwsh`                            | `PATH` via `find_tool("pwsh")`, then `find_tool("powershell")` |
-| taplo        | Comes under `tools/taplo/v0.10.0/<platform>/taplo` in a fresh clone               | Download taplo from https://github.com/tamasfe/taplo releases and put `taplo` on `PATH`                     | Bundled first, then `PATH` via `find_tool("taplo")`        |
-| gofmt        | Not bundled (PATH-only)                                                           | Install Go for your OS; `gofmt` comes with the Go installation                                               | `PATH` via `find_tool("gofmt")`                            |
-| goimports    | Not bundled (PATH-only)                                                           | `go install golang.org/x/tools/cmd/goimports@latest` (ensure `$(go env GOPATH)/bin` is on `PATH`)           | `PATH` via `find_tool("goimports")`                        |
+| shfmt        | Comes under `tools/shfmt/v3.14.1/<platform>/shfmt` in a fresh clone               | `go install mvdan.cc/sh/v3/cmd/shfmt@latest` or your OS package manager                                      | Bundled first, then `PATH` via `FindTool("shfmt")`        |
+| clang-format | Comes under `tools/clang-format/v23.1.3/<platform>/clang-format` in a fresh clone | Install LLVM/clang-tools for your OS (for example `brew install clang-format` or `apt install clang-format`) | Bundled first, then `PATH` via `FindTool("clang-format")` |
+| black        | Not bundled (PATH-only)                                                           | `pip install black` or `uv tool install black`                                                               | `PATH` via `FindTool("black")`                            |
+| prettier     | Not bundled (PATH-only)                                                           | `npm install -g prettier`                                                                                    | `PATH` via `FindTool("prettier")`                         |
+| powershell   | Not bundled (PATH-only; PSScriptAnalyzer is a module)                             | PowerShell 7+ (`pwsh`) on `PATH` plus `Install-Module PSScriptAnalyzer` in `pwsh`                            | `PATH` via `FindTool("pwsh")`, then `FindTool("powershell")` |
+| taplo        | Comes under `tools/taplo/v0.10.0/<platform>/taplo` in a fresh clone               | Download taplo from https://github.com/tamasfe/taplo releases and put `taplo` on `PATH`                     | Bundled first, then `PATH` via `FindTool("taplo")`        |
+| gofmt        | Not bundled (PATH-only)                                                           | Install Go for your OS; `gofmt` comes with the Go installation                                               | `PATH` via `FindTool("gofmt")`                            |
+| goimports    | Not bundled (PATH-only)                                                           | `go install golang.org/x/tools/cmd/goimports@latest` (ensure `$(go env GOPATH)/bin` is on `PATH`)           | `PATH` via `FindTool("goimports")`                        |
 
 Bundled versions are pinned in `tools/` for offline use; see [Bundled tools](#bundled-tools) for the layout and refresh process.
 
@@ -271,7 +271,7 @@ Formatter configuration files such as `.prettierrc` and `.clang-format` remain i
 
 ## Installation
 
-Formattington is a Python project managed with [uv](https://docs.astral.sh/uv/).
+Formattington is a Go program. It has no third-party dependencies, so `go build` is all that is needed.
 
 Clone the repository:
 
@@ -280,35 +280,37 @@ git clone https://github.com/fordaj/formattington.git
 cd formattington
 ```
 
-Install the project and its dependencies using the project's declared configuration:
+Build the binary:
 
 ```bash
-uv sync
+make build
 ```
 
-`uv.lock` is checked in for reproducible installs (`uv sync` installs exactly the locked versions).
+`make build` writes the executable to `./bin/formattington`. A plain `go build -o bin/formattington ./cmd/formattington` works just as well.
 
-The project requires Python 3.14 or newer (`.python-version` pins 3.14 for development; `requires-python` is `>=3.14` in `pyproject.toml`).
+The project requires Go 1.24 or newer (`go.mod` declares the language version).
 
-Run Formattington from the project environment (the console script and module entry point are equivalent):
+Run Formattington from the built binary:
 
 ```bash
-uv run formattington all
+./bin/formattington all
 
-uv run python -m formattington all
+./bin/formattington --version
+```
 
-uv run formattington --version
+To use it from anywhere, put the binary on your `PATH`:
 
-uv run python -m formattington --version
+```bash
+go install github.com/fordaj/formattington/cmd/formattington@latest
 ```
 
 ### Tool dependencies
 
-Formattington orchestrates external tools; it does not automatically make every tool available simply by installing the Python package.
+Formattington orchestrates external tools; it does not automatically make every tool available simply by building the program.
 
-A fresh clone already contains the pinned bundled executables under `tools/`, so `uv sync` plus the clone above are sufficient for offline use.
+A fresh clone already contains the pinned bundled executables under `tools/`, so building the binary is sufficient for offline use.
 
-If you prefer a system installation, put the tool on `PATH` instead — `find_tool()` prefers bundled copies and falls back to `PATH`.
+If you prefer a system installation, put the tool on `PATH` instead — `FindTool()` prefers bundled copies and falls back to `PATH`.
 
 `black` is PATH-only (installed via `pip install black` or `uv tool install black`) and is not bundled under `tools/`.
 
@@ -339,7 +341,7 @@ Formattington looks for bundled tool executables under:
 tools/<name>/v<version>/<platform>/
 ```
 
-Here, `<platform>` is the hyphenated `<os>-<arch>` name returned by `get_platform_dir()` (for example `linux-x86_64`, `macos-arm64`, `windows-x86_64`).
+Here, `<platform>` is the hyphenated `<os>-<arch>` name returned by `PlatformDir()` (for example `linux-x86_64`, `macos-arm64`, `windows-x86_64`).
 
 Bundled tools are preferred; when none is found, lookup falls back to `PATH`.
 
@@ -354,7 +356,7 @@ formattington --verbose --check shfmt
 
 ### Migration notes
 
-The shfmt Linux bundles were previously stored under underscored names (`linux_arm64`, `linux_x86_64`). They are now hyphenated (`linux-arm64`, `linux-x86_64`) to match `get_platform_dir()` and clang-format.
+The shfmt Linux bundles were previously stored under underscored names (`linux_arm64`, `linux_x86_64`). They are now hyphenated (`linux-arm64`, `linux-x86_64`) to match `PlatformDir()` and clang-format.
 
 Underscored layouts (for example `linux_x86_64`) are no longer resolved; only the hyphenated layout is supported.
 
@@ -366,7 +368,7 @@ On Windows, `PATH` lookup tries both `name` and `name.exe`.
 
 Formattington intentionally commits pinned formatter binaries under `tools/` (option (a) in #11).
 
-Bundled binaries are the first lookup location in `find_tool()` and the fallback is `PATH`, so deleting or updating a bundle never breaks the fallback — a missing bundle simply defers to `PATH` and, if that also fails, exits `127` with a one-line `formattington: Could not find ...` message.
+Bundled binaries are the first lookup location in `FindTool()` and the fallback is `PATH`, so deleting or updating a bundle never breaks the fallback — a missing bundle simply defers to `PATH` and, if that also fails, exits `127` with a one-line `formattington: Could not find ...` message.
 
 Pinned upstream versions (recorded in `tools/README.md`):
 
@@ -385,7 +387,7 @@ See `tools/README.md` for the full layout and version table.
 
 ### Repository hygiene
 
-`__pycache__/`, `*.pyc`, `.DS_Store`, `.logs/`, `.venv/`, `.pytest_cache/`, and `*.egg-info/` are ignored via `.gitignore` and must not be tracked.
+`bin/`, `*.exe`, `*.test`, `*.out`, `.DS_Store`, and `.logs/` are ignored via `.gitignore` and must not be tracked.
 
 The previously committed `__pycache__/*.pyc` and `tools/**/*.DS_Store` files were untracked with `git rm --cached`; only the formatter binaries remain tracked under `tools/`.
 
@@ -394,20 +396,21 @@ The previously committed `__pycache__/*.pyc` and `tools/**/*.DS_Store` files wer
 Run the test suite with:
 
 ```bash
-uv sync
-uv run pytest
+make test
 ```
 
-Tests live in `tests/` and cover CLI parsing, tool discovery, subprocess boundaries, and argument forwarding. They run without network access and without formatter binaries installed, using mocks and fake executable scripts in temporary directories.
+That is a thin wrapper around `go test ./...`. Tests live next to the code in `internal/formattington/` and cover CLI parsing, tool discovery, subprocess boundaries, argument forwarding, and the configuration file. They run without network access and without formatter binaries installed, using fake executable scripts in temporary directories.
+
+`make check` additionally runs `go vet ./...` and verifies that `gofmt` has nothing to change.
 
 ## Continuous integration
 
-CI runs on self-hosted runners managed by [runner-spawner](https://github.com/fordaj/runner-spawner): the bundled binary under `tools/runner-spawner/v<version>/<platform>/` installs repository-scoped runners at `$HOME/.runners/formattington/` (one checkout per run) with auto labels `self-hosted`, `<os>` (`windows`/`macos`), arch, hostname, and `<hostname>-<runner-name>`. The workflows under `.github/` (callers `pull_request_caller.yml` and `nightly_caller.yml`, reusable `pull_request.yml`/`nightly.yml`) use those labels to pin `Setup` (checkout) and `Checks` (format + pytest) to the same host.
+CI runs on self-hosted runners managed by [runner-spawner](https://github.com/fordaj/runner-spawner): the bundled binary under `tools/runner-spawner/v<version>/<platform>/` installs repository-scoped runners at `$HOME/.runners/formattington/` (one checkout per run) with auto labels `self-hosted`, `<os>` (`windows`/`macos`), arch, hostname, and `<hostname>-<runner-name>`. The workflows under `.github/` (callers `pull_request_caller.yml` and `nightly_caller.yml`, reusable `pull_request.yml`/`nightly.yml`) use those labels to pin `Setup` (checkout) and `Checks` (format + tests) to the same host.
 
 Host setup:
 
 ```bash
-source scripts/env.sh
+source scripts/entry.sh
 "$RUNNER_SPAWNER_BIN" list                  # configured names + on-disk dirs
 "$RUNNER_SPAWNER_BIN" create --dry-run      # preview labels and paths
 "$RUNNER_SPAWNER_BIN" create                 # needs a registration token (RUNNER_SPAWNER_TOKEN / GH_TOKEN / gh)
@@ -415,7 +418,7 @@ source scripts/env.sh
 
 The committed `.runner-spawner.json` (owner `fordaj`, repo `formattington`, `runnerNames: ["runner01"]`) drives the default; edit it per host for more runners. A caller-provided `RUNNER_SPAWNER_BIN` wins over the bundle. `create` downloads the actions runner archive once into `.runners/cache` and installs the service; on Windows it must run with admin privileges and `--windows-username`/`--windows-password` (or the env vars); on macOS it installs via `svc.sh`.
 
-Python 3.14+ and `uv` must be on `PATH` on each host — the Checks step runs `uv run formattington --check all` and `uv run pytest` (the suite is the primary gate). Because `black`, `prettier`, `gofmt`, and `goimports` are PATH-only (not bundled), `uv run formattington --check all` exits `127` unless those tools are installed on the host; the bundled `shfmt`, `clang-format`, and `taplo` work offline from `tools/`. `pull_request_caller.yml` and `nightly_caller.yml` pass secrets with `secrets: inherit` so the reusable workflow's checkout can clone with `GITHUB_TOKEN`. Linux is not yet in the OS matrices — runner-spawner supports macOS and Windows runners only (Linux binaries ship for `list`/`status` diagnostics).
+Go 1.24+ must be on `PATH` on each host — the Checks step runs `make check` (which builds the binary, vets it, and runs `go test ./...`; the suite is the primary gate). Because `black`, `prettier`, `gofmt`, and `goimports` are PATH-only (not bundled), `formattington --check all` exits `127` unless those tools are installed on the host; the bundled `shfmt`, `clang-format`, and `taplo` work offline from `tools/`. `pull_request_caller.yml` and `nightly_caller.yml` pass secrets with `secrets: inherit` so the reusable workflow's checkout can clone with `GITHUB_TOKEN`. Linux is not yet in the OS matrices — runner-spawner supports macOS and Windows runners only (Linux binaries ship for `list`/`status` diagnostics).
 
 ## Project status
 

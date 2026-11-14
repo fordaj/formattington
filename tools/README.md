@@ -1,7 +1,7 @@
 # Bundled formatter binaries
 
 Formattington commits pinned formatter binaries here intentionally
-(policy (a) in #11). `find_tool()` in `src/formattington/_tools.py`
+(policy (a) in #11). `FindTool()` in `internal/formattington/tools.go`
 looks here first, then falls back to `PATH`.
 
 ## Layout

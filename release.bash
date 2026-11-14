@@ -3,36 +3,37 @@
 # tag HEAD, push the tag, and create a GitHub release for version tracking.
 #
 # Unlike the Versioner repo release, this packs no binaries: GitHub Releases
-# are for version tracking only (no .exe uploads). Python wheels/sdists are
-# built separately with `uv build` from the tagged commit; they are not
-# attached here. The package version itself is dynamic via versioner
-# (src/formattington/_version.py + .versioner.json + pyproject.toml
-# dynamic = ["version"]), so the tag and `uv build` agree by construction.
+# are for version tracking only (no .exe uploads). Formattington is a Go
+# program; release artifacts (if any) are produced separately from the
+# tagged commit. The program version itself is dynamic via versioner
+# (internal/formattington/version.go + .versioner.json), so the tag and
+# `formattington --version` agree by construction.
 #
 # Usage:
 #   ./release.bash           # compute version, tag, push, gh release create
 #   ./release.bash --dry-run # compute + verify only, touch nothing remote
 #
 # Prerequisites: git, gh authenticated via `gh auth login` (real release),
-# python3 for _version verification, and bundled versioner/logamuffin
-# binaries (refresh with tools/versioner/update.bash and
-# tools/logamuffin/update.bash; select with scripts/env.sh). Logging uses
-# log <level> <message> from scripts/env.sh (logamuffin, with printf
-# fallback until tools/logamuffin is populated).
+# and bundled versioner/logamuffin binaries (refresh with
+# tools/versioner/update.bash and tools/logamuffin/update.bash; select with
+# scripts/entry.sh). Logging uses log <level> <message> from
+# scripts/entry.sh (logamuffin, with printf fallback until
+# tools/logamuffin is populated). A Go toolchain is needed to build the
+# binary whose version is verified.
 # Working tree must be clean; HEAD should be pushed.
 
 set -euo pipefail
 
-# Logging via logamuffin (log <level> <message> from scripts/env.sh,
+# Logging via logamuffin (log <level> <message> from scripts/entry.sh,
 # with printf fallback until tools/logamuffin is populated). Source the
-# env cascade first so every later message goes through log().
+# entry point first: it pulls in the env cascade and defines log().
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-if [[ ! -f "$SCRIPT_DIR/scripts/env.sh" ]]; then
-    printf 'release.bash: error: env cascade not found: %s/scripts/env.sh\n' "$SCRIPT_DIR" >&2
+if [[ ! -f "$SCRIPT_DIR/scripts/entry.sh" ]]; then
+    printf 'release.bash: error: script entry point not found: %s/scripts/entry.sh\n' "$SCRIPT_DIR" >&2
     exit 1
 fi
 # shellcheck disable=SC1091
-. "$SCRIPT_DIR/scripts/env.sh"
+. "$SCRIPT_DIR/scripts/entry.sh"
 
 DRY_RUN=0
 
@@ -41,7 +42,7 @@ usage() {
 Usage: ./release.bash [--dry-run]
 
 Compute the next VERSION/TAG with versioner itself (dogfooding, bundled
-binary selected via scripts/env.sh), verify the dynamic package version
+binary selected via scripts/entry.sh), verify the program's version
 matches, create an annotated tag, push it, and create a GitHub release
 with generated notes (version tracking only, no assets).
 
@@ -50,8 +51,9 @@ Flags:
   --help, -h      Show this help.
 
 Env:
-  VERSIONER_BIN   Path to versioner (default: via scripts/env.sh, then PATH).
-  LOGAMUFFIN_BIN  Path to logamuffin for log() (default: via scripts/env.sh, then PATH).
+  FORMATTINGTON_BIN  Path to the formattington binary (default: ./bin/formattington, then PATH).
+  VERSIONER_BIN   Path to versioner (default: via scripts/entry.sh, then PATH).
+  LOGAMUFFIN_BIN  Path to logamuffin for log() (default: via scripts/entry.sh, then PATH).
 EOF
 }
 
@@ -82,14 +84,6 @@ need_cmd() {
 }
 
 need_cmd git
-
-if command -v python3.14 >/dev/null 2>&1; then
-    PYTHON_BIN="python3.14"
-elif command -v python3 >/dev/null 2>&1; then
-    PYTHON_BIN="python3"
-else
-    die "required command not found: python3.14 (project requires Python >=3.14)"
-fi
 
 if [[ "$DRY_RUN" -ne 1 ]]; then
     need_cmd gh
@@ -130,14 +124,14 @@ if ! git fetch origin --tags 2>/dev/null; then
     fi
 fi
 
-# --- Dogfooding: versioner/logamuffin via scripts/env.sh (sourced above)
+# --- Dogfooding: versioner/logamuffin via scripts/entry.sh (sourced above)
 # shellcheck disable=SC2154
 if [[ -z "${VERSIONER_BIN:-}" ]]; then
     die "no versioner binary found (run tools/versioner/update.bash, or set VERSIONER_BIN)"
 fi
 [[ -x "$VERSIONER_BIN" ]] || die "VERSIONER_BIN=$VERSIONER_BIN is not executable"
 log INFO "using versioner: $VERSIONER_BIN"
-if [[ -n "${LOGAMUFFIN_BIN:-}" && -x "$LOGAMUFFIN_BIN" ]]; then
+if [[ -n "${LOGAMUFFIN_BIN:-}" && -x "${LOGAMUFFIN_BIN}" ]]; then
     log INFO "using logamuffin: $LOGAMUFFIN_BIN"
 else
     log WARNING "logamuffin not found; falling back to printf logging (run tools/logamuffin/update.bash)"
@@ -159,13 +153,50 @@ if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 log INFO "VERSION=$VERSION  TAG=$TAG"
 
-# --- Dynamic package version must agree with the tag ------------------
-log INFO "verifying dynamic package version..."
-# shellcheck disable=SC2154
-PKG_VERSION="$(PYTHONPATH="$REPO_ROOT/src" "$PYTHON_BIN" -c 'import formattington._version as v; print(v.__version__)')"
-log INFO "formattington._version reports: $PKG_VERSION"
+# --- The program's own version must agree with the tag ----------------
+# The binary computes its version from the same versioner binary, so the
+# two must match; a mismatch means the binary is stale or was built from
+# a different checkout.
+resolve_formattington() {
+    if [[ -n "${FORMATTINGTON_BIN:-}" ]]; then
+        if [[ -x "${FORMATTINGTON_BIN}" ]]; then
+            printf '%s' "$FORMATTINGTON_BIN"
+            return 0
+        fi
+        return 1
+    fi
+    local candidate
+    for candidate in "$REPO_ROOT/bin/formattington" "$REPO_ROOT/formattington"; do
+        if [[ -x "$candidate" ]]; then
+            printf '%s' "$candidate"
+            return 0
+        fi
+    done
+    if command -v formattington >/dev/null 2>&1; then
+        command -v formattington
+        return 0
+    fi
+    return 1
+}
+
+log INFO "verifying program version..."
+if ! FMT_BIN="$(resolve_formattington)"; then
+    if command -v go >/dev/null 2>&1; then
+        log INFO "no formattington binary found; building it with go build..."
+        mkdir -p "$REPO_ROOT/bin"
+        (cd "$REPO_ROOT" && go build -o "$REPO_ROOT/bin/formattington" ./cmd/formattington) ||
+            die "could not build formattington (install Go 1.24+ or set FORMATTINGTON_BIN)"
+        FMT_BIN="$REPO_ROOT/bin/formattington"
+    else
+        die "no formattington binary found (run 'make build', install formattington on PATH, or set FORMATTINGTON_BIN)"
+    fi
+fi
+log INFO "using formattington: $FMT_BIN"
+
+PKG_VERSION="$("$FMT_BIN" --version)"
+log INFO "formattington --version reports: $PKG_VERSION"
 if [[ "$PKG_VERSION" != "$VERSION" ]]; then
-    die "dynamic version $PKG_VERSION does not match versioner VERSION=$VERSION"
+    die "program version $PKG_VERSION does not match versioner VERSION=$VERSION"
 fi
 
 # --- Tag must not already exist ---------------------------------------
