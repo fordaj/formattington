@@ -1512,3 +1512,81 @@ func TestCljfmtExitCodesAreNotConflated(t *testing.T) {
 		}
 	}
 }
+
+func TestFantomasArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fantomas"}, func() (int, error) {
+			return runFantomas(Options{})
+		})
+		if len(recorded) != 0 {
+			t.Errorf("argv = %v, want []", recorded)
+		}
+	})
+
+	t.Run("check uses check flag", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fantomas"}, func() (int, error) {
+			return runFantomas(Options{Check: true})
+		})
+		want := []string{"--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fantomas"}, func() (int, error) {
+			return runFantomas(Options{DryRun: true})
+		})
+		want := []string{"--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fantomas"}, func() (int, error) {
+			return runFantomas(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+
+	t.Run("forwards args verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fantomas"}, func() (int, error) {
+			return runFantomas(Options{Args: []string{"--reorder-open-lists", "my file.fs"}})
+		})
+		want := []string{"--reorder-open-lists", "my file.fs"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
+
+func TestFantomasExit99IsRemapped(t *testing.T) {
+	requirePOSIX(t)
+
+	for _, tc := range []struct{ native, want int }{
+		{99, ExitFormatRequired}, // files need formatting
+		{1, 1},                   // error passes through
+		{0, 0},                   // clean
+	} {
+		binDir := filepath.Join(t.TempDir(), "bin")
+		writeFile(t, filepath.Join(binDir, "fantomas"), "#!/bin/sh\nexit "+strconv.Itoa(tc.native)+"\n")
+		if err := chmodExecutable(filepath.Join(binDir, "fantomas")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		code, err := runFantomas(Options{Check: true})
+		if err != nil {
+			t.Fatalf("fantomas exit %d: runFantomas returned an error: %v", tc.native, err)
+		}
+		if code != tc.want {
+			t.Errorf("fantomas exit %d: got %d, want %d", tc.native, code, tc.want)
+		}
+	}
+}
