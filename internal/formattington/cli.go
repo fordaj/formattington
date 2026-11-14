@@ -36,6 +36,7 @@ var registry = []Tool{
 	{Name: "perltidy", Extensions: perltidyExtensions, Run: runPerltidy},
 	{Name: "fprettify", Extensions: fprettifyExtensions, Run: runFprettify},
 	{Name: "erlfmt", Extensions: erlfmtExtensions, Run: runErlfmt},
+	{Name: "sqlfluff", Extensions: sqlfluffExtensions, Run: runSqlfluff},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -58,6 +59,7 @@ var languageAliases = map[string]string{
 	"perl":     "perltidy",
 	"fortran":  "fprettify",
 	"erlang":   "erlfmt",
+	"sql":      "sqlfluff",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
