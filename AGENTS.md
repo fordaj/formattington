@@ -59,7 +59,7 @@ formattington all --series
 - `all` runs all configured formatter integrations against their matching files.
 - By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
-- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format` order (missing tool = 127); `0` only if all succeed.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
 
 Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
@@ -149,6 +149,7 @@ Important files include:
 - `internal/formattington/styler.go` — styler (R) integration (`.R`/`.r` files; PATH-only; needs `Rscript` + the styler package). The `r` language alias resolves to `styler` in `cli.go`. The R expression is built from the file list; forwarded flags are a usage error; check uses `dry = "fail"`.
 - `internal/formattington/jlfmt.go` — jlfmt (Julia) integration (`.jl` files; PATH-only; needs Julia >= 1.12 with the JuliaFormatter.jl app installed via `Pkg.Apps.add`). The `julia` language alias resolves to `jlfmt` in `cli.go`. Check mode uses `jlfmt --check` (exit 1 ⇒ `ExitFormatRequired`, 2 passes through); `--diff` needs git on PATH and degrades to `--check` with a note otherwise.
 - `internal/formattington/elm_format.go` — elm-format (Elm) integration (`.elm` files; bundled for Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64). The `elm` language alias resolves to `elm-format` in `cli.go`. Zero-configuration (gofmt philosophy); `--validate` exits 1 when files need formatting.
+- `internal/formattington/fourmolu.go` — fourmolu (Haskell) integration (`.hs` files; bundled for macOS arm64, macOS x86_64, Linux arm64, Linux x86_64; Windows stays PATH-only; Linux binaries are glibc-dynamic). The `haskell` language alias resolves to `fourmolu` in `cli.go`. `--mode check` exit 100 is reported as `ExitFormatRequired`; the diff is printed to stderr; all other codes pass through.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 

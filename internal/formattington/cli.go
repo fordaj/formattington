@@ -48,6 +48,7 @@ var registry = []Tool{
 	{Name: "styler", Extensions: stylerExtensions, Run: runStyler},
 	{Name: "jlfmt", Extensions: jlfmtExtensions, Run: runJlfmt},
 	{Name: "elm-format", Extensions: elmFormatExtensions, Run: runElmFormat},
+	{Name: "fourmolu", Extensions: fourmoluExtensions, Run: runFourmolu},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -83,6 +84,7 @@ var languageAliases = map[string]string{
 	"r":           "styler",
 	"julia":       "jlfmt",
 	"elm":         "elm-format",
+	"haskell":     "fourmolu",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
