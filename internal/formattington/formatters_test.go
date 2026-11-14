@@ -929,3 +929,56 @@ func TestFprettifyCheckReportsDiffOutputAsExitFormatRequired(t *testing.T) {
 		t.Errorf("exit = %d, want %d (non-empty diff output means changes are required)", code, ExitFormatRequired)
 	}
 }
+
+func TestErlfmtArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"erlfmt"}, func() (int, error) {
+			return runErlfmt(Options{})
+		})
+		want := []string{"-w"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses -c", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"erlfmt"}, func() (int, error) {
+			return runErlfmt(Options{Check: true})
+		})
+		want := []string{"-c"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"erlfmt"}, func() (int, error) {
+			return runErlfmt(Options{DryRun: true})
+		})
+		want := []string{"-c"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"erlfmt"}, func() (int, error) {
+			return runErlfmt(Options{Args: []string{"--help"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--help"}) {
+			t.Errorf("argv = %v, want [--help]", recorded)
+		}
+	})
+
+	t.Run("forwards args verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"erlfmt"}, func() (int, error) {
+			return runErlfmt(Options{Args: []string{"my file.erl"}})
+		})
+		want := []string{"-w", "my file.erl"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
