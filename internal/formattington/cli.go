@@ -26,6 +26,7 @@ var registry = []Tool{
 	{Name: "black", Extensions: blackExtensions, Run: runBlack},
 	{Name: "prettier", Extensions: prettierExtensions, Run: runPrettier},
 	{Name: "powershell", Extensions: powershellExtensions, Run: runPowerShell},
+	{Name: "markdownlint", Extensions: markdownlintExtensions, Run: runMarkdownlint},
 	{Name: "taplo", Extensions: taploExtensions, Run: runTaplo},
 	{Name: "gofmt", Extensions: gofmtExtensions, Run: runGofmt},
 	{Name: "goimports", Extensions: goimportsExtensions, Run: runGoimports},

@@ -120,6 +120,50 @@ func TestClangFormatArgv(t *testing.T) {
 	})
 }
 
+func TestMarkdownlintArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	for _, mode := range []struct {
+		name string
+		opts Options
+	}{
+		{"default lints", Options{}},
+		{"check lints", Options{Check: true}},
+		{"dry run lints", Options{DryRun: true}},
+	} {
+		t.Run(mode.name, func(t *testing.T) {
+			_, recorded := runFake(t, []string{"markdownlint"}, func() (int, error) {
+				return runMarkdownlint(mode.opts)
+			})
+			if len(recorded) != 0 {
+				t.Errorf("argv = %v, want no arguments (markdownlint never rewrites without --fix)", recorded)
+			}
+		})
+	}
+
+	t.Run("forwards --fix and files verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"markdownlint"}, func() (int, error) {
+			return runMarkdownlint(Options{Check: true, Args: []string{"--fix", "--config", "custom.json", "README.md"}})
+		})
+		want := []string{"--fix", "--config", "custom.json", "README.md"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("missing tool reports exit 127", func(t *testing.T) {
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", t.TempDir())
+		code, err := runMarkdownlint(Options{})
+		if err == nil {
+			t.Fatal("expected an error for a missing tool")
+		}
+		if code != ExitNotFound {
+			t.Errorf("code = %d, want %d", code, ExitNotFound)
+		}
+	})
+}
+
 func TestBlackArgv(t *testing.T) {
 	requirePOSIX(t)
 
@@ -472,6 +516,7 @@ func TestInformationalPassthrough(t *testing.T) {
 		{"black", "black", runBlack},
 		{"prettier", "prettier", runPrettier},
 		{"powershell", "pwsh", runPowerShell},
+		{"markdownlint", "markdownlint", runMarkdownlint},
 		{"taplo", "taplo", runTaplo},
 		{"gofmt", "gofmt", runGofmt},
 		{"goimports", "goimports", runGoimports},

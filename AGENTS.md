@@ -127,12 +127,13 @@ Important files include:
 - `internal/formattington/black.go` — Black (Python) integration (`.py` files; resolved from PATH or the bundled formatters; respects `[tool.black]` / `pyproject.toml`).
 - `internal/formattington/prettier.go` — Prettier integration (`.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`, `.markdown`; resolved from PATH or the bundled formatters; respects `.prettierrc`). Prettier is the sole owner of Markdown formatting; `md`/`markdown` are entries in `languageAliases` for `prettier`, and there is no separate Markdown module.
 - `internal/formattington/powershell.go` — PowerShell integration (`.ps1`, `.psm1`; PATH-only, no bundle). Lints via PSScriptAnalyzer (`Invoke-ScriptAnalyzer`) through `pwsh` (PowerShell 7+, falling back to `powershell.exe` on Windows); there is no in-place formatting, so check/dry-run/default all lint and findings exit 1. The `ps1` language alias resolves to `powershell` in `cli.go`.
+- `internal/formattington/markdownlint.go` — markdownlint integration (`.md`, `.markdown`; resolved from PATH or the bundled formatters; respects the tool's native configuration). Runs `markdownlint-cli` verbatim — the tool never rewrites files without an explicit `--fix`, so check/dry-run/default all lint and findings exit 1. There is no language alias; invoke it as `markdownlint` (also valid in `.formattington.json` commands).
 - `internal/formattington/taplo.go` — Taplo (TOML) integration (`.toml` files; resolved from PATH or the bundled formatters; respects `taplo.toml`). The `toml` language alias resolves to `taplo` in `cli.go`.
 - `internal/formattington/gofmt.go` and `internal/formattington/goimports.go` — Go integrations (`.go` files; PATH-only, no bundle). The `go` language alias resolves to `gofmt` in `cli.go`.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 
-Markdown formatting is provided by Prettier via the `md`/`markdown` aliases; Markdown linting (for example `markdownlint`) is a separate operation outside this scope and is not yet integrated.
+Markdown formatting is provided by Prettier via the `md`/`markdown` aliases; Markdown linting is provided by `markdownlint` (an exact tool name, no alias), which runs `markdownlint-cli` against `.md`/`.markdown` files. It never rewrites files without an explicit `--fix`, and its arguments are forwarded verbatim, so `--fix`, `--config`, and glob patterns work natively; configuration is discovered by the tool itself (for example `.markdownlint.json`). In `all`, `markdownlint` runs like every other registered tool (after `powershell`); findings exit 1, as with the other linters.
 
 Before modifying a file, inspect its current implementation and callers. Keep responsibilities separated and avoid duplicating tool-specific logic across the orchestration layer.
 

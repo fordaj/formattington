@@ -12,24 +12,32 @@ const usageLine = "usage: formattington [-h] [--version] [--check | --dry-run] [
 const helpEpilog = `Language aliases (same --check/--dry-run and forwarded-argument semantics as
 formatter names): c/cpp/c++ use clang-format; bash uses shfmt; python/py use
 black; md/markdown use prettier (Markdown formatting is provided by Prettier;
-.md and .markdown files are covered); html uses prettier; ps1 uses powershell
+.md and .markdown files are covered; Markdown style is linted with the
+markdownlint tool); html uses prettier; ps1 uses powershell
 (PSScriptAnalyzer linting of PowerShell scripts); toml uses taplo (TOML
 formatting via taplo fmt); go uses gofmt (Go formatting via gofmt; goimports
 additionally fixes imports, so use it via the goimports name or a config
 command for import-aware formatting).
 
+markdownlint lints Markdown files; it never rewrites files without an
+explicit "--fix" argument, so every mode lints (findings exit 1, no
+findings exit 0). Configuration is discovered by the tool itself (for
+example .markdownlint.json in the working directory).
+
 With no file arguments, formattington discovers each formatter's matching
 files recursively from the current directory (skipping hidden directories and
-__pycache__, node_modules, vendor, venv, dist, build, and tools/) and formats
+__pycache__, node_modules, vendor, venv, dist, build, and formatters/) and formats
 them in batches.
 
-Bundled tools live under tools/<name>/v<version>/<platform>/; use --verbose
+Bundled formatters live under formatters/<name>/v<version>/<platform>/ or, in
+the "full" release binaries, inside the executable itself; use --verbose
 (or set FORMATTINGTON_VERBOSE=1) to show the resolved executable.
 
 With 'all', formatters run concurrently by default; use --series (before or
 after 'all', e.g. 'formattington --series all' or 'formattington all
 --series') to run them sequentially in shfmt, clang-format, black, prettier,
-powershell, taplo, gofmt, goimports order. Exit code is the last non-zero code
+powershell, markdownlint, taplo, gofmt, goimports order. Exit code is the
+last non-zero code
 in that order (missing tool counts as 127, printed to stderr, and does not
 prevent remaining formatters from running); 0 only if all succeed.
 

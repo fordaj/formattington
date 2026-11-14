@@ -581,9 +581,9 @@ smoke_full_binary() {
 		return 0
 	fi
 
-	# The formatters registered in the CLI. markdownlint is bundled but not
-	# yet integrated, so it is exercised through its unpacked binary below.
-	local cli_tools=(shfmt clang-format black prettier taplo)
+	# The formatters registered in the CLI. Every bundled tool is exercised
+	# through the CLI here; the direct check below covers all of them too.
+	local cli_tools=(shfmt clang-format black prettier taplo markdownlint)
 
 	local smoke_home
 	smoke_home="$(mktemp -d)"

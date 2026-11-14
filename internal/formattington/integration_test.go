@@ -106,6 +106,8 @@ func TestCLIEndToEnd(t *testing.T) {
 		{"prettier write", []string{"prettier"}, []string{"prettier"}, []string{"--write"}},
 		{"gofmt check", []string{"gofmt"}, []string{"--check", "gofmt", "my file.go"}, []string{"-l", "my file.go"}},
 		{"goimports dry run", []string{"goimports"}, []string{"--dry-run", "goimports", "file.go"}, []string{"-d", "file.go"}},
+		{"markdownlint fix", []string{"markdownlint"}, []string{"markdownlint", "--fix"}, []string{"--fix"}},
+		{"markdownlint check lints", []string{"markdownlint"}, []string{"--check", "markdownlint", "README.md"}, []string{"README.md"}},
 		{"taplo check", []string{"taplo"}, []string{"--check", "toml"}, []string{"fmt", "--colors", "never", "--check"}},
 	}
 

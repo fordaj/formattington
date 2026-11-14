@@ -160,7 +160,7 @@ func TestAllPreservesTheLastNonZeroExitCode(t *testing.T) {
 	if err := chmodExecutable(filepath.Join(binDir, "shfmt")); err != nil {
 		t.Fatalf("chmod: %v", err)
 	}
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "taplo", "gofmt", "goimports"} {
+	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports"} {
 		writeFakeExecutable(t, binDir, name)
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
@@ -250,6 +250,7 @@ func TestHelpListsOptionsAndAliases(t *testing.T) {
 		"c/cpp/c++", "bash", "python/py", "html", "clang-format",
 		"md/markdown use prettier", ".md", ".markdown",
 		"ps1", "powershell", "PSScriptAnalyzer",
+		"markdownlint",
 		"toml", "taplo",
 		"go uses gofmt", "goimports",
 		"concurrently", "last non-zero",
@@ -393,7 +394,7 @@ func TestAllReturnsOneTwentySevenWhenAnyToolIsMissing(t *testing.T) {
 
 	// Only shfmt is missing; the others are present.
 	binDir := filepath.Join(t.TempDir(), "bin")
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "taplo", "gofmt", "goimports"} {
+	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports"} {
 		writeFakeExecutable(t, binDir, name)
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
@@ -533,6 +534,7 @@ func TestExitAggregationFollowsRegistrationOrder(t *testing.T) {
 	writeFile(t, filepath.Join(binDir, "black"), "#!/bin/sh\nexit 2\n")
 	writeFakeExecutable(t, binDir, "prettier")
 	writeFakeExecutable(t, binDir, "pwsh")
+	writeFakeExecutable(t, binDir, "markdownlint")
 	writeFakeExecutable(t, binDir, "taplo")
 	writeFakeExecutable(t, binDir, "gofmt")
 	writeFakeExecutable(t, binDir, "goimports")

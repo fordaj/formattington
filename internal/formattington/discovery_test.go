@@ -141,6 +141,7 @@ func TestExtensionOwnership(t *testing.T) {
 		"gofmt":        {".go"},
 		"goimports":    {".go"},
 		"powershell":   {".ps1", ".psm1"},
+		"markdownlint": {".md", ".markdown"},
 		"clang-format": {".c", ".cpp", ".hpp"},
 	}
 	for name, wanted := range cases {
