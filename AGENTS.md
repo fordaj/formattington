@@ -59,7 +59,7 @@ formattington all --series
 - `all` runs all configured formatter integrations against their matching files.
 - By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
-- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format` order (missing tool = 127); `0` only if all succeed.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
 
 Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
@@ -153,6 +153,7 @@ Important files include:
 - `internal/formattington/ocamlformat.go` — ocamlformat (OCaml) integration (`.ml`/`.mli` files; PATH-only — no native binaries exist; built through opam). The `ocaml` language alias resolves to `ocamlformat` in `cli.go`. `--check` exit 1 is reported as `ExitFormatRequired` (also used for errors; stderr disambiguates).
 - `internal/formattington/rustfmt.go` — rustfmt (Rust) integration (`.rs` files; PATH-only; rustup component). The `rust` language alias resolves to `rustfmt` in `cli.go`. The edition is detected per file from the nearest Cargo.toml (`[package] edition`, else nearest `[workspace.package] edition` for inherited members); files are grouped per edition before batching; a caller-provided `--edition` wins.
 - `internal/formattington/swift_format.go` — swift-format (Swift) integration (`.swift` files; PATH-only; ships with Swift 6+ toolchains — standalone `swift-format` tried first, falling back to `swift format` with the `format` prefix). The `swift` language alias resolves to `swift-format` in `cli.go`.
+- `internal/formattington/dart_format.go` — dart format (Dart) integration (`.dart` files; PATH-only; ships with the Dart SDK). The tool name is `dart-format` (the binary is `dart`; invoked as `dart format`); the `dart` alias resolves to `dart-format` in `cli.go`. Check is `dart format --set-exit-if-changed -o none`.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 

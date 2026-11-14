@@ -2279,3 +2279,57 @@ func TestSwiftFormatResolutionErrorsWhenBothMissing(t *testing.T) {
 		t.Errorf("exit = %d, want %d", code, ExitNotFound)
 	}
 }
+
+func TestDartFormatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dart"}, func() (int, error) {
+			return runDartFormat(Options{})
+		})
+		want := []string{"format"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses set-exit-if-changed with -o none", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dart"}, func() (int, error) {
+			return runDartFormat(Options{Check: true})
+		})
+		want := []string{"format", "--set-exit-if-changed", "-o", "none"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dart"}, func() (int, error) {
+			return runDartFormat(Options{DryRun: true})
+		})
+		want := []string{"format", "--set-exit-if-changed", "-o", "none"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dart"}, func() (int, error) {
+			return runDartFormat(Options{Args: []string{"--verbose"}})
+		})
+		want := []string{"format", "--verbose"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("forwards args verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"dart"}, func() (int, error) {
+			return runDartFormat(Options{Args: []string{"--line-length", "80", "my file.dart"}})
+		})
+		want := []string{"format", "--line-length", "80", "my file.dart"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}

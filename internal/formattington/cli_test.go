@@ -56,6 +56,9 @@ func fakeNameFor(formatter string) string {
 	if formatter == "styler" {
 		return "Rscript"
 	}
+	if formatter == "dart-format" {
+		return "dart"
+	}
 	return formatter
 }
 
@@ -98,6 +101,7 @@ func TestLanguageAliasSelection(t *testing.T) {
 		"ocaml":       "ocamlformat",
 		"rust":        "rustfmt",
 		"swift":       "swift-format",
+		"dart":        "dart-format",
 	}
 
 	for alias, formatter := range cases {
@@ -182,7 +186,7 @@ func TestAllPreservesTheLastNonZeroExitCode(t *testing.T) {
 	if err := chmodExecutable(filepath.Join(binDir, "shfmt")); err != nil {
 		t.Fatalf("chmod: %v", err)
 	}
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript", "jlfmt", "elm-format", "fourmolu", "ocamlformat", "rustfmt", "swift-format"} {
+	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript", "jlfmt", "elm-format", "fourmolu", "ocamlformat", "rustfmt", "swift-format", "dart"} {
 		writeFakeExecutable(t, binDir, name)
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
@@ -417,7 +421,7 @@ func TestAllReturnsOneTwentySevenWhenAnyToolIsMissing(t *testing.T) {
 
 	// Only shfmt is missing; the others are present.
 	binDir := filepath.Join(t.TempDir(), "bin")
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript", "jlfmt", "elm-format", "fourmolu", "ocamlformat", "rustfmt", "swift-format"} {
+	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript", "jlfmt", "elm-format", "fourmolu", "ocamlformat", "rustfmt", "swift-format", "dart"} {
 		writeFakeExecutable(t, binDir, name)
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
@@ -580,6 +584,7 @@ func TestExitAggregationFollowsRegistrationOrder(t *testing.T) {
 	writeFakeExecutable(t, binDir, "ocamlformat")
 	writeFakeExecutable(t, binDir, "rustfmt")
 	writeFakeExecutable(t, binDir, "swift-format")
+	writeFakeExecutable(t, binDir, "dart")
 	for _, name := range []string{"shfmt", "black"} {
 		if err := chmodExecutable(filepath.Join(binDir, name)); err != nil {
 			t.Fatalf("chmod: %v", err)
