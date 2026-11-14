@@ -611,3 +611,55 @@ func TestStyluaArgv(t *testing.T) {
 		}
 	})
 }
+
+func TestNixfmtArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"nixfmt"}, func() (int, error) {
+			return runNixfmt(Options{})
+		})
+		if len(recorded) != 0 {
+			t.Errorf("argv = %v, want []", recorded)
+		}
+	})
+
+	t.Run("check uses check flag", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"nixfmt"}, func() (int, error) {
+			return runNixfmt(Options{Check: true})
+		})
+		want := []string{"--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"nixfmt"}, func() (int, error) {
+			return runNixfmt(Options{DryRun: true})
+		})
+		want := []string{"--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"nixfmt"}, func() (int, error) {
+			return runNixfmt(Options{Args: []string{"--help"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--help"}) {
+			t.Errorf("argv = %v, want [--help]", recorded)
+		}
+	})
+
+	t.Run("forwards args verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"nixfmt"}, func() (int, error) {
+			return runNixfmt(Options{Args: []string{"--width", "100", "my file.nix"}})
+		})
+		want := []string{"--width", "100", "my file.nix"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
