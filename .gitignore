@@ -1,7 +1,19 @@
-__pycache__/
-*.pyc
+# Build output
+/bin/
+/dist/
+/formattington
+# Scratch directory for the embedded formatters staged per release build
+/internal/formattington/assets/
+
+# Go
+*.exe
+*.test
+*.out
+vendor/
+
+# Editors / OS
 .DS_Store
+*.swp
+
+# Logs
 .logs/
-.venv/
-.pytest_cache/
-*.egg-info/

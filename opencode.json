@@ -1,0 +1,22 @@
+{
+    "$schema": "https://opencode.ai/config.json",
+    "provider": {
+        "ollama": {
+            "npm": "@ai-sdk/openai-compatible",
+            "name": "Ollama (LAN)",
+            "options": {
+                "baseURL": "http://forte.local:11434/v1"
+            },
+            "models": {
+                "qwen3.8:27b": {
+                    "name": "Qwen 3.8 27B (LAN)",
+                    "limit": {
+                        "context": 65536,
+                        "output": 8192
+                    }
+                }
+            }
+        }
+    },
+    "model": "ollama/qwen3.8:27b"
+}
