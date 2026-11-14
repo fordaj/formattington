@@ -2433,3 +2433,86 @@ func TestDotnetFormatExitTwoIsRemapped(t *testing.T) {
 		}
 	}
 }
+
+func TestMixFormatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place with no-compile", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"mix"}, func() (int, error) {
+			return runMixFormat(Options{})
+		})
+		want := []string{"format", "--no-compile"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses check-formatted with no-compile", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"mix"}, func() (int, error) {
+			return runMixFormat(Options{Check: true})
+		})
+		want := []string{"format", "--check-formatted", "--no-compile"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"mix"}, func() (int, error) {
+			return runMixFormat(Options{DryRun: true})
+		})
+		want := []string{"format", "--check-formatted", "--no-compile"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"mix"}, func() (int, error) {
+			return runMixFormat(Options{Args: []string{"--version"}})
+		})
+		want := []string{"format", "--version"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dot-formatter args forwarded verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"mix"}, func() (int, error) {
+			return runMixFormat(Options{Args: []string{"--dot-formatter", "ci.exs", "a.ex"}})
+		})
+		want := []string{"format", "--no-compile", "--dot-formatter", "ci.exs", "a.ex"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("fixture check does not modify", func(t *testing.T) {
+		fixture := filepath.Join("testdata", "mix-format", "fixture.ex")
+		original, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		before := string(original)
+
+		binDir := t.TempDir()
+		writeFile(t, filepath.Join(binDir, "mix"), fakeExecutableScript)
+		if err := chmodExecutable(filepath.Join(binDir, "mix")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		_, err = runMixFormat(Options{Check: true, Args: []string{fixture}})
+		if err != nil {
+			t.Fatalf("runMixFormat returned an error: %v", err)
+		}
+		after, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		if string(after) != before {
+			t.Error("the fixture was modified in check mode")
+		}
+	})
+}

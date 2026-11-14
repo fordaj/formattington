@@ -59,7 +59,7 @@ formattington all --series
 - `all` runs all configured formatter integrations against their matching files.
 - By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
-- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format` order (missing tool = 127); `0` only if all succeed.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
 
 Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
@@ -155,6 +155,7 @@ Important files include:
 - `internal/formattington/swift_format.go` — swift-format (Swift) integration (`.swift` files; PATH-only; ships with Swift 6+ toolchains — standalone `swift-format` tried first, falling back to `swift format` with the `format` prefix). The `swift` language alias resolves to `swift-format` in `cli.go`.
 - `internal/formattington/dart_format.go` — dart format (Dart) integration (`.dart` files; PATH-only; ships with the Dart SDK). The tool name is `dart-format` (the binary is `dart`; invoked as `dart format`); the `dart` alias resolves to `dart-format` in `cli.go`. Check is `dart format --set-exit-if-changed -o none`.
 - `internal/formattington/dotnet_format.go` — dotnet format (C#/VB.NET) integration (`.cs`/`.vb` files; PATH-only; ships with the .NET SDK ≥ 6). The tool name is `dotnet-format`; the `csharp` and `vbnet` aliases resolve to `dotnet-format` in `cli.go`. Uses the `whitespace` subcommand with `--folder . --include <files>`; `--verify-no-changes` exit 2 is reported as `ExitFormatRequired`. Style/analyzers are opt-in via forwarded args (they restore/build project code).
+- `internal/formattington/mix_format.go` — mix format (Elixir) integration (`.ex`/`.exs` files; PATH-only; ships with Elixir/OTP). The tool name is `mix-format` (the binary is `mix`); the `elixir` language alias resolves to `mix-format` in `cli.go`. `--no-compile` is passed by default; check is `--check-formatted`. `.formatter.exs` is EXECUTED CODE discovered from the cwd.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 

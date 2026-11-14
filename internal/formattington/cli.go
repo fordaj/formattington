@@ -54,6 +54,7 @@ var registry = []Tool{
 	{Name: "swift-format", Extensions: swiftFormatExtensions, Run: runSwiftFormat},
 	{Name: "dart-format", Extensions: dartFormatExtensions, Run: runDartFormat},
 	{Name: "dotnet-format", Extensions: dotnetFormatExtensions, Run: runDotnetFormat},
+	{Name: "mix-format", Extensions: mixFormatExtensions, Run: runMixFormat},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -96,6 +97,7 @@ var languageAliases = map[string]string{
 	"dart":        "dart-format",
 	"csharp":      "dotnet-format",
 	"vbnet":       "dotnet-format",
+	"elixir":      "mix-format",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
