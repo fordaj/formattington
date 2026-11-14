@@ -206,6 +206,8 @@ Use `goimports` when imports should also be fixed (for example `formattington go
 
 ### Run with a configuration file (`.formattington.json`)
 
+⚠️ `./.formattington.json` is auto-discovered: a bare `formattington all` in an untrusted clone runs whatever that file declares, with your privileges. Single-tool runs ignore it; when it is auto-discovered, Formattington prints a one-line notice on stderr naming the file in effect. See ⚠️ Untrusted repositories section.
+
 Instead of always running every formatter, `formattington all` can run an exact list of commands declared in a JSON configuration file. This is useful for mixed-language projects that want to version-control which tools and arguments they use:
 
 ```json
@@ -240,7 +242,7 @@ Config discovery precedence (highest first):
 | -------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1        | `--config <path>` (before or after `all`)        | Explicit path, relative paths resolve against the current directory; `--config` after `all` (e.g. `formattington all --config x.json`) is honored. |
 | 2        | `FORMATTINGTON_CONFIG_PATH` environment variable | Explicit path; an empty value counts as unset.                                                                                                     |
-| 3        | `./.formattington.json`                          | Auto-discovered in the current directory only (no parent-directory or user-home search).                                                           |
+| 3        | `./.formattington.json`                          | Auto-discovered in the current directory only (no parent-directory or user-home search); a one-line stderr notice names the file in effect.                                                           |
 | 4        | No config file                                   | `all` runs the full formatter registry as before (backwards compatible).                                                                           |
 
 When a config is in effect, `all` runs exactly the listed commands. With no config, `all` keeps its current behavior (every registered tool). The config only changes what `all` means: single-tool runs ignore the file and the environment variable, and `--config` before a single formatter (e.g. `formattington --config x.json black`) is a usage error (exit 2). `--config` after a single formatter is forwarded to that formatter, so native flags such as Prettier's `--config` keep working.
@@ -528,6 +530,86 @@ If neither a bundle nor a `PATH` installation is found, the CLI prints `formatti
 
 Formatter configuration files such as `.prettierrc` and `.clang-format` remain in your repository and are respected by the underlying tools.
 
+## AS-IS and your files
+
+Formattington and every tool it orchestrates are provided **as is**, without warranty of any kind, express or implied, including the warranties of merchantability, fitness for a particular purpose, and non-infringement. The MIT License ([LICENSE](LICENSE)) is the legal backstop, and nothing in this documentation grants you more.
+
+Formatters rewrite source files in place. `--check`, `--dry-run`, and the verify-no-changes modes do not modify files, but they are not a sandbox and they are not a guarantee — a formatter can destroy or corrupt a file on a bug, a crash, or a pathological input. Some tools have their own backup semantics (for example, `odinfmt -w` creates an `<file>_bk` backup before replacing the file). Keep your project under version control or backed up, run `--check` before you run the formatter itself, and review the result afterward.
+
+This applies with equal force on CI: Formattington checks out your repository and runs the configured tools with whatever authority the CI job has. If you run it on CI, you accept the same risk.
+
+
+## ⚠️ Untrusted repositories
+
+Formattington runs tools **with your privileges, on whatever you point it at**, and `formattington all` in a repository you did not create is a code-execution decision, not just a formatting decision:
+
+- **`./.formattington.json` is auto-discovered.** On a bare `formattington all`, the repository's config declares which tools run with which arguments — your own command line is overridden by the clone's. `--config` and `FORMATTINGTON_CONFIG_PATH` are explicit and safe(r); single-tool invocations (`formattington black --check`) never read it. When Formattington auto-discovers the config it prints a one-line notice to stderr naming the file in effect; make sure you see and understand it.
+- **Many native config files are executed code, not data:** `.prettierrc.js`/`.mjs`/`.cjs` (Node.js), the `"prettier"` key in `package.json` with plugins (Node.js), `.formatter.exs` (Elixir), npm-groovy-lint JS configs (`.groovylintrc.js`/`.cjs`, via cosmiconfig), `.rubocop.yml` `require:` (Ruby), `.php-cs-fixer.php` (PHP), and `.perltidyrc` (Perl). A repository can ship hostile code there.
+- **Some configs fetch from the network:** `.rubocop.yml` `inherit_from:` accepts `https://` URLs, and `.scalafmt.conf`'s `version =` line makes the coursier/JVM launcher download that scalafmt version at run time.
+- **`--check`/`--dry-run` never write files, but they still execute config code** where the underlying tool does. "Check mode" is not a sandbox.
+
+If you run Formattington on a repository you do not trust: read the config files first (or bypass discovery with an explicit `--config` you control), run single-tool invocations, and use isolation (container/VM, scoped credentials). Formattington cannot tell you whether a config is hostile; only you can.
+
+Every config mechanism Formattington can discover, classified (data-only, executed code, or remote fetch), is inventoried in Configuration execution inventory section below.
+
+## Configuration execution inventory
+
+Every configuration mechanism each registered tool can discover, classified as **data-only** (parsed, never evaluated), **executed code** (evaluated as a program), or **remote fetch** (network access at run time). Files the tool reads but does not exist in this table should be treated as data-only; the ⚠️ callouts above list the dangerous ones.
+
+<details>
+<summary>Full inventory (all registered tools)</summary>
+
+| Tool | Discovered configuration | Class |
+| ---- | ------------------------ | ----- |
+| prettier | `.prettierrc.js` / `.mjs` / `.cjs` | **executed code** (Node.js) |
+|  | `package.json` `"prettier"` key and plugin paths | **executed code** (Node.js) |
+|  | `.prettierrc.json` / `.json5` / `.yml` / `.yaml` / `.toml`, `.prettierignore` | data-only |
+| sqlfluff | `.sqlfluff`, `[tool.sqlfluff]` in `pyproject.toml` | data-only |
+| black | `pyproject.toml` `[tool.black]` | data-only |
+| shfmt | (none; flags only) | none |
+| google-java-format | (none; flags only) | none |
+| dotnet-format | `.editorconfig` (whitespace mode; the project is never built) | data-only |
+| powershell | `PSScriptAnalyzerSettings.psd1` (read via `Import-PowerShellDataFile`) | data-only (PowerShell data file) |
+| clang-format | `.clang-format` | data-only |
+| rustfmt | `rustfmt.toml` | data-only |
+| php-cs-fixer | `.php-cs-fixer.php` / `.php-cs-fixer.dist.php` | **executed code** (PHP) |
+| gofmt | (none) | none |
+| goimports | (none) | none |
+| ktfmt | (none) | none |
+| stylua | `stylua.toml` / `.stylua.toml` | data-only |
+| swift-format | `.swift-format` | data-only |
+| rubocop | `.rubocop.yml` `inherit_from:` with an `https://` URL | **remote fetch** |
+|  | `.rubocop.yml` `require:` / `plugins:` | **executed code** (Ruby) |
+|  | `.rubocop.yml` otherwise | data-only |
+| dart-format | `analysis_options.yaml` (`formatter:` section) | data-only |
+| styler | (none discovered) | none |
+| nixfmt | (none) | none |
+| gdformat | (none) | none |
+| npm-groovy-lint | `.groovylintrc.js` / `.cjs`, `package.json` via cosmiconfig | **executed code** (JavaScript) |
+|  | `.groovylintrc.json` / `.yml` | data-only |
+| perltidy | `.perltidyrc` | **executed code** (Perl) |
+| zig-fmt | (none) | none |
+| mix-format | `.formatter.exs` | **executed code** (Elixir) |
+| fourmolu | `fourmolu.yaml` | data-only |
+| scalafmt | `.scalafmt.conf` with `version =` | **remote fetch** (coursier downloads the pinned version) |
+|  | `.scalafmt.conf` otherwise | data-only |
+| fprettify | `.fprettify.ini` / `setup.cfg` | data-only |
+| erlfmt | (none) | none |
+| jlfmt | `.JuliaFormatter.toml` | data-only |
+| cljfmt | `.cljfmt.edn` / `cljfmt.edn` | data-only |
+| gleam-format | (none; fixed style) | none |
+| gnatformat | `.gpr` project file | **evaluated** (GNAT project file; reads the environment and toolchain definitions at run time) |
+| fantomas | `.editorconfig`, `.fantomasignore` | data-only |
+| ocamlformat | `.ocamlformat` | data-only |
+| forge-fmt | `foundry.toml` `[fmt]` | data-only |
+| mojo-format | (none) | none |
+| odinfmt | `odinfmt.json` | data-only |
+| elm-format | (none; zero-configuration) | none |
+| markdownlint | `.markdownlint.json` / `.yaml` / `.yml` | data-only |
+| taplo | `taplo.toml` / `.taplo.toml` | data-only |
+
+</details>
+
 ## Installation
 
 Formattington is a Go program. It has no third-party dependencies, so `go build` is all that is needed.
@@ -664,7 +746,7 @@ The cross-compile matrix (CGO disabled, so the binaries are statically linked an
 | `windows-x64`   | `windows`/`amd64` | `dist/{lite,full}/windows-x64/formattington.exe`   | `formattington-windows-x64-{lite,full}.zip`    |
 | `windows-arm64` | `windows`/`arm64` | `dist/{lite,full}/windows-arm64/formattington.exe` | `formattington-windows-arm64-{lite,full}.zip`  |
 
-Each archive contains a top-level `formattington-<platform>-{lite,full}/` directory holding the binary. The release version is stamped into every binary with `-ldflags -X`, so a binary downloaded from a release reports the version it was released as even outside the repository.
+Each archive contains a top-level `formattington-<platform>-{lite,full}/` directory holding the binary, plus `NOTICE.md` and `LICENSES/` carrying every bundled tool's license text and attribution. The release version is stamped into every binary with `-ldflags -X`, so a binary downloaded from a release reports the version it was released as even outside the repository.
 
 `FORMATTER_VERSION` controls which formatter release to fetch (default `latest`, resolved independently per tool). Forms that publish no suitable asset for a platform (for example `shfmt` and Windows arm64) are built anyway for the platforms they do support; missing tools are omitted from that platform's full binary and reported with a warning. Black's macOS x86_64 build (no upstream standalone asset) is compiled from source by `formatters/black/update.sh` on a native Intel Mac when one is available.
 
@@ -730,7 +812,9 @@ Formattington orchestrates third-party tools; they are never redistributed as pa
 | markdownlint | https://github.com/igorshubovych/markdownlint-cli | MIT | Bundled |
 | taplo | https://github.com/tamasfe/taplo | MIT | Bundled |
 
-Bundled tools are fetched from their upstream projects at release time and redistributed **unmodified**; the `formatters/<tool>/update.sh` scripts record the exact upstream location per tool. Bundled EPL-1.0 material (cljfmt) is redistributed unmodified, with this attribution. Tools available only from PATH are never redistributed by Formattington at all.
+Bundled tools are fetched from their upstream projects at release time and redistributed **unmodified**; the `formatters/<tool>/update.sh` scripts record the exact upstream location per tool. Bundled EPL-1.0 material (cljfmt) is redistributed unmodified, with this attribution. Tools available only from PATH are never redistributed by Formattington at all. The release archives (both lite and full) carry `NOTICE.md` and `LICENSES/` with every bundled tool's license text and copyright attribution; the same files are in this repository.
+
+Formattington is an independent open-source project. It is not affiliated with, sponsored by, or endorsed by any of the upstream projects or vendors listed above — nor by Stack Overflow, the Apache Software Foundation, the Eclipse Foundation, the Mozilla Foundation, or any other party. Trademarks belong to their owners; mention of a product here is descriptive only.
 
 ## License
 

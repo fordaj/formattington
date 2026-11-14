@@ -195,12 +195,19 @@ func Main(argv []string) int {
 		}
 		formatterArgs = nil
 
-		commands, found, err := loadConfig(opts.config, opts.hasConfig)
+		commands, found, source, raw, err := loadConfig(opts.config, opts.hasConfig)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "formattington: %s\n", err)
 			return ExitUsage
 		}
 		if found {
+			// An auto-discovered ./.formattington.json runs repo-declared
+			// argv on a bare 'formattington all' in an untrusted clone, so
+			// name the file in effect (not for --config or the environment
+			// variable, which are explicit).
+			if source == "auto-discovered .formattington.json" {
+				fmt.Fprintf(os.Stderr, "formattington: using auto-discovered configuration %s\n", raw)
+			}
 			runOpts := Options{
 				Check:   opts.check,
 				DryRun:  opts.dryRun,

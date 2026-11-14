@@ -106,7 +106,10 @@ order (missing tool is 127 per command and does not stop remaining commands;
 Discovery precedence (highest first): --config PATH (before or after 'all'),
 then FORMATTINGTON_CONFIG_PATH, then ./.formattington.json in the current
 directory (cwd only, no parent-directory search), then no config (full
-registry 'all' as before). Shell strings, object-form entries, and bare
+registry 'all' as before). When ./.formattington.json is auto-discovered,
+'all' prints a one-line notice to stderr naming the file in effect; the
+notice is not printed for --config or FORMATTINGTON_CONFIG_PATH, which are
+explicit. Shell strings, object-form entries, and bare
 top-level arrays are rejected; unknown top-level keys are rejected.
 Missing/invalid config exits 2 with a 'formattington: ...' message naming the
 file. Single-tool runs ignore the config file and environment variable;

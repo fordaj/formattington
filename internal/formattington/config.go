@@ -163,23 +163,27 @@ func validateConfig(data any, path string) ([][]string, error) {
 //
 // It returns the commands and true when a config is in effect, false and
 // nil when no config applies (the full-registry "all" behaviour), or an
-// error whose message is the text after "formattington: ".
-func loadConfig(explicit string, hasExplicit bool) ([][]string, bool, error) {
+// error whose message is the text after "formattington: ". It also returns
+// the source label ("--config", FORMATTINGTON_CONFIG_PATH, or
+// "auto-discovered .formattington.json") and the path as it should be named
+// in messages, so callers can report which file is in effect. Both are
+// empty when no config applies.
+func loadConfig(explicit string, hasExplicit bool) ([][]string, bool, string, string, error) {
 	path, raw, source, found := resolveConfigPath(explicit, hasExplicit)
 	if !found {
-		return nil, false, nil
+		return nil, false, "", "", nil
 	}
 
 	data, err := readConfigData(path, raw, source)
 	if err != nil {
-		return nil, false, err
+		return nil, false, "", "", err
 	}
 
 	commands, err := validateConfig(data, path)
 	if err != nil {
-		return nil, false, err
+		return nil, false, "", "", err
 	}
-	return commands, true, nil
+	return commands, true, source, raw, nil
 }
 
 // pyRepr renders a decoded JSON value the way Python's repr() would, so
