@@ -1729,6 +1729,53 @@ func TestStylerExpressionConstruction(t *testing.T) {
 	}
 }
 
+func TestStylerExpressionQuoting(t *testing.T) {
+	requirePOSIX(t)
+
+	binDir := t.TempDir()
+	writeFile(t, filepath.Join(binDir, "Rscript"),
+		"#!/bin/sh\nprintf '%s\n' \"$@\" > \"$FAKE_ARGV_FILE\"\nexit 0\n")
+	if err := chmodExecutable(filepath.Join(binDir, "Rscript")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FAKE_ARGV_FILE", filepath.Join(t.TempDir(), "argv.txt"))
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	// Adversarial filenames: the R expression embeds each file name in a
+	// double-quoted R string. R's escape rules match Go's\'s for the
+	// escapes strconv.Quote emits (\\, \", \n, \xNN, \uNNNN, \UNNNNNNNN,
+	// and raw UTF-8), so each of these must remain a single inert string
+	// literal in the generated expression.
+	cases := map[string]string{
+		"my file's.R":         `"my file's.R"`,
+		`a\b.R`:               `"a\\b.R"`,
+		"new\nline.R":         `"new\nline.R"`,
+		`back"slash\" .R`:     `"back\"slash\\\" .R"`,
+		`trail\`:              `"trail\\"`,
+		"unicodé.R":           `"unicodé.R"`,
+		`; system("id"); #.R`: `"; system(\"id\"); #.R"`,
+		`$(reboot).R`:         `"$(reboot).R"`,
+		"tab\there.R":         `"tab\there.R"`,
+		"cr\rhere.R":          `"cr\rhere.R"`,
+	}
+
+	for name, want := range cases {
+		_, err := runStyler(Options{Args: []string{name}})
+		if err != nil {
+			t.Fatalf("runStyler(%q) returned an error: %v", name, err)
+		}
+		data, err := os.ReadFile(os.Getenv("FAKE_ARGV_FILE"))
+		if err != nil {
+			t.Fatalf("read argv: %v", err)
+		}
+		got := string(data)
+		if !strings.Contains(got, "styler::style_file(c("+want+"), dry = \"off\")") {
+			t.Errorf("argument %q was quoted as %q, want the literal %q", name, got, want)
+		}
+	}
+}
+
 func TestStylerRejectsForwardedFlags(t *testing.T) {
 	requirePOSIX(t)
 

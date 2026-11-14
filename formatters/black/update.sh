@@ -50,6 +50,31 @@ else
     TARGETS=("$@")
 fi
 
+# Pinned SHA-256 of every asset this script downloads. Release bumps must
+# re-pin: audit the new upstream release, update PINNED_VERSION, and
+# replace the hashes below with `shasum -a 256 <asset>`. The script
+# refuses any version other than PINNED_VERSION and hard-fails on a hash
+# mismatch, so an unverifiable binary is never fetched into a release.
+# (The macOS x86_64 target is built from verified source instead — see
+# build_macos-x64.sh, which pins the tag's commit hash.)
+PINNED_VERSION="26.10.1"
+PINNED_SHA256_linux_arm64="a470befedf349ea38391b00f0a10b84bdca645cc9df0cd5db70d4cf7a4efa2b5"
+PINNED_SHA256_linux_x86_64="94324773c2d112e7a4d62052ac9d7ed811ff1c826599f6d394e7b65d16ab1278"
+PINNED_SHA256_macos_arm64="1336c90c027f854e9806ca8476c4f4ce84d3a3eb4bc5495797f0446ee253d2c2"
+PINNED_SHA256_windows_arm64="8b2233f85d92cef5f916c44b6b9b51530dd3502c6a396ecf8ddda807544b3d0c"
+PINNED_SHA256_windows_x86_64="9901f869bcfe0df3304ee7a42913dc3a8f6d85ad4feff6f6c30c26bfd7063dd4"
+
+sha256_check() { # <file> <expected>
+    local actual
+    actual="$(shasum -a 256 "$1" | awk '{print $1}')"
+    if [[ "$actual" != "$2" ]]; then
+        echo "Error: SHA-256 verification failed for $1" >&2
+        echo "  expected: $2" >&2
+        echo "  actual:   $actual" >&2
+        return 1
+    fi
+}
+
 # macos-x86_64 is intentionally absent from this map; it is built from
 # source by build_macos-x64.sh (see below).
 get_asset_name() {
@@ -91,6 +116,12 @@ curl -fsSL "$RELEASE_URL" -o "$WORK_DIR/release.json"
 
 RELEASE_VERSION="$(jq -er '.tag_name' "$WORK_DIR/release.json")"
 RELEASE_VERSION="${RELEASE_VERSION#v}"
+
+if [[ "$RELEASE_VERSION" != "$PINNED_VERSION" ]]; then
+    echo "Error: this script pins black $PINNED_VERSION, but the release resolved to $RELEASE_VERSION." >&2
+    echo "Re-pin PINNED_VERSION and the hashes in this script after auditing the new release." >&2
+    exit 1
+fi
 
 VERSION_DIR="$OUTPUT_DIR/v$RELEASE_VERSION"
 mkdir -p "$VERSION_DIR"
@@ -156,6 +187,10 @@ for TARGET in "${TARGETS[@]}"; do
 
     echo "  -> $TARGET"
     curl -fSL "$ASSET_URL" -o "$OUTPUT"
+
+    local_key="${TARGET//-/_}"
+    local_var="PINNED_SHA256_${local_key}"
+    sha256_check "$OUTPUT" "${!local_var}" || { rm -f "$OUTPUT"; exit 1; }
 
     if [[ "$TARGET" != windows-* ]]; then
         chmod +x "$OUTPUT"

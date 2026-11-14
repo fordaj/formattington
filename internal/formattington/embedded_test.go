@@ -11,6 +11,21 @@ import (
 	"testing"
 )
 
+// fingerprintOf computes the extraction directory name for a payload,
+// mirroring the implementation.
+func fingerprintOf(t *testing.T, payload []byte) string {
+	t.Helper()
+	reader, err := zip.NewReader(bytes.NewReader(payload), int64(len(payload)))
+	if err != nil {
+		t.Fatalf("zip.NewReader: %v", err)
+	}
+	files, err := regularZipFiles(reader.File)
+	if err != nil {
+		t.Fatalf("regularZipFiles: %v", err)
+	}
+	return filepath.Join("formatters-" + zipFingerprint(files))
+}
+
 // buildPayload zips entries ("name" -> contents) into an in-memory
 // archive the way release.bash produces assets/formatters.zip.
 func buildPayload(t *testing.T, entries map[string]string) []byte {
@@ -48,7 +63,7 @@ func TestInstallEmbeddedFormattersExtractsThePayload(t *testing.T) {
 	if err != nil {
 		t.Fatalf("installEmbeddedFormatters: %v", err)
 	}
-	want := filepath.Join(cacheDir, "formatters")
+	want := filepath.Join(cacheDir, fingerprintOf(t, payload))
 	if dir != want {
 		t.Fatalf("dir = %q, want %q", dir, want)
 	}
@@ -232,7 +247,7 @@ func TestFormattersDirPrefersTheEmbeddedBundle(t *testing.T) {
 	embeddedFormattersZip = payload
 
 	got := FormattersDir()
-	want := filepath.Join(embeddedFormattersCacheDir(), "formatters")
+	want := filepath.Join(embeddedFormattersCacheDir(), fingerprintOf(t, payload))
 	if got != want {
 		t.Errorf("FormattersDir = %q, want %q", got, want)
 	}
@@ -257,5 +272,154 @@ func TestFormattersDirFallsBackWhenTheBundleFailsToUnpack(t *testing.T) {
 	got := FormattersDir()
 	if strings.HasPrefix(got, filepath.Join(os.TempDir(), "formattington")) {
 		t.Fatalf("FormattersDir = %q, want a repository fallback", got)
+	}
+}
+
+func TestInstallEmbeddedFormattersFiltersDriveLettersAndBackslashes(t *testing.T) {
+	payload := buildPayload(t, map[string]string{
+		"C:/Windows/evil.exe":              "evil\n",
+		"..\\evil.exe":                     "evil\n",
+		"/etc/passwd":                      "evil\n",
+		"./../escape.txt":                  "evil\n",
+		"shfmt/v3.14.1/linux-x86_64/shfmt": "#!/bin/sh\necho shfmt\n",
+	})
+	cacheDir := t.TempDir()
+	dir, err := installEmbeddedFormatters(payload, cacheDir)
+	if err != nil {
+		t.Fatalf("installEmbeddedFormatters: %v", err)
+	}
+	for _, evil := range []string{"C:/Windows/evil.exe", "..\\evil.exe", "/etc/passwd", "./../escape.txt"} {
+		clean := filepath.ToSlash(filepath.Clean(evil))
+		if strings.HasPrefix(clean, "../") || strings.HasPrefix(clean, "/") || strings.ContainsRune(clean, '\\') || (len(clean) >= 2 && clean[1] == ':') {
+			continue
+		}
+		if _, err := os.Stat(filepath.Join(dir, filepath.FromSlash(clean))); !os.IsNotExist(err) {
+			t.Errorf("hostile member %q was extracted", evil)
+		}
+	}
+	entries, err := os.ReadDir(cacheDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if strings.HasPrefix(entry.Name(), "formatters-") {
+			if _, err := os.Stat(filepath.Join(cacheDir, entry.Name(), "shfmt", "v3.14.1", "linux-x86_64", "shfmt")); err != nil {
+				t.Errorf("safe member was not extracted: %v", err)
+			}
+		}
+	}
+}
+
+func TestInstallEmbeddedFormattersRejectsDuplicateMembers(t *testing.T) {
+	var buffer bytes.Buffer
+	writer := zip.NewWriter(&buffer)
+	for range []int{1, 2} {
+		member, err := writer.Create("shfmt/v3.14.1/linux-x86_64/shfmt")
+		if err != nil {
+			t.Fatalf("create member: %v", err)
+		}
+		if _, err := member.Write([]byte("#!/bin/sh\n")); err != nil {
+			t.Fatalf("write member: %v", err)
+		}
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close zip: %v", err)
+	}
+	if dir, err := installEmbeddedFormatters(buffer.Bytes(), t.TempDir()); err == nil {
+		t.Errorf("duplicate members accepted: dir = %q, want an error", dir)
+	}
+}
+
+func TestInstallEmbeddedFormattersEnforcesSizeLimits(t *testing.T) {
+	payload := buildPayload(t, map[string]string{
+		"shfmt/v3.14.1/linux-x86_64/shfmt": "#!/bin/sh\necho shfmt\n",
+	})
+	saveMember, saveFiles := maxEmbeddedMemberBytes, maxEmbeddedFiles
+	t.Cleanup(func() {
+		maxEmbeddedMemberBytes, maxEmbeddedFiles = saveMember, saveFiles
+	})
+
+	maxEmbeddedMemberBytes = 4 // smaller than the member contents
+	if dir, err := installEmbeddedFormatters(payload, t.TempDir()); err == nil {
+		t.Errorf("oversized member accepted: dir = %q, want an error", dir)
+	}
+
+	maxEmbeddedMemberBytes = saveMember
+	maxEmbeddedFiles = 1 // one directory member + the file used to fit; now 2 needed
+	if dir, err := installEmbeddedFormatters(buildPayload(t, map[string]string{
+		"shfmt/v3.14.1/linux-x86_64/shfmt":  "#!/bin/sh\n",
+		"black/v26.10.1/linux-x86_64/black": "#!/bin/sh\n",
+	}), t.TempDir()); err == nil {
+		t.Errorf("too many members accepted: dir = %q, want an error", dir)
+	}
+}
+
+func TestInstallEmbeddedFormattersIgnoresSymlinkMembers(t *testing.T) {
+	var buffer bytes.Buffer
+	writer := zip.NewWriter(&buffer)
+	header := &zip.FileHeader{Name: "shfmt/v3.14.1/linux-x86_64/shfmt", Method: zip.Deflate}
+	header.SetMode(os.ModeSymlink | 0o777)
+	member, err := writer.CreateHeader(header)
+	if err != nil {
+		t.Fatalf("create symlink member: %v", err)
+	}
+	if _, err := member.Write([]byte("/bin/sh")); err != nil {
+		t.Fatalf("write symlink member: %v", err)
+	}
+	if err := writer.Close(); err != nil {
+		t.Fatalf("close zip: %v", err)
+	}
+	if dir, err := installEmbeddedFormatters(buffer.Bytes(), t.TempDir()); err != nil || dir != "" {
+		t.Errorf("installEmbeddedFormatters = %q, %v; want \"\", nil (symlink-only payload)", dir, err)
+	}
+}
+
+func TestInstallEmbeddedFormattersCacheDirHasOwnerOnlyPermissions(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX permission bits are not meaningful on Windows")
+	}
+	payload := buildPayload(t, map[string]string{
+		"shfmt/v3.14.1/linux-x86_64/shfmt": "#!/bin/sh\necho shfmt\n",
+	})
+	cacheDir := t.TempDir()
+	dir, err := installEmbeddedFormatters(payload, cacheDir)
+	if err != nil {
+		t.Fatalf("installEmbeddedFormatters: %v", err)
+	}
+	for _, path := range []string{cacheDir, dir} {
+		info, err := os.Stat(path)
+		if err != nil {
+			t.Fatalf("stat %s: %v", path, err)
+		}
+		if got := info.Mode().Perm(); got != 0o700 {
+			t.Errorf("%s mode = %o, want 700", path, got)
+		}
+	}
+}
+
+func TestInstallEmbeddedFormattersGarbageCollectsStalePayloads(t *testing.T) {
+	cacheDir := t.TempDir()
+	first := buildPayload(t, map[string]string{
+		"shfmt/v3.14.1/linux-x86_64/shfmt": "#!/bin/sh\necho v1\n",
+	})
+	firstDir, err := installEmbeddedFormatters(first, cacheDir)
+	if err != nil {
+		t.Fatalf("install first payload: %v", err)
+	}
+	updated := buildPayload(t, map[string]string{
+		"shfmt/v3.14.1/linux-x86_64/shfmt": "#!/bin/sh\necho v2\n",
+	})
+	updatedDir, err := installEmbeddedFormatters(updated, cacheDir)
+	if err != nil {
+		t.Fatalf("install updated payload: %v", err)
+	}
+	if firstDir == updatedDir {
+		t.Fatal("distinct payloads produced identical extraction directories")
+	}
+	if _, err := os.Stat(firstDir); !os.IsNotExist(err) {
+		t.Error("stale payload directory was not garbage-collected")
+	}
+	if _, err := os.Stat(updatedDir); err != nil {
+		t.Errorf("current payload directory missing: %v", err)
 	}
 }

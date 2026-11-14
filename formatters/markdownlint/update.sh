@@ -56,16 +56,33 @@ for command in pnpm bun; do
     fi
 done
 
+# Verify the requested version is the pinned one; the committed
+# pnpm-lock.yaml carries the SHA-512 integrity of every tarball in the
+# markdownlint-cli dependency closure.
+PINNED_VERSION="0.50.0"
+RESOLVED_VERSION="$VERSION"
+if [[ "$RESOLVED_VERSION" != "latest" && "$RESOLVED_VERSION" != "$PINNED_VERSION" ]]; then
+    echo "Error: this script pins markdownlint-cli $PINNED_VERSION, got $RESOLVED_VERSION." >&2
+    echo "Re-pin package.json and pnpm-lock.yaml in this directory after auditing the new release." >&2
+    exit 1
+fi
+
 # Create an isolated temporary installation.
 WORK_DIR="$(mktemp -d)"
 trap 'rm -rf "$WORK_DIR"' EXIT
 
-echo "Installing markdownlint-cli@$VERSION..."
+echo "Installing markdownlint-cli@$PINNED_VERSION from the pinned lockfile..."
+
+cp "$SCRIPT_DIR/package.json" "$SCRIPT_DIR/pnpm-lock.yaml" "$WORK_DIR/"
 
 cd "$WORK_DIR"
-pnpm add --save-exact "markdownlint-cli@$VERSION"
+pnpm install --frozen-lockfile
 
 MARKDOWNLINT_VERSION="$(pnpm exec markdownlint --version)"
+if [[ "$MARKDOWNLINT_VERSION" != "$PINNED_VERSION" ]]; then
+    echo "Error: installed markdownlint $MARKDOWNLINT_VERSION, expected $PINNED_VERSION." >&2
+    exit 1
+fi
 MARKDOWNLINT_DIR="$WORK_DIR/node_modules/markdownlint-cli"
 CLI_MODULE="$MARKDOWNLINT_DIR/markdownlint.js"
 

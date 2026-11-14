@@ -12,6 +12,18 @@ set -euo pipefail
 VERSION="${1:-26.10.1}"
 VERSION="${VERSION#v}"
 
+# The clone checks out the tag looked up here, and Git resolves the tag to
+# this commit. A tag that ever moved would fail the checkout, so a
+# substituted source cannot be injected silently. Re-pin when bumping.
+PINNED_VERSION="26.10.1"
+PINNED_COMMIT="258e7dbf348bc23cb70b8cdf693481c04634ebcc"
+
+if [[ "$VERSION" != "$PINNED_VERSION" ]]; then
+    echo "Error: this script pins black $PINNED_VERSION, got $VERSION." >&2
+    echo "Re-pin PINNED_VERSION and PINNED_COMMIT in this script after auditing the new release." >&2
+    exit 1
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT_DIR="${OUTPUT_DIR:-$SCRIPT_DIR}"
 
@@ -45,7 +57,12 @@ git clone --quiet https://github.com/psf/black.git "$REPO_DIR"
 cd "$REPO_DIR"
 
 echo "Checking out Black $VERSION..."
-git checkout --quiet "$VERSION"
+git checkout --quiet "$PINNED_COMMIT"
+
+if [[ "$(git rev-parse HEAD)" != "$PINNED_COMMIT" ]]; then
+    echo "Error: black source checkout is not the pinned commit (tag moved?)." >&2
+    exit 1
+fi
 
 echo "Creating Intel Python environment..."
 uv venv --python 3.13 "$VENV_DIR"
