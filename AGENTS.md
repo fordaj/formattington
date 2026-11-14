@@ -187,6 +187,14 @@ The orchestration layer owns tool selection, file discovery, execution strategy,
 
 Do not introduce unnecessary abstractions or a generalized plugin architecture without a demonstrated need.
 
+## Presentation Order
+
+User-facing tool and language enumerations default to **Stack Overflow Developer Survey 2026, "Programming, scripting, and markup languages", All Respondents, n = 14,099** (<https://survey.stackoverflow.co/2026/technology/data/languages>), licensed ODbL 1.0 (attribute it, as done here, whenever the ranking is published or repeated). File and folder names, testdata paths, and the bundled-formatter directory layout stay alphabetical — they are lookup paths, not narratives.
+
+Ranked languages are mapped onto the tools that cover them; a tool takes the best rank of any language it covers. Equal-rank ties follow the survey's respondent counts, then the survey table order (Erlang 218 > Julia 211; Ada 172 = F# 172 with Ada first per survey order; Gleam 176 > Ada 172). `gofmt` precedes `goimports` (existing convention — goimports is the superset). Tools with no survey row (`markdownlint`, `taplo` — TOML/YAML/JSON/Markdown have no survey rank) sort **after all ranked tools, alphabetically among themselves**. `.formattington.example.json` and every hardcoded order list in the docs mirror the registry exactly.
+
+Everything Formattington *presents* to the user (help output, `all`/`--series` execution and exit-code aggregation order, `list` output, README tables and lists, this file's tool lists) follows this order. Re-derive the order on each new survey release — do not re-rank by downloads, stars, or intuition; the survey is the single source of truth.
+
 ## Development Environment
 
 This is a Go project with no third-party dependencies.

@@ -373,7 +373,7 @@ Either a bundled copy under `formatters/` (see [Bundled tools](#bundled-tools)) 
 
 ## Supported tools
 
-Formattington integrates existing tools rather than reimplementing their functionality.
+Formattington integrates existing tools rather than reimplementing their functionality. Tools are presented in Stack Overflow Developer Survey 2026 popularity order — see [Presentation order in AGENTS.md](AGENTS.md#presentation-order).
 
 | Tool                                                              | Category  | Status    | Typical use                                             |
 | ----------------------------------------------------------------- | --------- | --------- | ------------------------------------------------------- |
