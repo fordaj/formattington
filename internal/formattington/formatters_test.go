@@ -2839,3 +2839,86 @@ func TestOdinfmtSynthesizedCheck(t *testing.T) {
 		t.Errorf("exit = %d, want %d", code, ExitOK)
 	}
 }
+
+func TestForgeFmtArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"forge"}, func() (int, error) {
+			return runForgeFmt(Options{Args: []string{"a.sol", "b.sol"}})
+		})
+		want := []string{"fmt", "a.sol", "b.sol"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"forge"}, func() (int, error) {
+			return runForgeFmt(Options{Check: true, Args: []string{"a.sol"}})
+		})
+		want := []string{"fmt", "--check", "a.sol"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"forge"}, func() (int, error) {
+			return runForgeFmt(Options{DryRun: true, Args: []string{"a.sol"}})
+		})
+		want := []string{"fmt", "--check", "a.sol"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("raw diff passthrough is verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"forge"}, func() (int, error) {
+			return runForgeFmt(Options{Check: true, Args: []string{"--check", "-r", "a.sol"}})
+		})
+		want := []string{"fmt", "--check", "--check", "-r", "a.sol"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"forge"}, func() (int, error) {
+			return runForgeFmt(Options{Args: []string{"--version"}})
+		})
+		want := []string{"fmt", "--version"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("fixture check does not modify", func(t *testing.T) {
+		fixture := filepath.Join("testdata", "forge-fmt", "fixture.sol")
+		original, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		before := string(original)
+
+		binDir := t.TempDir()
+		writeFile(t, filepath.Join(binDir, "forge"), fakeExecutableScript)
+		if err := chmodExecutable(filepath.Join(binDir, "forge")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		_, err = runForgeFmt(Options{Check: true, Args: []string{fixture}})
+		if err != nil {
+			t.Fatalf("runForgeFmt returned an error: %v", err)
+		}
+		after, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		if string(after) != before {
+			t.Error("the fixture was modified in check mode")
+		}
+	})
+}
