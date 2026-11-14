@@ -525,11 +525,29 @@ package_binaries() {
 	done
 }
 
+# version_probe <command...>
+# Probe a tool with "--version", falling back to "--help" for tools that
+# have no --version flag (elm-format rejects it, but its --help prints a
+# banner with the version and exits 0). Prints the tool's full output and
+# returns 0 when either probe exits 0, 1 otherwise.
+version_probe() {
+	local output
+	if output="$("$@" --version 2>&1)"; then
+		printf '%s' "$output"
+		return 0
+	fi
+	if output="$("$@" --help 2>&1)"; then
+		printf '%s' "$output"
+		return 0
+	fi
+	return 1
+}
+
 # smoke_full_binary
 # Run the freshly built full binary for this host under an empty HOME, so
 # the embedded formatters must be unpacked from the binary itself. Passes
-# when every fetched tool for the host bundle platform answers
-# "--version" — through the CLI for the tools that are registered, and by
+# when every fetched tool for the host bundle platform answers a version
+# probe — through the CLI for the tools that are registered, and by
 # direct invocation of the unpacked executable for the ones that are not
 # (markdownlint). Fails the build otherwise. Skipped on platforms the
 # matrix does not cover and when no formatter was fetched for the host.
@@ -595,9 +613,10 @@ smoke_full_binary() {
 			# PATH intentionally excludes every location a formatter could
 			# hide in, so a passing run proves the embedded bundle resolved.
 			output="$(
-				env -u FORMATTINGTON_FORMATTERS_DIR \
+				version_probe \
+					env -u FORMATTINGTON_FORMATTERS_DIR \
 					HOME="$smoke_home" XDG_CACHE_HOME="$smoke_home/xdg" \
-					PATH=/usr/bin:/bin "$host_full" "$tool" --version 2>&1
+					PATH=/usr/bin:/bin "$host_full" "$tool"
 			)" || failed+=("$tool")
 			log INFO "  $tool (via formattington): $(head -n 1 <<<"$output")"
 			;;
@@ -617,7 +636,7 @@ smoke_full_binary() {
 			failed+=("$tool (unpacked binary not found)")
 			continue
 		fi
-		if direct_output="$("$exe" --version 2>&1)"; then
+		if direct_output="$(version_probe "$exe")"; then
 			log INFO "  $tool (direct): $(head -n 1 <<<"$direct_output")"
 		else
 			failed+=("$tool (unpacked binary exited non-zero)")
