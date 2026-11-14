@@ -625,6 +625,56 @@ Go 1.24+ must be on `PATH` on each host — the Checks step runs `make check` (w
 
 Formattington is under active development. The core command-line interface and formatter integrations are being established, with additional languages, tools, distribution options, and workflow improvements planned.
 
+## Tool sources and licenses
+
+Formattington orchestrates third-party tools; they are never redistributed as part of the source distribution, and the bundled release binaries ship unmodified upstream executables with this attribution. Each tool belongs to its upstream project and remains under its own license:
+
+| Tool | Source | License | Distribution |
+| ---- | ------ | ------- | ------------ |
+| shfmt | https://github.com/mvdan/sh | BSD-3-Clause | Bundled |
+| clang-format | https://github.com/cpp-linter/clang-tools-static-binaries (LLVM via https://github.com/llvm/llvm-project) | Unlicense (repackaged LLVM binaries; upstream LLVM is Apache-2.0 WITH LLVM-exception) | Bundled |
+| black | https://github.com/psf/black | MIT | Bundled |
+| prettier | https://github.com/prettier/prettier | MIT | Bundled |
+| powershell (PSScriptAnalyzer) | https://github.com/PowerShell/PSScriptAnalyzer | MIT | PATH-only |
+| markdownlint | https://github.com/igorshubovych/markdownlint-cli | MIT | Bundled |
+| taplo | https://github.com/tamasfe/taplo | MIT | Bundled |
+| gofmt | https://github.com/golang/go (cmd/gofmt) | BSD-3-Clause | PATH-only |
+| goimports | https://github.com/golang/tools (cmd/goimports) | BSD-3-Clause | PATH-only |
+| stylua | https://github.com/JohnnyMorganz/StyLua | MPL-2.0 | Bundled |
+| nixfmt | https://github.com/NixOS/nixfmt | MPL-2.0 | PATH-only |
+| php-cs-fixer | https://github.com/PHP-CS-Fixer/PHP-CS-Fixer | MIT | PATH-only |
+| perltidy | https://github.com/perltidy/perltidy | GPL-2.0+ | PATH-only, never embedded |
+| fprettify | https://github.com/pseewald/fprettify | GPL-3.0+ | PATH-only, never embedded |
+| erlfmt | https://github.com/WhatsApp/erlfmt | Apache-2.0 | PATH-only |
+| sqlfluff | https://github.com/sqlfluff/sqlfluff | MIT | PATH-only |
+| gdformat | https://github.com/Scony/godot-gdscript-toolkit | MIT | PATH-only |
+| google-java-format | https://github.com/google/google-java-format | Apache-2.0 | Bundled |
+| ktfmt | https://github.com/Kotlin/ktfmt | Apache-2.0 | Bundled |
+| scalafmt | https://github.com/scalameta/scalafmt | Apache-2.0 | PATH-only |
+| npm-groovy-lint | https://github.com/nvuillam/npm-groovy-lint | MIT | PATH-only |
+| MicroPython (via black) | https://github.com/psf/black | MIT | (bundled, as black) |
+| cljfmt | https://github.com/weavejester/cljfmt | EPL-1.0 | Bundled (unmodified upstream binaries) |
+| fantomas | https://github.com/fsprojects/fantomas | Apache-2.0 | PATH-only |
+| rubocop | https://github.com/rubocop/rubocop | MIT | PATH-only |
+| styler | https://github.com/r-lib/styler | MIT | PATH-only |
+| jlfmt | https://github.com/JuliaEditorSupport/JuliaFormatter.jl | MIT | PATH-only |
+| elm-format | https://github.com/avh4/elm-format | BSD-3-Clause | Bundled |
+| fourmolu | https://github.com/fourmolu/fourmolu | BSD-3-Clause | Bundled |
+| ocamlformat | https://github.com/ocaml-ppx/ocamlformat | MIT | PATH-only |
+| rustfmt | https://github.com/rust-lang/rustfmt | Apache-2.0 | PATH-only |
+| swift-format | https://github.com/swiftlang/swift-format | Apache-2.0 | PATH-only |
+| dart-format | https://github.com/dart-lang/sdk | BSD-3-Clause | PATH-only |
+| dotnet-format | https://github.com/dotnet/sdk | MIT | PATH-only |
+| mix-format | https://github.com/elixir-lang/elixir | Apache-2.0 | PATH-only |
+| zig-fmt | https://github.com/ziglang/zig | MIT | PATH-only |
+| gleam-format | https://github.com/gleam-lang/gleam | Apache-2.0 | PATH-only |
+| mojo-format | https://github.com/modular/mojo | Apache-2.0 WITH LLVM-exception (compiler portions); some MAX components under the Modular MAX License | PATH-only |
+| odinfmt | https://github.com/DanielGavin/ols | MIT | PATH-only |
+| forge-fmt | https://github.com/foundry-rs/foundry | Apache-2.0 | PATH-only |
+| gnatformat | https://github.com/AdaCore/GNATformat | Apache-2.0 WITH LLVM-exception | PATH-only |
+
+Bundled tools are fetched from their upstream projects at release time and redistributed **unmodified**; the `formatters/<tool>/update.sh` scripts record the exact upstream location per tool. Bundled EPL-1.0 material (cljfmt) is redistributed unmodified, with this attribution. Tools available only from PATH are never redistributed by Formattington at all.
+
 ## License
 
 See [LICENSE](LICENSE) for licensing information.
