@@ -212,6 +212,32 @@ func Main(argv []string) int {
 		for _, tool := range registry {
 			names = append(names, tool.Name)
 		}
+	} else if formatterName == "list" {
+		// "list" is informational: it takes no arguments and no mode
+		// flags, and --config is only meaningful with 'all'. Anything
+		// trailing (including flags) counts as extra arguments.
+		if len(formatterArgs) > 0 {
+			usageError(errors.New("extra arguments are not supported with 'list'"))
+			return ExitUsage
+		}
+		if opts.hasConfig {
+			usageError(errors.New("--config is only supported with 'all'"))
+			return ExitUsage
+		}
+		if opts.check {
+			usageError(errors.New("--check is not supported with 'list'"))
+			return ExitUsage
+		}
+		if opts.dryRun {
+			usageError(errors.New("--dry-run is not supported with 'list'"))
+			return ExitUsage
+		}
+		if opts.series {
+			usageError(errors.New("--series is not supported with 'list'"))
+			return ExitUsage
+		}
+		printList(os.Stdout)
+		return ExitOK
 	} else {
 		// Config only changes what "all" means: an explicit --config
 		// before a single formatter is a usage error, while the env
@@ -264,7 +290,7 @@ func Main(argv []string) int {
 // "all" token, skipping "--config" values. It returns -1 when there is
 // none.
 func findFormatterIndex(argv []string) int {
-	selectors := map[string]bool{"all": true}
+	selectors := map[string]bool{"all": true, "list": true}
 	for _, tool := range registry {
 		selectors[tool.Name] = true
 	}
