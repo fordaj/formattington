@@ -58,6 +58,7 @@ var registry = []Tool{
 	{Name: "zig-fmt", Extensions: zigFmtExtensions, Run: runZigFmt},
 	{Name: "gleam-format", Extensions: gleamFormatExtensions, Run: runGleamFormat},
 	{Name: "mojo-format", Extensions: mojoFormatExtensions, Run: runMojoFormat},
+	{Name: "odinfmt", Extensions: odinfmtExtensions, Run: runOdinfmt},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -104,6 +105,7 @@ var languageAliases = map[string]string{
 	"zig":         "zig-fmt",
 	"gleam":       "gleam-format",
 	"mojo":        "mojo-format",
+	"odin":        "odinfmt",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
