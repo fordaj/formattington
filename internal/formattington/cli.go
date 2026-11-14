@@ -57,6 +57,7 @@ var registry = []Tool{
 	{Name: "mix-format", Extensions: mixFormatExtensions, Run: runMixFormat},
 	{Name: "zig-fmt", Extensions: zigFmtExtensions, Run: runZigFmt},
 	{Name: "gleam-format", Extensions: gleamFormatExtensions, Run: runGleamFormat},
+	{Name: "mojo-format", Extensions: mojoFormatExtensions, Run: runMojoFormat},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -102,6 +103,7 @@ var languageAliases = map[string]string{
 	"elixir":      "mix-format",
 	"zig":         "zig-fmt",
 	"gleam":       "gleam-format",
+	"mojo":        "mojo-format",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per

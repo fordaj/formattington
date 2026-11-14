@@ -1,6 +1,7 @@
 package formattington
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -2690,5 +2691,84 @@ func TestGleamFormatCheckNonZeroIsRemapped(t *testing.T) {
 	}
 	if code != ExitFormatRequired {
 		t.Errorf("exit = %d, want %d", code, ExitFormatRequired)
+	}
+}
+
+func TestMojoFormatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"mojo"}, func() (int, error) {
+			return runMojoFormat(Options{Args: []string{"my file.mojo"}})
+		})
+		want := []string{"format", "my file.mojo"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"mojo"}, func() (int, error) {
+			return runMojoFormat(Options{Args: []string{"--help"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"format", "--help"}) {
+			t.Errorf("argv = %v, want [format --help]", recorded)
+		}
+	})
+
+	t.Run("line length forwarded verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"mojo"}, func() (int, error) {
+			return runMojoFormat(Options{Args: []string{"-l", "100", "a.mojo"}})
+		})
+		want := []string{"format", "-l", "100", "a.mojo"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
+
+func TestMojoFormatSynthesizedCheck(t *testing.T) {
+	requirePOSIX(t)
+
+	// A fake mojo that "formats" by appending a trailing newline if absent.
+	binDir := t.TempDir()
+	// A fake "mojo format" that normalizes every file to "formatted\n".
+	writeFile(t, filepath.Join(binDir, "mojo"),
+		"#!/bin/sh\nfor f in \"$@\"; do\n  case \"$f\" in\n    format|-l|[0-9]*) continue;;\n  esac\n  printf 'formatted\\n' > \"$f\"\ndone\nexit 0\n")
+	if err := chmodExecutable(filepath.Join(binDir, "mojo")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	needy := filepath.Join(t.TempDir(), "needy.mojo")
+	if err := os.WriteFile(needy, []byte("not formatted\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	original, _ := os.ReadFile(needy)
+
+	code, err := runMojoFormat(Options{Check: true, Args: []string{needy}})
+	if err != nil {
+		t.Fatalf("runMojoFormat returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d (content differs after formatting)", code, ExitFormatRequired)
+	}
+	after, _ := os.ReadFile(needy)
+	if !bytes.Equal(after, original) {
+		t.Error("the original file was modified by check mode — must never happen")
+	}
+
+	// Already-formatted file (ends with newline) passes.
+	clean := filepath.Join(t.TempDir(), "clean.mojo")
+	if err := os.WriteFile(clean, []byte("formatted\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	code, err = runMojoFormat(Options{Check: true, Args: []string{clean}})
+	if err != nil {
+		t.Fatalf("runMojoFormat returned an error: %v", err)
+	}
+	if code != ExitOK {
+		t.Errorf("exit = %d, want %d", code, ExitOK)
 	}
 }
