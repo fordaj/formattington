@@ -1,7 +1,6 @@
 package formattington
 
 import (
-	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -215,9 +214,7 @@ func TestMainWithoutFormattersDoesNotRunTools(t *testing.T) {
 func TestMainHonorsWorkingDirectory(t *testing.T) {
 	root := t.TempDir()
 	writeFile(t, filepath.Join(root, "a.sh"), "#!/bin/sh\n")
-	if err := os.Chdir(root); err != nil {
-		t.Fatalf("chdir: %v", err)
-	}
+	t.Chdir(root)
 
 	if got := DiscoverFiles([]string{".sh"}, ""); len(got) != 1 {
 		t.Errorf("expected one discovered file, got %v", got)

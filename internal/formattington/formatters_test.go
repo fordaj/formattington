@@ -1,6 +1,8 @@
 package formattington
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -662,4 +664,123 @@ func TestNixfmtArgv(t *testing.T) {
 			t.Errorf("argv = %v, want %v", recorded, want)
 		}
 	})
+}
+
+func TestPhpCsFixerArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default fixes in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"php-cs-fixer"}, func() (int, error) {
+			return runPhpCsFixer(Options{})
+		})
+		want := []string{"fix"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses check subcommand", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"php-cs-fixer"}, func() (int, error) {
+			return runPhpCsFixer(Options{Check: true})
+		})
+		want := []string{"check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"php-cs-fixer"}, func() (int, error) {
+			return runPhpCsFixer(Options{DryRun: true})
+		})
+		want := []string{"check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"php-cs-fixer"}, func() (int, error) {
+			return runPhpCsFixer(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+
+	t.Run("diff passthrough is verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"php-cs-fixer"}, func() (int, error) {
+			return runPhpCsFixer(Options{Args: []string{"fix", "--dry-run", "--diff", "file.php"}})
+		})
+		want := []string{"fix", "fix", "--dry-run", "--diff", "file.php"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
+
+func TestPhpCsFixerCheckExitEightIsRemapped(t *testing.T) {
+	requirePOSIX(t)
+
+	binDir := filepath.Join(t.TempDir(), "bin")
+	writeFile(t, filepath.Join(binDir, "php-cs-fixer"), "#!/bin/sh\nexit 8\n")
+	if err := chmodExecutable(filepath.Join(binDir, "php-cs-fixer")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	code, err := runPhpCsFixer(Options{Check: true})
+	if err != nil {
+		t.Fatalf("runPhpCsFixer returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d (native 8 must map to ExitFormatRequired)", code, ExitFormatRequired)
+	}
+
+	// Other non-zero codes pass through verbatim.
+	writeFile(t, filepath.Join(binDir, "php-cs-fixer"), "#!/bin/sh\nexit 16\n")
+	code, err = runPhpCsFixer(Options{Check: true})
+	if err != nil {
+		t.Fatalf("runPhpCsFixer returned an error: %v", err)
+	}
+	if code != 16 {
+		t.Errorf("exit = %d, want 16 (unknown codes must pass through)", code)
+	}
+}
+
+func TestPhpCsFixerCheckDoesNotModifyFixture(t *testing.T) {
+	requirePOSIX(t)
+
+	fixture := filepath.Join("testdata", "php-cs-fixer", "sample.php")
+	original, err := os.ReadFile(fixture)
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	before := string(original)
+
+	// A fake that would rewrite the file must never run in check mode,
+	// because the integration only invokes read-only commands.
+	binDir := t.TempDir()
+	writeFile(t, filepath.Join(binDir, "php-cs-fixer"), "#!/bin/sh\nexit 8\n")
+	if err := chmodExecutable(filepath.Join(binDir, "php-cs-fixer")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	code, err := runPhpCsFixer(Options{Check: true, Args: []string{fixture}})
+	if err != nil {
+		t.Fatalf("runPhpCsFixer returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d", code, ExitFormatRequired)
+	}
+	after, err := os.ReadFile(fixture)
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	if string(after) != before {
+		t.Error("the fixture was modified in check mode")
+	}
 }
