@@ -42,7 +42,7 @@ func runRustfmt(opts Options) (int, error) {
 	}
 
 	userHasEdition := hasFlag(forwarded, "--edition")
-	files, flags := splitArgsAndFiles(forwarded)
+	files, flags := splitArgsAndFiles(forwarded, rustfmtValuedFlags)
 
 	// Partition files by detected edition (empty = tool default).
 	groups := map[string][]string{}
@@ -114,14 +114,14 @@ var rustfmtValuedFlags = map[string]bool{
 }
 
 // splitArgsAndFiles separates non-flag arguments (treated as files)
-// from everything else, preserving order. Known rustfmt flags that take
-// a value consume the next argument as part of the flag.
-func splitArgsAndFiles(args []string) (files []string, rest []string) {
+// from everything else, preserving order. Flags in valuedFlags (which
+// take a value) consume the following argument as part of the flag.
+func splitArgsAndFiles(args []string, valuedFlags map[string]bool) (files []string, rest []string) {
 	for index := 0; index < len(args); index++ {
 		arg := args[index]
 		if strings.HasPrefix(arg, "-") {
 			rest = append(rest, arg)
-			if rustfmtValuedFlags[arg] && index+1 < len(args) {
+			if valuedFlags[arg] && index+1 < len(args) {
 				rest = append(rest, args[index+1])
 				index++
 			}

@@ -53,6 +53,7 @@ var registry = []Tool{
 	{Name: "rustfmt", Extensions: rustfmtExtensions, Run: runRustfmt},
 	{Name: "swift-format", Extensions: swiftFormatExtensions, Run: runSwiftFormat},
 	{Name: "dart-format", Extensions: dartFormatExtensions, Run: runDartFormat},
+	{Name: "dotnet-format", Extensions: dotnetFormatExtensions, Run: runDotnetFormat},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -93,6 +94,8 @@ var languageAliases = map[string]string{
 	"rust":        "rustfmt",
 	"swift":       "swift-format",
 	"dart":        "dart-format",
+	"csharp":      "dotnet-format",
+	"vbnet":       "dotnet-format",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
