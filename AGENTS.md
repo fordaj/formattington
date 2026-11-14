@@ -59,7 +59,7 @@ formattington all --series
 - `all` runs all configured formatter integrations against their matching files.
 - By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
-- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer` order (missing tool = 127); `0` only if all succeed.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
 
 Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
@@ -133,6 +133,7 @@ Important files include:
 - `internal/formattington/stylua.go` — StyLua (Lua) integration (`.lua` files; resolved from PATH or the bundled formatters; respects `stylua.toml` / `.stylua.toml`). The `lua` language alias resolves to `stylua` in `cli.go`.
 - `internal/formattington/nixfmt.go` — nixfmt (Nix) integration (`.nix` files; PATH-only; no bundleable release matrix upstream). The `nix` language alias resolves to `nixfmt` in `cli.go`.
 - `internal/formattington/php_cs_fixer.go` — PHP-CS-Fixer (PHP) integration (`.php` files; PATH-only). The `php` language alias resolves to `php-cs-fixer` in `cli.go`. Native exit 8 (files need fixing) is reported as `ExitFormatRequired`; all other codes pass through.
+- `internal/formattington/perltidy.go` — perltidy (Perl) integration (`.pl`, `.pm`, `.t` files; PATH-only; GPL-2.0+, never embedded). The `perl` language alias resolves to `perltidy` in `cli.go`. Check mode uses `perltidy --assert-tidy`; the default suppresses `.bak` backups with `-bext=/`.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 

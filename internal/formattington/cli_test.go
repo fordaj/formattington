@@ -79,6 +79,7 @@ func TestLanguageAliasSelection(t *testing.T) {
 		"lua":      "stylua",
 		"nix":      "nixfmt",
 		"php":      "php-cs-fixer",
+		"perl":     "perltidy",
 	}
 
 	for alias, formatter := range cases {
@@ -163,7 +164,7 @@ func TestAllPreservesTheLastNonZeroExitCode(t *testing.T) {
 	if err := chmodExecutable(filepath.Join(binDir, "shfmt")); err != nil {
 		t.Fatalf("chmod: %v", err)
 	}
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer"} {
+	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy"} {
 		writeFakeExecutable(t, binDir, name)
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
@@ -256,7 +257,7 @@ func TestHelpListsOptionsAndAliases(t *testing.T) {
 		"markdownlint",
 		"toml", "taplo",
 		"go uses gofmt", "goimports",
-		"lua", "stylua", "nix", "nixfmt", "php", "php-cs-fixer",
+		"lua", "stylua", "nix", "nixfmt", "php", "php-cs-fixer", "perl", "perltidy",
 		"concurrently", "last non-zero",
 		"FORMATTINGTON_CONFIG_PATH", ".formattington.json",
 	} {
@@ -398,7 +399,7 @@ func TestAllReturnsOneTwentySevenWhenAnyToolIsMissing(t *testing.T) {
 
 	// Only shfmt is missing; the others are present.
 	binDir := filepath.Join(t.TempDir(), "bin")
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer"} {
+	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy"} {
 		writeFakeExecutable(t, binDir, name)
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
@@ -545,6 +546,7 @@ func TestExitAggregationFollowsRegistrationOrder(t *testing.T) {
 	writeFakeExecutable(t, binDir, "stylua")
 	writeFakeExecutable(t, binDir, "nixfmt")
 	writeFakeExecutable(t, binDir, "php-cs-fixer")
+	writeFakeExecutable(t, binDir, "perltidy")
 	for _, name := range []string{"shfmt", "black"} {
 		if err := chmodExecutable(filepath.Join(binDir, name)); err != nil {
 			t.Fatalf("chmod: %v", err)

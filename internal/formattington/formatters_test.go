@@ -784,3 +784,76 @@ func TestPhpCsFixerCheckDoesNotModifyFixture(t *testing.T) {
 		t.Error("the fixture was modified in check mode")
 	}
 }
+
+func TestPerltidyArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place and suppresses backups", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"perltidy"}, func() (int, error) {
+			return runPerltidy(Options{})
+		})
+		want := []string{"-b", "-bext=/"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses assert-tidy", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"perltidy"}, func() (int, error) {
+			return runPerltidy(Options{Check: true})
+		})
+		want := []string{"--assert-tidy"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run prints a diff", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"perltidy"}, func() (int, error) {
+			return runPerltidy(Options{DryRun: true})
+		})
+		want := []string{"-d"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"perltidy"}, func() (int, error) {
+			return runPerltidy(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+
+	t.Run("forwards args verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"perltidy"}, func() (int, error) {
+			return runPerltidy(Options{Args: []string{"-i=4", "--profile=custom.rc", "my file.pl"}})
+		})
+		want := []string{"-b", "-bext=/", "-i=4", "--profile=custom.rc", "my file.pl"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
+
+func TestPerltidyCheckNonZeroIsRemapped(t *testing.T) {
+	requirePOSIX(t)
+
+	binDir := filepath.Join(t.TempDir(), "bin")
+	writeFile(t, filepath.Join(binDir, "perltidy"), "#!/bin/sh\nexit 2\n")
+	if err := chmodExecutable(filepath.Join(binDir, "perltidy")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	code, err := runPerltidy(Options{Check: true})
+	if err != nil {
+		t.Fatalf("runPerltidy returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d (non-zero --assert-tidy must map to ExitFormatRequired)", code, ExitFormatRequired)
+	}
+}
