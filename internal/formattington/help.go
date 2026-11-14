@@ -17,7 +17,10 @@ markdownlint tool); html uses prettier; ps1 uses powershell
 (PSScriptAnalyzer linting of PowerShell scripts); toml uses taplo (TOML
 formatting via taplo fmt); go uses gofmt (Go formatting via gofmt; goimports
 additionally fixes imports, so use it via the goimports name or a config
-command for import-aware formatting); lua uses stylua (Lua formatting via
+command for import-aware formatting); micropython uses black (MicroPython is a
+Python 3 subset, so it is formatted by the Python formatter — fixtures
+verified against black 26.5.1 and ruff, including @micropython.native/viper
+and inline asm; statement-level asm labels cannot be parsed by either); lua uses stylua (Lua formatting via
 StyLua); nix uses nixfmt (Nix formatting via nixfmt, RFC 166 "rfc style"); php uses
 php-cs-fixer (PHP formatting; "php-cs-fixer check" is non-modifying, exit 8
 is reported as 1). perl uses perltidy (Perl formatting; PATH-only and GPL-2.0+; check mode
