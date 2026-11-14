@@ -62,6 +62,9 @@ func fakeNameFor(formatter string) string {
 	if formatter == "dotnet-format" {
 		return "dotnet"
 	}
+	if formatter == "mix-format" {
+		return "mix"
+	}
 	return formatter
 }
 
@@ -191,8 +194,11 @@ func TestAllPreservesTheLastNonZeroExitCode(t *testing.T) {
 	if err := chmodExecutable(filepath.Join(binDir, "shfmt")); err != nil {
 		t.Fatalf("chmod: %v", err)
 	}
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript", "jlfmt", "elm-format", "fourmolu", "ocamlformat", "rustfmt", "swift-format", "dart", "dotnet"} {
-		writeFakeExecutable(t, binDir, name)
+	for _, tool := range registry {
+		if tool.Name == "shfmt" {
+			continue // keep the exit-5 shim
+		}
+		writeFakeExecutable(t, binDir, fakeNameFor(tool.Name))
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
 	t.Setenv("PATH", binDir)
@@ -284,7 +290,7 @@ func TestHelpListsOptionsAndAliases(t *testing.T) {
 		"markdownlint",
 		"toml", "taplo",
 		"go uses gofmt", "goimports",
-		"lua", "stylua", "nix", "nixfmt", "php", "php-cs-fixer", "perl", "perltidy", "fortran", "fprettify", "erlang", "erlfmt", "sql", "sqlfluff", "gdscript", "gdformat", "java", "google-java-format", "kotlin", "ktfmt", "scala", "scalafmt", "groovy", "npm-groovy-lint", "micropython", "black", "clojure", "cljfmt", "fsharp", "fantomas", "ruby", "rubocop", "r", "styler", "julia", "jlfmt", "elm", "elm-format", "haskell", "fourmolu", "ocaml", "ocamlformat", "rust", "rustfmt", "swift", "swift-format", "dart", "dart-format", "csharp", "vbnet", "dotnet-format",
+		"lua", "stylua", "nix", "nixfmt", "php", "php-cs-fixer", "perl", "perltidy", "fortran", "fprettify", "erlang", "erlfmt", "sql", "sqlfluff", "gdscript", "gdformat", "java", "google-java-format", "kotlin", "ktfmt", "scala", "scalafmt", "groovy", "npm-groovy-lint", "micropython", "black", "clojure", "cljfmt", "fsharp", "fantomas", "ruby", "rubocop", "r", "styler", "julia", "jlfmt", "elm", "elm-format", "haskell", "fourmolu", "ocaml", "ocamlformat", "rust", "rustfmt", "swift", "swift-format", "dart", "dart-format", "csharp", "vbnet", "dotnet-format", "elixir", "mix-format",
 		"concurrently", "last non-zero",
 		"FORMATTINGTON_CONFIG_PATH", ".formattington.json",
 	} {
@@ -426,8 +432,11 @@ func TestAllReturnsOneTwentySevenWhenAnyToolIsMissing(t *testing.T) {
 
 	// Only shfmt is missing; the others are present.
 	binDir := filepath.Join(t.TempDir(), "bin")
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript", "jlfmt", "elm-format", "fourmolu", "ocamlformat", "rustfmt", "swift-format", "dart", "dotnet"} {
-		writeFakeExecutable(t, binDir, name)
+	for _, tool := range registry {
+		if tool.Name == "shfmt" {
+			continue // shfmt is the deliberately missing tool
+		}
+		writeFakeExecutable(t, binDir, fakeNameFor(tool.Name))
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
 	t.Setenv("PATH", binDir)
@@ -559,38 +568,14 @@ func TestSeriesDoesNotOverlap(t *testing.T) {
 func TestExitAggregationFollowsRegistrationOrder(t *testing.T) {
 	binDir := filepath.Join(t.TempDir(), "bin")
 	writeFile(t, filepath.Join(binDir, "shfmt"), "#!/bin/sh\nexit 5\n")
-	writeFakeExecutable(t, binDir, "clang-format")
 	writeFile(t, filepath.Join(binDir, "black"), "#!/bin/sh\nexit 2\n")
-	writeFakeExecutable(t, binDir, "prettier")
-	writeFakeExecutable(t, binDir, "pwsh")
-	writeFakeExecutable(t, binDir, "markdownlint")
-	writeFakeExecutable(t, binDir, "taplo")
-	writeFakeExecutable(t, binDir, "gofmt")
-	writeFakeExecutable(t, binDir, "goimports")
-	writeFakeExecutable(t, binDir, "stylua")
-	writeFakeExecutable(t, binDir, "nixfmt")
-	writeFakeExecutable(t, binDir, "php-cs-fixer")
-	writeFakeExecutable(t, binDir, "perltidy")
-	writeFakeExecutable(t, binDir, "fprettify")
-	writeFakeExecutable(t, binDir, "erlfmt")
-	writeFakeExecutable(t, binDir, "sqlfluff")
-	writeFakeExecutable(t, binDir, "gdformat")
-	writeFakeExecutable(t, binDir, "google-java-format")
-	writeFakeExecutable(t, binDir, "ktfmt")
-	writeFakeExecutable(t, binDir, "scalafmt")
-	writeFakeExecutable(t, binDir, "npm-groovy-lint")
-	writeFakeExecutable(t, binDir, "cljfmt")
-	writeFakeExecutable(t, binDir, "fantomas")
-	writeFakeExecutable(t, binDir, "rubocop")
-	writeFakeExecutable(t, binDir, "Rscript")
-	writeFakeExecutable(t, binDir, "jlfmt")
-	writeFakeExecutable(t, binDir, "elm-format")
-	writeFakeExecutable(t, binDir, "fourmolu")
-	writeFakeExecutable(t, binDir, "ocamlformat")
-	writeFakeExecutable(t, binDir, "rustfmt")
-	writeFakeExecutable(t, binDir, "swift-format")
-	writeFakeExecutable(t, binDir, "dotnet")
-	writeFakeExecutable(t, binDir, "dart")
+	for _, tool := range registry {
+		name := fakeNameFor(tool.Name)
+		if name == "shfmt" || name == "black" {
+			continue
+		}
+		writeFakeExecutable(t, binDir, name)
+	}
 	for _, name := range []string{"shfmt", "black"} {
 		if err := chmodExecutable(filepath.Join(binDir, name)); err != nil {
 			t.Fatalf("chmod: %v", err)
