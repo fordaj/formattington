@@ -95,6 +95,7 @@ func TestLanguageAliasSelection(t *testing.T) {
 		"julia":       "jlfmt",
 		"elm":         "elm-format",
 		"haskell":     "fourmolu",
+		"ocaml":       "ocamlformat",
 	}
 
 	for alias, formatter := range cases {
@@ -179,7 +180,7 @@ func TestAllPreservesTheLastNonZeroExitCode(t *testing.T) {
 	if err := chmodExecutable(filepath.Join(binDir, "shfmt")); err != nil {
 		t.Fatalf("chmod: %v", err)
 	}
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript", "jlfmt", "elm-format", "fourmolu"} {
+	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript", "jlfmt", "elm-format", "fourmolu", "ocamlformat"} {
 		writeFakeExecutable(t, binDir, name)
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
@@ -272,7 +273,7 @@ func TestHelpListsOptionsAndAliases(t *testing.T) {
 		"markdownlint",
 		"toml", "taplo",
 		"go uses gofmt", "goimports",
-		"lua", "stylua", "nix", "nixfmt", "php", "php-cs-fixer", "perl", "perltidy", "fortran", "fprettify", "erlang", "erlfmt", "sql", "sqlfluff", "gdscript", "gdformat", "java", "google-java-format", "kotlin", "ktfmt", "scala", "scalafmt", "groovy", "npm-groovy-lint", "micropython", "black", "clojure", "cljfmt", "fsharp", "fantomas", "ruby", "rubocop", "r", "styler", "julia", "jlfmt", "elm", "elm-format", "haskell", "fourmolu",
+		"lua", "stylua", "nix", "nixfmt", "php", "php-cs-fixer", "perl", "perltidy", "fortran", "fprettify", "erlang", "erlfmt", "sql", "sqlfluff", "gdscript", "gdformat", "java", "google-java-format", "kotlin", "ktfmt", "scala", "scalafmt", "groovy", "npm-groovy-lint", "micropython", "black", "clojure", "cljfmt", "fsharp", "fantomas", "ruby", "rubocop", "r", "styler", "julia", "jlfmt", "elm", "elm-format", "haskell", "fourmolu", "ocaml", "ocamlformat",
 		"concurrently", "last non-zero",
 		"FORMATTINGTON_CONFIG_PATH", ".formattington.json",
 	} {
@@ -414,7 +415,7 @@ func TestAllReturnsOneTwentySevenWhenAnyToolIsMissing(t *testing.T) {
 
 	// Only shfmt is missing; the others are present.
 	binDir := filepath.Join(t.TempDir(), "bin")
-	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript", "jlfmt", "elm-format", "fourmolu"} {
+	for _, name := range []string{"clang-format", "black", "prettier", "pwsh", "markdownlint", "taplo", "gofmt", "goimports", "stylua", "nixfmt", "php-cs-fixer", "perltidy", "fprettify", "erlfmt", "sqlfluff", "gdformat", "google-java-format", "ktfmt", "scalafmt", "npm-groovy-lint", "cljfmt", "fantomas", "rubocop", "Rscript", "jlfmt", "elm-format", "fourmolu", "ocamlformat"} {
 		writeFakeExecutable(t, binDir, name)
 	}
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
@@ -574,6 +575,7 @@ func TestExitAggregationFollowsRegistrationOrder(t *testing.T) {
 	writeFakeExecutable(t, binDir, "jlfmt")
 	writeFakeExecutable(t, binDir, "elm-format")
 	writeFakeExecutable(t, binDir, "fourmolu")
+	writeFakeExecutable(t, binDir, "ocamlformat")
 	for _, name := range []string{"shfmt", "black"} {
 		if err := chmodExecutable(filepath.Join(binDir, name)); err != nil {
 			t.Fatalf("chmod: %v", err)

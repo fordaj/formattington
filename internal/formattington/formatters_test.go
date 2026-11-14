@@ -1990,3 +1990,116 @@ func TestFourmoluExit100IsRemapped(t *testing.T) {
 		}
 	}
 }
+
+func TestOcamlformatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"ocamlformat"}, func() (int, error) {
+			return runOcamlformat(Options{})
+		})
+		want := []string{"--inplace"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"ocamlformat"}, func() (int, error) {
+			return runOcamlformat(Options{Check: true})
+		})
+		want := []string{"--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"ocamlformat"}, func() (int, error) {
+			return runOcamlformat(Options{DryRun: true})
+		})
+		want := []string{"--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"ocamlformat"}, func() (int, error) {
+			return runOcamlformat(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+
+	t.Run("profile is forwarded verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"ocamlformat"}, func() (int, error) {
+			return runOcamlformat(Options{Args: []string{"--profile", "janestreet", "my file.ml"}})
+		})
+		want := []string{"--inplace", "--profile", "janestreet", "my file.ml"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("fixture check does not modify", func(t *testing.T) {
+		fixture := filepath.Join("testdata", "ocamlformat", "fixture.ml")
+		original, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		before := string(original)
+
+		binDir := t.TempDir()
+		writeFile(t, filepath.Join(binDir, "ocamlformat"), fakeExecutableScript)
+		if err := chmodExecutable(filepath.Join(binDir, "ocamlformat")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		argvFile := filepath.Join(t.TempDir(), "argv.txt")
+
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+		t.Setenv("FAKE_ARGV_FILE", argvFile)
+		t.Setenv("FAKE_CALLED_FILE", filepath.Join(t.TempDir(), "called"))
+
+		_, err = runOcamlformat(Options{Check: true, Args: []string{fixture}})
+		if err != nil {
+			t.Fatalf("runOcamlformat returned an error: %v", err)
+		}
+
+		if got := recordedArgv(t, argvFile); !reflect.DeepEqual(got, []string{"--check", fixture}) {
+			t.Errorf("argv = %v, want --check %s", got, fixture)
+		}
+
+		after, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		if string(after) != before {
+			t.Error("the fixture was modified in check mode")
+		}
+	})
+}
+
+func TestOcamlformatExitOnePassthrough(t *testing.T) {
+	requirePOSIX(t)
+
+	// Both "formatting needed" and "error" report exit 1; Formattington
+	// maps them to ExitFormatRequired verbatim.
+	binDir := filepath.Join(t.TempDir(), "bin")
+	writeFile(t, filepath.Join(binDir, "ocamlformat"), "#!/bin/sh\nexit 1\n")
+	if err := chmodExecutable(filepath.Join(binDir, "ocamlformat")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	code, err := runOcamlformat(Options{Check: true})
+	if err != nil {
+		t.Fatalf("runOcamlformat returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d", code, ExitFormatRequired)
+	}
+}
