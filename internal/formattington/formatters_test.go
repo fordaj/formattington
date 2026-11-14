@@ -1216,3 +1216,55 @@ func TestGoogleJavaFormatArgv(t *testing.T) {
 		}
 	})
 }
+
+func TestKtfmtArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place and injects no style flag", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"ktfmt"}, func() (int, error) {
+			return runKtfmt(Options{})
+		})
+		if len(recorded) != 0 {
+			t.Errorf("argv = %v, want [] (no injected style flag)", recorded)
+		}
+	})
+
+	t.Run("check uses dry-run with exit-if-changed", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"ktfmt"}, func() (int, error) {
+			return runKtfmt(Options{Check: true})
+		})
+		want := []string{"--dry-run", "--set-exit-if-changed"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run lists changed files without failing", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"ktfmt"}, func() (int, error) {
+			return runKtfmt(Options{DryRun: true})
+		})
+		want := []string{"--dry-run"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("style flags pass through verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"ktfmt"}, func() (int, error) {
+			return runKtfmt(Options{Args: []string{"--google-style", "my file.kt"}})
+		})
+		want := []string{"--google-style", "my file.kt"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"ktfmt"}, func() (int, error) {
+			return runKtfmt(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+}
