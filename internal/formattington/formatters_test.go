@@ -1431,3 +1431,84 @@ func TestNpmGroovyLintCheckDoesNotModifyFixture(t *testing.T) {
 		t.Error("the fixture was modified in check mode")
 	}
 }
+
+func TestCljfmtArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default fixes in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"cljfmt"}, func() (int, error) {
+			return runCljfmt(Options{})
+		})
+		want := []string{"fix"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses check subcommand", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"cljfmt"}, func() (int, error) {
+			return runCljfmt(Options{Check: true})
+		})
+		want := []string{"check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check (it IS the diff mode)", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"cljfmt"}, func() (int, error) {
+			return runCljfmt(Options{DryRun: true})
+		})
+		want := []string{"check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"cljfmt"}, func() (int, error) {
+			return runCljfmt(Options{Args: []string{"--help"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--help"}) {
+			t.Errorf("argv = %v, want [--help]", recorded)
+		}
+	})
+
+	t.Run("config is forwarded verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"cljfmt"}, func() (int, error) {
+			return runCljfmt(Options{Args: []string{"--config", "custom.edn", "my file.clj"}})
+		})
+		want := []string{"fix", "--config", "custom.edn", "my file.clj"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
+
+func TestCljfmtExitCodesAreNotConflated(t *testing.T) {
+	requirePOSIX(t)
+
+	// 1 = unformatted (reported as-is), 2 = parse/format error (passed
+	// through verbatim, never conflated with 1).
+	for _, tc := range []struct{ native, want int }{
+		{1, ExitFormatRequired},
+		{2, 2},
+		{0, 0},
+	} {
+		binDir := filepath.Join(t.TempDir(), "bin")
+		writeFile(t, filepath.Join(binDir, "cljfmt"), "#!/bin/sh\nexit "+strconv.Itoa(tc.native)+"\n")
+		if err := chmodExecutable(filepath.Join(binDir, "cljfmt")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		code, err := runCljfmt(Options{Check: true})
+		if err != nil {
+			t.Fatalf("cljfmt exit %d: runCljfmt returned an error: %v", tc.native, err)
+		}
+		if code != tc.want {
+			t.Errorf("cljfmt exit %d: got %d, want %d", tc.native, code, tc.want)
+		}
+	}
+}

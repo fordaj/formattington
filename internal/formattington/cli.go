@@ -42,6 +42,7 @@ var registry = []Tool{
 	{Name: "ktfmt", Extensions: ktfmtExtensions, Run: runKtfmt},
 	{Name: "scalafmt", Extensions: scalafmtExtensions, Run: runScalafmt},
 	{Name: "npm-groovy-lint", Extensions: npmGroovyLintExtensions, Run: runNpmGroovyLint},
+	{Name: "cljfmt", Extensions: cljfmtExtensions, Run: runCljfmt},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -71,6 +72,7 @@ var languageAliases = map[string]string{
 	"scala":       "scalafmt",
 	"groovy":      "npm-groovy-lint",
 	"micropython": "black",
+	"clojure":     "cljfmt",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
