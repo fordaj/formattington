@@ -41,6 +41,7 @@ var registry = []Tool{
 	{Name: "google-java-format", Extensions: googleJavaFormatExtensions, Run: runGoogleJavaFormat},
 	{Name: "ktfmt", Extensions: ktfmtExtensions, Run: runKtfmt},
 	{Name: "scalafmt", Extensions: scalafmtExtensions, Run: runScalafmt},
+	{Name: "npm-groovy-lint", Extensions: npmGroovyLintExtensions, Run: runNpmGroovyLint},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -68,6 +69,7 @@ var languageAliases = map[string]string{
 	"java":     "google-java-format",
 	"kotlin":   "ktfmt",
 	"scala":    "scalafmt",
+	"groovy":   "npm-groovy-lint",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
