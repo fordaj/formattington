@@ -559,3 +559,55 @@ func TestMissingToolIsReported(t *testing.T) {
 		}
 	}
 }
+
+func TestStyluaArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"stylua"}, func() (int, error) {
+			return runStylua(Options{})
+		})
+		if len(recorded) != 0 {
+			t.Errorf("argv = %v, want []", recorded)
+		}
+	})
+
+	t.Run("check uses check flag", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"stylua"}, func() (int, error) {
+			return runStylua(Options{Check: true})
+		})
+		want := []string{"--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run prints unified diffs via check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"stylua"}, func() (int, error) {
+			return runStylua(Options{DryRun: true})
+		})
+		want := []string{"--check", "--output-format=unified"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"stylua"}, func() (int, error) {
+			return runStylua(Options{Args: []string{"--help"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--help"}) {
+			t.Errorf("argv = %v, want [--help]", recorded)
+		}
+	})
+
+	t.Run("forwards args verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"stylua"}, func() (int, error) {
+			return runStylua(Options{Args: []string{"--column-width", "100", "my file.lua"}})
+		})
+		want := []string{"--column-width", "100", "my file.lua"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}

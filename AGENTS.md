@@ -59,7 +59,7 @@ formattington all --series
 - `all` runs all configured formatter integrations against their matching files.
 - By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
-- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier` order (missing tool = 127); `0` only if all succeed.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
 
 Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
@@ -130,6 +130,7 @@ Important files include:
 - `internal/formattington/markdownlint.go` — markdownlint integration (`.md`, `.markdown`; resolved from PATH or the bundled formatters; respects the tool's native configuration). Runs `markdownlint-cli` verbatim — the tool never rewrites files without an explicit `--fix`, so check/dry-run/default all lint and findings exit 1. There is no language alias; invoke it as `markdownlint` (also valid in `.formattington.json` commands).
 - `internal/formattington/taplo.go` — Taplo (TOML) integration (`.toml` files; resolved from PATH or the bundled formatters; respects `taplo.toml`). The `toml` language alias resolves to `taplo` in `cli.go`.
 - `internal/formattington/gofmt.go` and `internal/formattington/goimports.go` — Go integrations (`.go` files; PATH-only, no bundle). The `go` language alias resolves to `gofmt` in `cli.go`.
+- `internal/formattington/stylua.go` — StyLua (Lua) integration (`.lua` files; resolved from PATH or the bundled formatters; respects `stylua.toml` / `.stylua.toml`). The `lua` language alias resolves to `stylua` in `cli.go`.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 
