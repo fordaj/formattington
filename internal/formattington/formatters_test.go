@@ -857,3 +857,75 @@ func TestPerltidyCheckNonZeroIsRemapped(t *testing.T) {
 		t.Errorf("exit = %d, want %d (non-zero --assert-tidy must map to ExitFormatRequired)", code, ExitFormatRequired)
 	}
 }
+
+func TestFprettifyArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fprettify"}, func() (int, error) {
+			return runFprettify(Options{})
+		})
+		if len(recorded) != 0 {
+			t.Errorf("argv = %v, want []", recorded)
+		}
+	})
+
+	t.Run("check synthesizes via diff", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fprettify"}, func() (int, error) {
+			return runFprettify(Options{Check: true})
+		})
+		want := []string{"--diff"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run prints a diff", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fprettify"}, func() (int, error) {
+			return runFprettify(Options{DryRun: true})
+		})
+		want := []string{"--diff"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fprettify"}, func() (int, error) {
+			return runFprettify(Options{Args: []string{"--help"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--help"}) {
+			t.Errorf("argv = %v, want [--help]", recorded)
+		}
+	})
+
+	t.Run("forwards args verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"fprettify"}, func() (int, error) {
+			return runFprettify(Options{Args: []string{"-c", "custom.rc", "my file.f90"}})
+		})
+		want := []string{"-c", "custom.rc", "my file.f90"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
+
+func TestFprettifyCheckReportsDiffOutputAsExitFormatRequired(t *testing.T) {
+	requirePOSIX(t)
+
+	binDir := filepath.Join(t.TempDir(), "bin")
+	writeFile(t, filepath.Join(binDir, "fprettify"), "#!/bin/sh\necho '--- a/foo.f90'\nexit 0\n")
+	if err := chmodExecutable(filepath.Join(binDir, "fprettify")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	code, err := runFprettify(Options{Check: true})
+	if err != nil {
+		t.Fatalf("runFprettify returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d (non-empty diff output means changes are required)", code, ExitFormatRequired)
+	}
+}
