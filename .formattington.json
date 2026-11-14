@@ -1,0 +1,23 @@
+{
+  "commands": [
+    ["prettier"],
+    ["black"],
+    ["shfmt", "-i", "2"],
+    ["php-cs-fixer"],
+    ["gofmt"],
+    ["goimports"],
+    ["rubocop"],
+    ["styler"],
+    ["gdformat"],
+    ["npm-groovy-lint"],
+    ["zig-fmt"],
+    ["mix-format"],
+    ["gleam-format"],
+    ["gnatformat"],
+    ["ocamlformat"],
+    ["forge-fmt"],
+    ["mojo-format"],
+    ["odinfmt"],
+    ["markdownlint"]
+  ]
+}

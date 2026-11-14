@@ -95,6 +95,21 @@ Exit code is the last non-zero code
 in that order (missing tool counts as 127, printed to stderr, and does not
 prevent remaining formatters from running); 0 only if all succeed.
 
+'formattington init' examines the current directory recursively and writes
+./.formattington.json with the formatters whose file types are present.
+Inside a Git repository, tracked files are preferred (submodules included)
+and untracked files that are not excluded by .gitignore are also counted;
+a repository encountered during the scan is examined from its own tracked
+perspective. Outside a repository every file is examined. Hidden
+directories and the generated/vendored/package-manager directories
+(__pycache__, node_modules, vendor, venv, dist, build, tools, formatters)
+are always skipped. The generated commands are the registered formatter
+invocations for the detected file types, in the order 'all' runs them;
+file arguments are omitted so each formatter discovers files as usual. If
+./.formattington.json already exists, init asks for confirmation before
+overwriting; a non-interactive shell refuses. 'init' takes no arguments or
+mode flags; the exit code is 0 on success and 2 on usage errors.
+
 Configuration file for 'all': a JSON file with a 'commands' array of argv
 arrays, e.g. {"commands": [["black", "--check", "src"], ["prettier",
 "docs/**/*.md"]]}. Element 0 of each command is a formatter name or language
@@ -143,7 +158,8 @@ func printHelp(out io.Writer) {
 		fmt.Fprintf(out, "  %s\n", tool.Name)
 	}
 	fmt.Fprintf(out, "  all              run every registered formatter\n")
-	fmt.Fprintf(out, "  list             show each registered tool's bundled and PATH versions\n\n")
+	fmt.Fprintf(out, "  list             show each registered tool's bundled and PATH versions\n")
+	fmt.Fprintf(out, "  init             scan the current directory and write .formattington.json\n\n")
 
 	fmt.Fprintf(out, "language aliases:\n")
 	for _, alias := range sortedAliasNames() {
