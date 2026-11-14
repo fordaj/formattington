@@ -2772,3 +2772,70 @@ func TestMojoFormatSynthesizedCheck(t *testing.T) {
 		t.Errorf("exit = %d, want %d", code, ExitOK)
 	}
 }
+
+func TestOdinfmtArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place with -w", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"odinfmt"}, func() (int, error) {
+			return runOdinfmt(Options{Args: []string{"a.odin", "b.odin"}})
+		})
+		want := []string{"-w", "a.odin", "b.odin"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"odinfmt"}, func() (int, error) {
+			return runOdinfmt(Options{Args: []string{"--help"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--help"}) {
+			t.Errorf("argv = %v, want [--help]", recorded)
+		}
+	})
+}
+
+func TestOdinfmtSynthesizedCheck(t *testing.T) {
+	requirePOSIX(t)
+
+	// Fake odinfmt: normalizes every file to "formatted\n" on stdout.
+	binDir := t.TempDir()
+	writeFile(t, filepath.Join(binDir, "odinfmt"),
+		"#!/bin/sh\nprintf 'formatted\\n'\n")
+	if err := chmodExecutable(filepath.Join(binDir, "odinfmt")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	needy := filepath.Join(t.TempDir(), "needy.odin")
+	if err := os.WriteFile(needy, []byte("not formatted\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	original, _ := os.ReadFile(needy)
+
+	code, err := runOdinfmt(Options{Check: true, Args: []string{needy}})
+	if err != nil {
+		t.Fatalf("runOdinfmt returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d", code, ExitFormatRequired)
+	}
+	after, _ := os.ReadFile(needy)
+	if !bytes.Equal(after, original) {
+		t.Error("the original file was modified by check mode — must never happen")
+	}
+
+	clean := filepath.Join(t.TempDir(), "clean.odin")
+	if err := os.WriteFile(clean, []byte("formatted\n"), 0o644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+	code, err = runOdinfmt(Options{Check: true, Args: []string{clean}})
+	if err != nil {
+		t.Fatalf("runOdinfmt returned an error: %v", err)
+	}
+	if code != ExitOK {
+		t.Errorf("exit = %d, want %d", code, ExitOK)
+	}
+}
