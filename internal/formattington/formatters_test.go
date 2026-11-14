@@ -1344,3 +1344,90 @@ func TestScalafmtBitfieldExitCodesPassThrough(t *testing.T) {
 		}
 	}
 }
+
+func TestNpmGroovyLintArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"npm-groovy-lint"}, func() (int, error) {
+			return runNpmGroovyLint(Options{})
+		})
+		want := []string{"--format"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses failon error without writes", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"npm-groovy-lint"}, func() (int, error) {
+			return runNpmGroovyLint(Options{Check: true})
+		})
+		want := []string{"--failon", "error"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"npm-groovy-lint"}, func() (int, error) {
+			return runNpmGroovyLint(Options{DryRun: true})
+		})
+		want := []string{"--failon", "error"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"npm-groovy-lint"}, func() (int, error) {
+			return runNpmGroovyLint(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+
+	t.Run("explicit noserver and config args pass through", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"npm-groovy-lint"}, func() (int, error) {
+			return runNpmGroovyLint(Options{Args: []string{"--noserver", "-c", "custom.groovylintrc.json", "my file.groovy"}})
+		})
+		want := []string{"--format", "--noserver", "-c", "custom.groovylintrc.json", "my file.groovy"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
+
+func TestNpmGroovyLintCheckDoesNotModifyFixture(t *testing.T) {
+	requirePOSIX(t)
+
+	fixture := filepath.Join("testdata", "npm-groovy-lint", "fixture.groovy")
+	original, err := os.ReadFile(fixture)
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	before := string(original)
+
+	binDir := t.TempDir()
+	writeFile(t, filepath.Join(binDir, "npm-groovy-lint"), "#!/bin/sh\nexit 1\n")
+	if err := chmodExecutable(filepath.Join(binDir, "npm-groovy-lint")); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+	t.Setenv("PATH", binDir)
+
+	code, err := runNpmGroovyLint(Options{Check: true, Args: []string{fixture}})
+	if err != nil {
+		t.Fatalf("runNpmGroovyLint returned an error: %v", err)
+	}
+	if code != ExitFormatRequired {
+		t.Errorf("exit = %d, want %d", code, ExitFormatRequired)
+	}
+	after, err := os.ReadFile(fixture)
+	if err != nil {
+		t.Fatalf("read fixture: %v", err)
+	}
+	if string(after) != before {
+		t.Error("the fixture was modified in check mode")
+	}
+}
