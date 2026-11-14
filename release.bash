@@ -5,8 +5,8 @@
 #
 # Two archives are produced per platform:
 #
-#   formattington-lite-<platform>  the program alone
-#   formattington-full-<platform>  the program with the bundled formatter
+#   formattington-<platform>-lite  the program alone
+#   formattington-<platform>-full  the program with the bundled formatter
 #                                  executables for that platform embedded
 #                                  inside it, so the binary is a single,
 #                                  self-contained executable (the archive
@@ -106,8 +106,8 @@ supported platform into dist/, verify the program's version matches,
 create an annotated tag, push it, and create a GitHub release with the
 per-platform archives attached.
 
-Two archives are produced per platform: formattington-lite-<platform>
-(the program alone) and formattington-full-<platform> (the program with
+Two archives are produced per platform: formattington-<platform>-lite
+(the program alone) and formattington-<platform>-full (the program with
 the bundled formatter executables for that platform embedded inside the
 binary, so it is a single, self-contained executable).
 
@@ -275,8 +275,8 @@ fi
 # --- Cross-compile the release binaries -------------------------------
 # Two variants are produced per platform:
 #
-#   formattington-lite-<platform>  the program alone (dist/lite/)
-#   formattington-full-<platform>  the program with the bundled formatter
+#   formattington-<platform>-lite  the program alone (dist/lite/)
+#   formattington-<platform>-full  the program with the bundled formatter
 #                                  executables for that platform embedded
 #                                  inside the binary (dist/full/), so the
 #                                  archive is a single self-contained
@@ -505,20 +505,20 @@ package_binaries() {
 		fi
 
 		# Lite: the program alone.
-		lite_tree="$STAGE_DIR/pkg/formattington-lite-$platform"
+		lite_tree="$STAGE_DIR/pkg/formattington-$platform-lite"
 		mkdir -p "$lite_tree"
 		cp "$DIST_DIR/lite/$platform/$binary" "$lite_tree/$binary"
-		archive="$DIST_DIR/formattington-lite-$platform.$extension"
+		archive="$DIST_DIR/formattington-$platform-lite.$extension"
 		package_tree "$lite_tree" "$archive"
 		log INFO "  packaged $(basename "$archive")"
 		RELEASE_ASSETS+=("$archive")
 
 		# Full: the self-contained program (the bundled formatters are
 		# embedded inside the binary).
-		full_tree="$STAGE_DIR/pkg/formattington-full-$platform"
+		full_tree="$STAGE_DIR/pkg/formattington-$platform-full"
 		mkdir -p "$full_tree"
 		cp "$DIST_DIR/full/$platform/$binary" "$full_tree/$binary"
-		archive="$DIST_DIR/formattington-full-$platform.$extension"
+		archive="$DIST_DIR/formattington-$platform-full.$extension"
 		package_tree "$full_tree" "$archive"
 		log INFO "  packaged $(basename "$archive")"
 		RELEASE_ASSETS+=("$archive")
@@ -686,16 +686,16 @@ fi
 if [[ "$DRY_RUN" -eq 1 ]]; then
 	log INFO "DRY RUN: would run:"
 	if [[ "$TAG_EXISTS_LOCALLY" -eq 1 ]]; then
-		log INFO "  git tag -a $TAG -m \"formattington $TAG\"   (skipped: the tag already exists)"
+		log INFO "  git tag -a $TAG -m \"$TAG\"   (skipped: the tag already exists)"
 	else
-		log INFO "  git tag -a $TAG -m \"formattington $TAG\""
+		log INFO "  git tag -a $TAG -m \"$TAG\""
 	fi
 	if [[ "$TAG_EXISTS_REMOTELY" -eq 1 ]]; then
 		log INFO "  git push origin $TAG   (skipped: the tag is already on origin)"
 	else
 		log INFO "  git push origin $TAG"
 	fi
-	log INFO "  gh release create $TAG --title \"formattington $TAG\" --generate-notes ${RELEASE_ASSETS[*]}"
+	log INFO "  gh release create $TAG --title \"$TAG\" --generate-notes ${RELEASE_ASSETS[*]}"
 	log INFO "  gh release upload $TAG ${RELEASE_ASSETS[*]} --clobber   (only if the release already exists)"
 	log INFO "dry run complete: VERSION=$VERSION TAG=$TAG"
 	exit 0
@@ -703,7 +703,7 @@ fi
 
 if [[ "$TAG_EXISTS_LOCALLY" -eq 0 ]]; then
 	log INFO "creating annotated tag $TAG..."
-	git tag -a "$TAG" -m "formattington $TAG"
+	git tag -a "$TAG" -m "$TAG"
 else
 	log WARNING "tag $TAG already exists locally; reusing it"
 fi
@@ -723,7 +723,7 @@ if gh release view "$TAG" >/dev/null 2>&1; then
 else
 	log INFO "creating GitHub release $TAG with ${#RELEASE_ASSETS[@]} assets..."
 	gh release create "$TAG" \
-		--title "formattington $TAG" \
+		--title "$TAG" \
 		--generate-notes \
 		"${RELEASE_ASSETS[@]}"
 fi
