@@ -59,7 +59,7 @@ formattington all --series
 - `all` runs all configured formatter integrations against their matching files.
 - By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
-- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt` order (missing tool = 127); `0` only if all succeed.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt`, `gleam-format` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
 
 Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
@@ -157,6 +157,7 @@ Important files include:
 - `internal/formattington/dotnet_format.go` — dotnet format (C#/VB.NET) integration (`.cs`/`.vb` files; PATH-only; ships with the .NET SDK ≥ 6). The tool name is `dotnet-format`; the `csharp` and `vbnet` aliases resolve to `dotnet-format` in `cli.go`. Uses the `whitespace` subcommand with `--folder . --include <files>`; `--verify-no-changes` exit 2 is reported as `ExitFormatRequired`. Style/analyzers are opt-in via forwarded args (they restore/build project code).
 - `internal/formattington/mix_format.go` — mix format (Elixir) integration (`.ex`/`.exs` files; PATH-only; ships with Elixir/OTP). The tool name is `mix-format` (the binary is `mix`); the `elixir` language alias resolves to `mix-format` in `cli.go`. `--no-compile` is passed by default; check is `--check-formatted`. `.formatter.exs` is EXECUTED CODE discovered from the cwd.
 - `internal/formattington/zig_fmt.go` — zig fmt (Zig) integration (`.zig` files only; PATH-only; ships with the Zig toolchain). The tool name is `zig-fmt` (the binary is `zig`; invoked as `zig fmt`); the `zig` language alias resolves to `zig-fmt` in `cli.go`. `.zon` is opt-in only (`--zon`, forwarded verbatim).
+- `internal/formattington/gleam_format.go` — gleam format (Gleam) integration (`.gleam` files; PATH-only; ships with the Gleam toolchain). The tool name is `gleam-format` (the binary is `gleam`; invoked as `gleam format`); the `gleam` language alias resolves to `gleam-format` in `cli.go`. `--check` exit non-zero (Error::Format = 1) is reported as `ExitFormatRequired`.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 
