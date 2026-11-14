@@ -39,7 +39,7 @@ Output from different formatters may interleave in this mode.
 formattington all --series
 ```
 
-Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt`, `gleam-format`, `mojo-format`, `odinfmt`, `forge-fmt`, `gnatformat` order) instead of concurrently, for ordered output.
+Run formatters one after another (prettier, sqlfluff, black, shfmt, google-java-format, dotnet-format, powershell, clang-format, rustfmt, php-cs-fixer, gofmt, goimports, ktfmt, stylua, swift-format, rubocop, dart-format, styler, nixfmt, gdformat, npm-groovy-lint, perltidy, zig-fmt, mix-format, fourmolu, scalafmt, fprettify, erlfmt, jlfmt, cljfmt, gleam-format, gnatformat, fantomas, ocamlformat, forge-fmt, mojo-format, odinfmt, elm-format, markdownlint, taplo order — the Stack Overflow Developer Survey 2026 popularity order) instead of concurrently, for ordered output.
 
 The flag is also accepted before `all`:
 
@@ -54,42 +54,45 @@ formattington --check --series all
 
 ```bash
 formattington prettier
-formattington clang-format
-formattington shfmt
+formattington sqlfluff
 formattington black
+formattington shfmt
+formattington google-java-format
+formattington dotnet-format
+formattington powershell
+formattington clang-format
+formattington rustfmt
+formattington php-cs-fixer
 formattington gofmt
 formattington goimports
+formattington ktfmt
 formattington stylua
+formattington swift-format
+formattington rubocop
+formattington dart-format
+formattington styler
 formattington nixfmt
-formattington php-cs-fixer
+formattington gdformat
+formattington npm-groovy-lint
 formattington perltidy
+formattington zig-fmt
+formattington mix-format
+formattington fourmolu
+formattington scalafmt
 formattington fprettify
 formattington erlfmt
-formattington sqlfluff
-formattington gdformat
-formattington google-java-format
-formattington ktfmt
-formattington scalafmt
-formattington npm-groovy-lint
-formattington cljfmt
-formattington fantomas
-formattington rubocop
-formattington styler
 formattington jlfmt
-formattington elm-format
-formattington fourmolu
-formattington ocamlformat
-formattington rustfmt
-formattington swift-format
-formattington dart-format
-formattington dotnet-format
-formattington mix-format
-formattington zig-fmt
+formattington cljfmt
 formattington gleam-format
+formattington gnatformat
+formattington fantomas
+formattington ocamlformat
+formattington forge-fmt
 formattington mojo-format
 formattington odinfmt
-formattington forge-fmt
-formattington gnatformat
+formattington elm-format
+formattington markdownlint
+formattington taplo
 ```
 
 Pass additional arguments through to the underlying tool:
@@ -111,50 +114,95 @@ Discovery skips hidden directories and the usual generated/vendored locations (`
 ### Run by language or file type
 
 ```bash
-formattington c
-formattington cpp
-formattington c++
-formattington bash
-formattington python
-formattington md
-formattington markdown
 formattington html
-formattington go
-formattington lua
-formattington nix
+formattington markdown
+formattington md
+formattington sql
+formattington micropython
+formattington py
+formattington python
+formattington bash
+formattington java
+formattington csharp
+formattington vbnet
+formattington ps1
+formattington c
+formattington c++
+formattington cpp
+formattington rust
 formattington php
+formattington go
+formattington kotlin
+formattington lua
+formattington swift
+formattington ruby
+formattington dart
+formattington r
+formattington nix
+formattington gdscript
+formattington groovy
 formattington perl
+formattington zig
+formattington elixir
+formattington haskell
+formattington scala
 formattington fortran
 formattington erlang
-formattington sql
-formattington gdscript
-formattington java
-formattington kotlin
-formattington scala
-formattington groovy
-formattington micropython
-formattington clojure
-formattington fsharp
-formattington ruby
-formattington r
 formattington julia
-formattington elm
-formattington haskell
-formattington ocaml
-formattington rust
-formattington swift
-formattington dart
-formattington csharp
-formattington elixir
-formattington zig
+formattington clojure
 formattington gleam
+formattington ada
+formattington fsharp
+formattington ocaml
+formattington solidity
 formattington mojo
 formattington odin
-formattington solidity
-formattington ada
+formattington elm
+formattington toml
 ```
 
-Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; `md`/`markdown`/`html` resolve to `prettier`; `go` resolves to `gofmt`; `lua` resolves to `stylua`; `nix` resolves to `nixfmt`; `php` resolves to `php-cs-fixer`; `perl` resolves to `perltidy`; `fortran` resolves to `fprettify`; `erlang` resolves to `erlfmt`; `sql` resolves to `sqlfluff`; `gdscript` resolves to `gdformat`; `java` resolves to `google-java-format`; `kotlin` resolves to `ktfmt`; `scala` resolves to `scalafmt`; `groovy` resolves to `npm-groovy-lint`; and `micropython` resolves to `black`; and `clojure` resolves to `cljfmt`; and `fsharp` resolves to `fantomas`; and `ruby` resolves to `rubocop`; and `r` resolves to `styler`; and `julia` resolves to `jlfmt`; and `elm` resolves to `elm-format`; and `haskell` resolves to `fourmolu`; and `ocaml` resolves to `ocamlformat`; and `rust` resolves to `rustfmt`; and `swift` resolves to `swift-format`; and `dart` resolves to `dart-format`; and `csharp`/`vbnet` resolve to `dotnet-format`; and `elixir` resolves to `mix-format`; and `zig` resolves to `zig-fmt`; and `gleam` resolves to `gleam-format`; and `mojo` resolves to `mojo-format`; and `odin` resolves to `odinfmt`; and `solidity` resolves to `forge-fmt`; and `ada` resolves to `gnatformat`. Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
+Language selection lets you target the relevant files without having to remember which tool handles each extension; aliases are listed in Stack Overflow Developer Survey 2026 popularity order (unranked TOML last):
+
+- `md`/`markdown`/`html` resolve to `prettier`
+- `sql` resolves to `sqlfluff`
+- `python`/`py`/`micropython` resolve to `black`
+- `bash` resolves to `shfmt`
+- `java` resolves to `google-java-format`
+- `csharp`/`vbnet` resolve to `dotnet-format`
+- `ps1` resolves to `powershell`
+- `c`/`cpp`/`c++` resolve to `clang-format`
+- `rust` resolves to `rustfmt`
+- `php` resolves to `php-cs-fixer`
+- `go` resolves to `gofmt`
+- `kotlin` resolves to `ktfmt`
+- `lua` resolves to `stylua`
+- `swift` resolves to `swift-format`
+- `ruby` resolves to `rubocop`
+- `dart` resolves to `dart-format`
+- `r` resolves to `styler`
+- `nix` resolves to `nixfmt`
+- `gdscript` resolves to `gdformat`
+- `groovy` resolves to `npm-groovy-lint`
+- `perl` resolves to `perltidy`
+- `zig` resolves to `zig-fmt`
+- `elixir` resolves to `mix-format`
+- `haskell` resolves to `fourmolu`
+- `scala` resolves to `scalafmt`
+- `fortran` resolves to `fprettify`
+- `erlang` resolves to `erlfmt`
+- `julia` resolves to `jlfmt`
+- `clojure` resolves to `cljfmt`
+- `gleam` resolves to `gleam-format`
+- `ada` resolves to `gnatformat`
+- `fsharp` resolves to `fantomas`
+- `ocaml` resolves to `ocamlformat`
+- `solidity` resolves to `forge-fmt`
+- `mojo` resolves to `mojo-format`
+- `odin` resolves to `odinfmt`
+- `elm` resolves to `elm-format`
+- `toml` resolves to `taplo`
+
+Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
 
 ### Run with a configuration file (`.formattington.json`)
 
@@ -184,7 +232,7 @@ formattington --config path/to/config.json all
 formattington --check all --config path/to/config.json
 ```
 
-Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt`, `gleam-format`, `mojo-format`, `odinfmt`, `forge-fmt`, `gnatformat`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`, `go`, `lua`, `nix`, `php`, `perl`, `fortran`, `erlang`, `sql`, `gdscript`, `java`, `kotlin`, `scala`, `groovy`, `micropython`, `clojure`, `fsharp`, `ruby`, `r`, `julia`, `elm`, `haskell`, `ocaml`, `rust`, `swift`, `dart`, `csharp`, `vbnet`, `elixir`, `zig`, `gleam`, `mojo`, `odin`, `solidity`, `ada`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered). It showcases every registered tool with its most commonly used formatting invocation — one command each, in registration order — and the test suite keeps it honest: `internal/formattington/example_test.go` generates a `dirty.<ext>` fixture per tool, verifies that `--dry-run` and `--check` report the file as needing formatting, applies the fix (the default in-place mode, or `--fix`/`-x` for markdownlint and rubocop), verifies that both then report it clean, and deletes the temporary file. Tools that cannot format in place (`powershell`, `npm-groovy-lint`) are not round-tripped, and any tool that is not resolvable on the current machine is skipped; the example-validation tests always run.
+Each entry in `commands` is an argv list: element 0 is a formatter name (`prettier`, `sqlfluff`, `black`, `shfmt`, `google-java-format`, `dotnet-format`, `powershell`, `clang-format`, `rustfmt`, `php-cs-fixer`, `gofmt`, `goimports`, `ktfmt`, `stylua`, `swift-format`, `rubocop`, `dart-format`, `styler`, `nixfmt`, `gdformat`, `npm-groovy-lint`, `perltidy`, `zig-fmt`, `mix-format`, `fourmolu`, `scalafmt`, `fprettify`, `erlfmt`, `jlfmt`, `cljfmt`, `gleam-format`, `gnatformat`, `fantomas`, `ocamlformat`, `forge-fmt`, `mojo-format`, `odinfmt`, `elm-format`, `markdownlint`, `taplo`) or a language alias (`md`/`markdown`/`html`, `sql`, `python`/`py`/`micropython`, `bash`, `java`, `csharp`/`vbnet`, `ps1`, `c`/`cpp`/`c++`, `rust`, `php`, `go`, `kotlin`, `lua`, `swift`, `ruby`, `dart`, `r`, `nix`, `gdscript`, `groovy`, `perl`, `zig`, `elixir`, `haskell`, `scala`, `fortran`, `erlang`, `julia`, `clojure`, `gleam`, `ada`, `fsharp`, `ocaml`, `solidity`, `mojo`, `odin`, `elm`, `toml`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered). It showcases every registered tool with its most commonly used formatting invocation — one command each, in registration order — and the test suite keeps it honest: `internal/formattington/example_test.go` generates a `dirty.<ext>` fixture per tool, verifies that `--dry-run` and `--check` report the file as needing formatting, applies the fix (the default in-place mode, or `--fix`/`-x` for markdownlint and rubocop), verifies that both then report it clean, and deletes the temporary file. Tools that cannot format in place (`powershell`, `npm-groovy-lint`) are not round-tripped, and any tool that is not resolvable on the current machine is skipped; the example-validation tests always run.
 
 Config discovery precedence (highest first):
 
@@ -195,7 +243,7 @@ Config discovery precedence (highest first):
 | 3        | `./.formattington.json`                          | Auto-discovered in the current directory only (no parent-directory or user-home search).                                                           |
 | 4        | No config file                                   | `all` runs the full formatter registry as before (backwards compatible).                                                                           |
 
-When a config is in effect, `all` runs exactly the listed commands. With no config, `all` keeps its current behavior (all eight formatters). The config only changes what `all` means: single-tool runs ignore the file and the environment variable, and `--config` before a single formatter (e.g. `formattington --config x.json black`) is a usage error (exit 2). `--config` after a single formatter is forwarded to that formatter, so native flags such as Prettier's `--config` keep working.
+When a config is in effect, `all` runs exactly the listed commands. With no config, `all` keeps its current behavior (every registered tool). The config only changes what `all` means: single-tool runs ignore the file and the environment variable, and `--config` before a single formatter (e.g. `formattington --config x.json black`) is a usage error (exit 2). `--config` after a single formatter is forwarded to that formatter, so native flags such as Prettier's `--config` keep working.
 
 Global flags compose as with a full-registry `all`: `--check`/`--dry-run` and `--verbose` (or `FORMATTINGTON_VERBOSE=1`) propagate to every config command. Config commands run concurrently by default; use `--series` (before or after `all`) to run them sequentially in file order. The exit code is the last non-zero code in file order, or `0` only if every command succeeds. A missing formatter executable counts as `127` for that command and does not prevent the remaining commands from running.
 
@@ -256,45 +304,46 @@ Formattington owns the mode flag before the formatter name; arguments after the 
 
 | Formatter    | `--check` (before formatter)                                                       | `--dry-run` (before formatter)                                                                 | Default                                                                                                               |
 | ------------ | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| shfmt        | `shfmt -l` — list unformatted files; exit 1 if any listed, else 0                  | `shfmt -d` — print diff, do not modify                                                         | `shfmt -w` — write in place                                                                                           |
-| clang-format | `clang-format --dry-run --Werror` — fail if any file needs formatting              | `clang-format --dry-run` — validate without modifying                                          | `clang-format -i` — format in place (unless `-i`/`--in-place` already given)                                          |
-| black        | `black --check` — fail if any file needs formatting                                | `black --diff` — show diff, do not modify                                                      | `black` in place (no flag)                                                                                            |
 | prettier     | `prettier --check` — fail if any file needs formatting                             | `prettier --list-different` — list files that differ, do not modify (Prettier has no `--diff`) | `prettier --write` — write in place (unless `--write`/`-w`, `--check`/`-c`, or `--list-different`/`-l` already given) |
+| sqlfluff     | `sqlfluff lint --disable-progress-bar` — exit 1 on violations (exit 2 = error, passed through)       | `sqlfluff lint --disable-progress-bar` (no diff mode since SQLFluff 3.x; same invocation as check)         | `sqlfluff fix --disable-progress-bar` — fix in place                                                        |
+| black        | `black --check` — fail if any file needs formatting                                | `black --diff` — show diff, do not modify                                                      | `black` in place (no flag)                                                                                            |
+| shfmt        | `shfmt -l` — list unformatted files; exit 1 if any listed, else 0                  | `shfmt -d` — print diff, do not modify                                                         | `shfmt -w` — write in place                                                                                           |
+| google-java-format | `google-java-format --dry-run --set-exit-if-changed` — exit 1 when formatting is needed                 | `google-java-format --dry-run --set-exit-if-changed` (same invocation; there is no patch output)              | `google-java-format --replace` — format in place                                                                |
+| dotnet-format | `dotnet format whitespace --verify-no-changes --folder . --include <files...>` — exit 2→1              | same as check (never writes)                                                                          | `dotnet format whitespace --folder . --include <files...>` — format in place                             |
 | powershell   | PSScriptAnalyzer lint (no in-place formatting); findings exit 1                    | Same PSScriptAnalyzer lint invocation (check/dry-run are accepted for CLI uniformity)          | Same PSScriptAnalyzer lint invocation (findings exit 1)                                                               |
-| taplo        | `taplo fmt --check` — fail if any file needs formatting                            | `taplo fmt --diff` — print diff, do not modify                                                 | `taplo fmt` in place (no flag)                                                                                        |
+| clang-format | `clang-format --dry-run --Werror` — fail if any file needs formatting              | `clang-format --dry-run` — validate without modifying                                          | `clang-format -i` — format in place (unless `-i`/`--in-place` already given)                                          |
+| rustfmt      | `rustfmt [--edition E] --check` — exit 1 when formatting is needed (also used for parse errors)     | `rustfmt [--edition E] --emit diff` — print a diff                                                    | `rustfmt [--edition E]` — format in place                                                                |
+| php-cs-fixer | `php-cs-fixer check` — fail if any file needs fixing (native exit 8 is reported as 1)              | `php-cs-fixer check` (non-modifying; same invocation)                                             | `php-cs-fixer fix` — fix in place                                                                               |
 | gofmt        | `gofmt -l` — list unformatted files; exit 1 if any listed, else 0                  | `gofmt -d` — display diffs instead of rewriting files                                          | `gofmt -w` — write result to the source file instead of stdout (format in place)                                      |
 | goimports    | `goimports -l` — list files whose formatting differs; exit 1 if any listed, else 0 | `goimports -d` — display diffs instead of rewriting files                                      | `goimports -w` — write result to the source file instead of stdout (format in place, fixing imports)                  |
+| ktfmt        | `ktfmt --dry-run --set-exit-if-changed` — exit 1 when formatting is needed                        | `ktfmt --dry-run` — list files that would change (upstream always exits 0; NOT a check)                        | `ktfmt` — format in place                                                                                       |
 | stylua       | `stylua --check` — fail if any file needs formatting; files are not modified                   | `stylua --check --output-format=unified` — print unified diffs, do not modify                    | `stylua` — format in place                                                                                          |
+| swift-format | `swift format lint --strict --ignore-unparsable-files` — exit 1 on findings                           | same as check (no diff mode)                                                                          | `swift format -i --ignore-unparsable-files` — format in place                                       |
+| rubocop      | `rubocop` — lint posture (all modes; findings exit 1, config error exit 2)                        | `rubocop` (same invocation)                                                                           | `rubocop` — lint posture; pass `-x` for layout-only fixes, `-a`/`-A` for all auto-corrections                |
+| dart-format  | `dart format --set-exit-if-changed -o none` — exit 1 when formatting is needed                        | same as check (never writes)                                                                          | `dart format` — format in place                                                                        |
+| styler       | `styler::style_file(..., dry = "fail")` via Rscript — errors abort; reported as 1                    | `styler::style_file(..., dry = "fail")` (same invocation)                                             | `styler::style_file(..., dry = "off")` — format in place                                             |
 | nixfmt       | `nixfmt --check` — fail if any file needs formatting (exit 1; also used for parse errors)       | `nixfmt --check` (no diff mode exists) — validate without modifying                               | `nixfmt` — format in place                                                                                       |
-| php-cs-fixer | `php-cs-fixer check` — fail if any file needs fixing (native exit 8 is reported as 1)              | `php-cs-fixer check` (non-modifying; same invocation)                                             | `php-cs-fixer fix` — fix in place                                                                               |
+| gdformat     | `gdformat -c` — print "would reformat <file>" and exit 1 when reformatting is needed              | `gdformat -d` — print a diff, do not modify (implies --check)                                           | `gdformat` — format in place                                                                                |
+| npm-groovy-lint | `npm-groovy-lint --failon error` — linter-flavored check (no writes; NOT a byte comparison)         | `npm-groovy-lint --failon error` (same invocation)                                                      | `npm-groovy-lint --format` — format in place (layout rules only)                                                |
 | perltidy     | `perltidy --assert-tidy` — exit 0 when tidy, non-zero (reported as 1) otherwise                  | `perltidy -d` — print a diff, do not modify                                                       | `perltidy -b -bext=/` — format in place (backups suppressed)                                                      |
+| zig-fmt      | `zig fmt --check` — exit 1 when any file would change                                                   | `zig fmt --check` (same invocation; there is no diff mode)                                                | `zig fmt` — format in place                                                                                |
+| mix-format   | `mix format --check-formatted --no-compile` — exit non-zero (reported as 1) when formatting is needed  | same as check (never writes)                                                                          | `mix format --no-compile` — format in place                                                              |
+| fourmolu     | `fourmolu --mode check` — print a unified diff (stderr) and exit 100 when formatting is needed        | `fourmolu --mode check` (same invocation)                                                            | `fourmolu --mode inplace` — format in place                                                               |
+| scalafmt     | `scalafmt --test` — print a diff and exit 1 when formatting is needed                             | `scalafmt --test` (same invocation — this is scalafmt's diff mode)                                     | `scalafmt` — format in place                                                                                    |
 | fprettify    | Synthesized: `fprettify --diff` — non-empty diff output means changes required (exit 1)          | `fprettify --diff` — print a diff, do not modify                                                  | `fprettify` — format in place                                                                                |
 | erlfmt       | `erlfmt -c` — fail if any file needs formatting (exit 1)                                          | `erlfmt -c` (no diff mode exists) — validate without modifying                                      | `erlfmt -w` — format in place                                                                               |
-| sqlfluff     | `sqlfluff lint --disable-progress-bar` — exit 1 on violations (exit 2 = error, passed through)       | `sqlfluff lint --disable-progress-bar` (no diff mode since SQLFluff 3.x; same invocation as check)         | `sqlfluff fix --disable-progress-bar` — fix in place                                                        |
-| gdformat     | `gdformat -c` — print "would reformat <file>" and exit 1 when reformatting is needed              | `gdformat -d` — print a diff, do not modify (implies --check)                                           | `gdformat` — format in place                                                                                |
-| google-java-format | `google-java-format --dry-run --set-exit-if-changed` — exit 1 when formatting is needed                 | `google-java-format --dry-run --set-exit-if-changed` (same invocation; there is no patch output)              | `google-java-format --replace` — format in place                                                                |
-| ktfmt        | `ktfmt --dry-run --set-exit-if-changed` — exit 1 when formatting is needed                        | `ktfmt --dry-run` — list files that would change (upstream always exits 0; NOT a check)                        | `ktfmt` — format in place                                                                                       |
-| scalafmt     | `scalafmt --test` — print a diff and exit 1 when formatting is needed                             | `scalafmt --test` (same invocation — this is scalafmt's diff mode)                                     | `scalafmt` — format in place                                                                                    |
-| npm-groovy-lint | `npm-groovy-lint --failon error` — linter-flavored check (no writes; NOT a byte comparison)         | `npm-groovy-lint --failon error` (same invocation)                                                      | `npm-groovy-lint --format` — format in place (layout rules only)                                                |
-| cljfmt       | `cljfmt check` — print a unified diff and exit 1 when formatting is needed                          | `cljfmt check` (same invocation — this is cljfmt's diff mode)                                            | `cljfmt fix` — format in place                                                                            |
-| fantomas     | `fantomas --check` — exit 99 when formatting is needed (reported as 1); 1 (error) passes through    | `fantomas --check` (same invocation; there is no diff mode)                                           | `fantomas` — format in place                                                                               |
-| rubocop      | `rubocop` — lint posture (all modes; findings exit 1, config error exit 2)                        | `rubocop` (same invocation)                                                                           | `rubocop` — lint posture; pass `-x` for layout-only fixes, `-a`/`-A` for all auto-corrections                |
-| styler       | `styler::style_file(..., dry = "fail")` via Rscript — errors abort; reported as 1                    | `styler::style_file(..., dry = "fail")` (same invocation)                                             | `styler::style_file(..., dry = "off")` — format in place                                             |
 | jlfmt        | `jlfmt --check` — exit 1 when formatting is needed (2 on error, passed through)                        | `jlfmt --diff` — print a unified diff; needs git on PATH, else degrades to --check                  | `jlfmt --inplace` — format in place                                                                        |
-| elm-format   | `elm-format --validate` — print a JSON report and exit 1 when formatting is needed                  | `elm-format --validate` (same invocation; there is no diff mode)                                    | `elm-format --yes` — format in place (accept all prompts)                                                |
-| fourmolu     | `fourmolu --mode check` — print a unified diff (stderr) and exit 100 when formatting is needed        | `fourmolu --mode check` (same invocation)                                                            | `fourmolu --mode inplace` — format in place                                                               |
-| ocamlformat  | `ocamlformat --check` — exit 1 when formatting is needed (also used for errors; stderr disambiguates)  | `ocamlformat --check` (same invocation; there is no diff mode)                                       | `ocamlformat --inplace` — format in place                                                                  |
-| rustfmt      | `rustfmt [--edition E] --check` — exit 1 when formatting is needed (also used for parse errors)     | `rustfmt [--edition E] --emit diff` — print a diff                                                    | `rustfmt [--edition E]` — format in place                                                                |
-| swift-format | `swift format lint --strict --ignore-unparsable-files` — exit 1 on findings                           | same as check (no diff mode)                                                                          | `swift format -i --ignore-unparsable-files` — format in place                                       |
-| dart-format  | `dart format --set-exit-if-changed -o none` — exit 1 when formatting is needed                        | same as check (never writes)                                                                          | `dart format` — format in place                                                                        |
-| dotnet-format | `dotnet format whitespace --verify-no-changes --folder . --include <files...>` — exit 2→1              | same as check (never writes)                                                                          | `dotnet format whitespace --folder . --include <files...>` — format in place                             |
-| mix-format   | `mix format --check-formatted --no-compile` — exit non-zero (reported as 1) when formatting is needed  | same as check (never writes)                                                                          | `mix format --no-compile` — format in place                                                              |
-| zig-fmt      | `zig fmt --check` — exit 1 when any file would change                                                   | `zig fmt --check` (same invocation; there is no diff mode)                                                | `zig fmt` — format in place                                                                                |
+| cljfmt       | `cljfmt check` — print a unified diff and exit 1 when formatting is needed                          | `cljfmt check` (same invocation — this is cljfmt's diff mode)                                            | `cljfmt fix` — format in place                                                                            |
 | gleam-format | `gleam format --check` — exit non-zero (Error::Format = 1) listing files that would change             | same as check (no diff mode)                                                                          | `gleam format` — format in place                                                                        |
+| gnatformat   | `gnatformat [--no-project] --check` — exit 1 when formatting is needed                                  | same as check (no built-in diff; `--pipe` forwarded verbatim)                                             | `gnatformat [--no-project]` — format in place                                                                |
+| fantomas     | `fantomas --check` — exit 99 when formatting is needed (reported as 1); 1 (error) passes through    | `fantomas --check` (same invocation; there is no diff mode)                                           | `fantomas` — format in place                                                                               |
+| ocamlformat  | `ocamlformat --check` — exit 1 when formatting is needed (also used for errors; stderr disambiguates)  | `ocamlformat --check` (same invocation; there is no diff mode)                                       | `ocamlformat --inplace` — format in place                                                                  |
+| forge-fmt    | `forge fmt --check` — exit 1 when formatting is required (0 clean; diff printed by default)             | same as check (no separate diff mode; `-r` for raw output)                                            | `forge fmt` — format in place                                                                               |
 | mojo-format  | Synthesized: copy→`mojo format`→byte-compare — exit 1 when any file would change (tree never touched)  | same synthesis (no diff mode exists)                                                                  | `mojo format` — format in place                                                                        |
 | odinfmt      | Synthesized: byte-compare `odinfmt <file>` stdout vs the original (one process per file)               | same synthesis (no diff mode exists)                                                                  | `odinfmt -w` — format in place (creates an `<file>_bk` backup first)                                      |
-| forge-fmt    | `forge fmt --check` — exit 1 when formatting is required (0 clean; diff printed by default)             | same as check (no separate diff mode; `-r` for raw output)                                            | `forge fmt` — format in place                                                                               |
-| gnatformat   | `gnatformat [--no-project] --check` — exit 1 when formatting is needed                                  | same as check (no built-in diff; `--pipe` forwarded verbatim)                                             | `gnatformat [--no-project]` — format in place                                                                |
+| elm-format   | `elm-format --validate` — print a JSON report and exit 1 when formatting is needed                  | `elm-format --validate` (same invocation; there is no diff mode)                                    | `elm-format --yes` — format in place (accept all prompts)                                                |
+| markdownlint | `markdownlint` verbatim — never rewrites without an explicit `--fix`; every mode lints; findings exit 1 (no findings exit 0) | Same invocation (every mode lints) | Same invocation; findings exit 1 (`--fix` rewrites only when explicitly passed); configuration discovered natively (e.g. `.markdownlint.json`) |
+| taplo        | `taplo fmt --check` — fail if any file needs formatting                            | `taplo fmt --diff` — print diff, do not modify                                                 | `taplo fmt` in place (no flag)                                                                                        |
 
 These mode mappings are integration-specific. Future tools may support different operations or native flags, and their integrations should preserve those differences.
 
@@ -308,17 +357,17 @@ formattington: Could not find 'shfmt'. Expected a bundled executable under forma
 
 ) and exits `127`.
 
-This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt`, `gleam-format`, `mojo-format`, `odinfmt`, `forge-fmt`, and `gnatformat`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
+This happens identically in default, `--check`, and `--dry-run` modes, for `prettier`, `sqlfluff`, `black`, `shfmt`, `google-java-format`, `dotnet-format`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `clang-format`, `rustfmt`, `php-cs-fixer`, `gofmt`, `goimports`, `ktfmt`, `stylua`, `swift-format`, `rubocop`, `dart-format`, `styler`, `nixfmt`, `gdformat`, `npm-groovy-lint`, `perltidy`, `zig-fmt`, `mix-format`, `fourmolu`, `scalafmt`, `fprettify`, `erlfmt`, `jlfmt`, `cljfmt`, `gleam-format`, `gnatformat`, `fantomas`, `ocamlformat`, `forge-fmt`, `mojo-format`, `odinfmt`, `elm-format`, `markdownlint`, and `taplo`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
 
 ### Exit-code aggregation with `all`
 
-The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `npm-groovy-lint`, `cljfmt`, `fantomas`, `rubocop`, `styler`, `jlfmt`, `elm-format`, `fourmolu`, `ocamlformat`, `rustfmt`, `swift-format`, `dart-format`, `dotnet-format`, `mix-format`, `zig-fmt`, `gleam-format`, `mojo-format`, `odinfmt`, `forge-fmt`, `gnatformat` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
+The exit code is the **last non-zero code in `prettier`, `sqlfluff`, `black`, `shfmt`, `google-java-format`, `dotnet-format`, `powershell`, `clang-format`, `rustfmt`, `php-cs-fixer`, `gofmt`, `goimports`, `ktfmt`, `stylua`, `swift-format`, `rubocop`, `dart-format`, `styler`, `nixfmt`, `gdformat`, `npm-groovy-lint`, `perltidy`, `zig-fmt`, `mix-format`, `fourmolu`, `scalafmt`, `fprettify`, `erlfmt`, `jlfmt`, `cljfmt`, `gleam-format`, `gnatformat`, `fantomas`, `ocamlformat`, `forge-fmt`, `mojo-format`, `odinfmt`, `elm-format`, `markdownlint`, `taplo` order** (SO Survey 2026 popularity order; a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
 
 The rule is deterministic regardless of completion order in the concurrent default.
 
 For example:
 
-- If `shfmt` returns `5` and `prettier` returns `1`, `all` exits `1`.
+- If `black` returns `2` and `shfmt` returns `5`, `all` exits `5` (`shfmt` registers after `black`).
 - If `shfmt` returns `5` and the rest succeed, `all` exits `5`.
 
 With a config file, the same rule applies in config-command order: the last non-zero code among the listed commands wins (a missing tool counts as `127` in its command slot and does not stop later commands), or `0` only if every command succeeds. Invalid or missing config files exit `2` before any formatter runs.
