@@ -39,7 +39,7 @@ Output from different formatters may interleave in this mode.
 formattington all --series
 ```
 
-Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt` order) instead of concurrently, for ordered output.
+Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt` order) instead of concurrently, for ordered output.
 
 The flag is also accepted before `all`:
 
@@ -69,6 +69,7 @@ formattington sqlfluff
 formattington gdformat
 formattington google-java-format
 formattington ktfmt
+formattington scalafmt
 ```
 
 Pass additional arguments through to the underlying tool:
@@ -109,9 +110,10 @@ formattington sql
 formattington gdscript
 formattington java
 formattington kotlin
+formattington scala
 ```
 
-Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; `md`/`markdown`/`html` resolve to `prettier`; `go` resolves to `gofmt`; `lua` resolves to `stylua`; `nix` resolves to `nixfmt`; `php` resolves to `php-cs-fixer`; and `perl` resolves to `perltidy`; and `fortran` resolves to `fprettify`; and `erlang` resolves to `erlfmt`; and `sql` resolves to `sqlfluff`; and `gdscript` resolves to `gdformat`; and `java` resolves to `google-java-format`; and `kotlin` resolves to `ktfmt`. Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
+Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; `md`/`markdown`/`html` resolve to `prettier`; `go` resolves to `gofmt`; `lua` resolves to `stylua`; `nix` resolves to `nixfmt`; `php` resolves to `php-cs-fixer`; and `perl` resolves to `perltidy`; and `fortran` resolves to `fprettify`; and `erlang` resolves to `erlfmt`; and `sql` resolves to `sqlfluff`; and `gdscript` resolves to `gdformat`; and `java` resolves to `google-java-format`; and `kotlin` resolves to `ktfmt`; and `scala` resolves to `scalafmt`. Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
 
 ### Run with a configuration file (`.formattington.json`)
 
@@ -141,7 +143,7 @@ formattington --config path/to/config.json all
 formattington --check all --config path/to/config.json
 ```
 
-Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`, `go`, `lua`, `nix`, `php`, `perl`, `fortran`, `erlang`, `sql`, `gdscript`, `java`, `kotlin`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
+Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`, `go`, `lua`, `nix`, `php`, `perl`, `fortran`, `erlang`, `sql`, `gdscript`, `java`, `kotlin`, `scala`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
 
 Config discovery precedence (highest first):
 
@@ -212,6 +214,7 @@ Formattington owns the mode flag before the formatter name; arguments after the 
 | gdformat     | `gdformat -c` — print "would reformat <file>" and exit 1 when reformatting is needed              | `gdformat -d` — print a diff, do not modify (implies --check)                                           | `gdformat` — format in place                                                                                |
 | google-java-format | `google-java-format --dry-run --set-exit-if-changed` — exit 1 when formatting is needed                 | `google-java-format --dry-run --set-exit-if-changed` (same invocation; there is no patch output)              | `google-java-format --replace` — format in place                                                                |
 | ktfmt        | `ktfmt --dry-run --set-exit-if-changed` — exit 1 when formatting is needed                        | `ktfmt --dry-run` — list files that would change (upstream always exits 0; NOT a check)                        | `ktfmt` — format in place                                                                                       |
+| scalafmt     | `scalafmt --test` — print a diff and exit 1 when formatting is needed                             | `scalafmt --test` (same invocation — this is scalafmt's diff mode)                                     | `scalafmt` — format in place                                                                                    |
 
 These mode mappings are integration-specific. Future tools may support different operations or native flags, and their integrations should preserve those differences.
 
@@ -225,11 +228,11 @@ formattington: Could not find 'shfmt'. Expected a bundled executable under forma
 
 ) and exits `127`.
 
-This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, and `ktfmt`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
+This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, and `scalafmt`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
 
 ### Exit-code aggregation with `all`
 
-The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
+The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
 
 The rule is deterministic regardless of completion order in the concurrent default.
 
@@ -264,6 +267,7 @@ Use `--verbose` to see which executable was resolved when a tool is present.
 - `gdformat` is the Godot 4 GDScript formatter (from the gdtoolkit package); install with `pipx install gdtoolkit==4.*` (3.x targets the Godot 3 line). It is PATH-only; Formattington does not set `--fast`, so the safety checks stay on.
 - `google-java-format` formats Java; the full release archives bundle the four upstream native binaries (macOS arm64, Linux arm64, Linux x86_64, Windows x86_64 — no macOS x86_64 or Windows arm64 asset exists upstream). Its non-whitespace `--cleanup` pass is disabled by default (`--cleanup=false`) so diffs stay formatting-only; pass `--cleanup=true` to opt in. For macOS x86_64 and Windows arm64 use the all-deps jar on a JDK ≥ 21 with the six `--add-exports` flags (`jdk.compiler/com.sun.tools.javac.{api,code,file,parser,tree,util}=ALL-UNNAMED`).
 - `ktfmt` formats Kotlin; the full release archives bundle the three upstream native binaries (Linux x86_64, macOS arm64, Windows x86_64 — no Linux arm64, macOS x86_64, or Windows arm64 asset exists upstream; those stay PATH-only). No style flag is injected — pass `--google-style`/`--kotlinlang-style`/`--meta-style` verbatim as needed.
+- `scalafmt` formats Scala; it is PATH-only via coursier (`cs install scalafmt`) or brew (`brew install scalafmt`). **Why PATH-only:** scalafmt requires a `version = <x.y.z>` line in `.scalafmt.conf`, and the upstream native release binaries have no dynamic runner — a config whose pinned version differs from the compiled-in one fails hard (exact error: `error: invalid Scalafmt version.`, exit bit 16). The coursier/JVM launcher honors the pin by downloading it dynamically, so PATH-only is the only route with full fidelity. The `.sc` worksheet extension is covered.
 
 Either a bundled copy under `formatters/` (see [Bundled tools](#bundled-tools)) — or, in the full release builds, the copy embedded inside the binary — or an installation on `PATH` satisfies `FindTool()`. `gofmt` and `goimports` are PATH-only and are found via `PATH`.
 
@@ -292,8 +296,9 @@ Formattington integrates existing tools rather than reimplementing their functio
 | [gdformat](https://github.com/Scony/godot-gdscript-toolkit)              | Formatter | Available | GDScript (`.gd`) — PATH-only, Godot 4                       |
 | [google-java-format](https://github.com/google/google-java-format)        | Formatter | Available | Java (`.java`)                                               |
 | [ktfmt](https://github.com/Kotlin/ktfmt)                                 | Formatter | Available | Kotlin (`.kt`, `.kts`)                                       |
+| [scalafmt](https://github.com/scalameta/scalafmt)                         | Formatter | Available | Scala (`.scala`, `.sbt`, `.sc`) — PATH-only                 |
 
-Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), `lua` (alias for `stylua`), `nix` (alias for `nixfmt`), `php` (alias for `php-cs-fixer`), `perl` (alias for `perltidy`), `fortran` (alias for `fprettify`), `erlang` (alias for `erlfmt`), `sql` (alias for `sqlfluff`), `gdscript` (alias for `gdformat`), `java` (alias for `google-java-format`), `kotlin` (alias for `ktfmt`), and `all` are accepted by the CLI.
+Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), `lua` (alias for `stylua`), `nix` (alias for `nixfmt`), `php` (alias for `php-cs-fixer`), `perl` (alias for `perltidy`), `fortran` (alias for `fprettify`), `erlang` (alias for `erlfmt`), `sql` (alias for `sqlfluff`), `gdscript` (alias for `gdformat`), `java` (alias for `google-java-format`), `kotlin` (alias for `ktfmt`), `scala` (alias for `scalafmt`), and `all` are accepted by the CLI.
 
 Prettier is the sole owner of Markdown formatting. There is no dedicated Markdown formatter module; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown _style_ is a distinct operation and is linted by `formattington markdownlint`: it runs [`markdownlint-cli`](https://github.com/igorshubovych/markdownlint-cli) against `.md`/`.markdown` files, discovery batches files as usual, findings exit `1`, and no flags are injected — the tool is read-only without an explicit `--fix`, and `--fix`, `--config`, and glob patterns are forwarded verbatim, so it edits files only when you ask. Configuration is discovered natively by the tool (for example `.markdownlint.json` in the working directory) and `.prettierrc`'s sibling `.markdownlint.json` needs no Formattington-side setup. Aliases are not involved: use `md`/`markdown` for formatting and `markdownlint` for linting. Unrecognized names still report a usage error (exit 2).
 
@@ -324,6 +329,7 @@ Additional tools may provide other capabilities, such as checking, linting, and 
 | gdformat     | Not bundled (PATH-only; Python package; no official binaries)                                                                                                               | `pipx install gdtoolkit==4.*`                                                                      | `PATH` via `FindTool("gdformat")`                                    |
 | google-java-format | Fetched by `formatters/google-java-format/update.sh`; bundled for macOS arm64, Linux arm64/x86_64, Windows x86_64 | Download the release archive, or `brew install google-java-format`                                     | Bundled (or embedded) first, then `PATH` via `FindTool("google-java-format")` |
 | ktfmt        | Fetched by `formatters/ktfmt/update.sh`; bundled for Linux x86_64, macOS arm64, Windows x86_64                        | `brew install ktfmt` or a PATH install of ktfmt (or the with-dependencies jar, JDK 11+)                    | Bundled (or embedded) first, then `PATH` via `FindTool("ktfmt")`           |
+| scalafmt     | Not bundled (PATH-only; the natives fail hard on the `.scalafmt.conf` `version =` pin — verified: exit bit 16)              | `cs install scalafmt` / `brew install scalafmt` (JVM; honors the pin dynamically)            | `PATH` via `FindTool("scalafmt")`                                    |
 
 Bundled versions are pinned by the `formatters/<tool>/update.sh` scripts for offline use in the release archives; see [Bundled tools](#bundled-tools) for the layout and refresh process.
 
