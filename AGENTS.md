@@ -59,7 +59,7 @@ formattington all --series
 - `all` runs all configured formatter integrations against their matching files.
 - By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
-- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt` order (missing tool = 127); `0` only if all succeed.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
 
 Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
@@ -136,6 +136,7 @@ Important files include:
 - `internal/formattington/perltidy.go` — perltidy (Perl) integration (`.pl`, `.pm`, `.t` files; PATH-only; GPL-2.0+, never embedded). The `perl` language alias resolves to `perltidy` in `cli.go`. Check mode uses `perltidy --assert-tidy`; the default suppresses `.bak` backups with `-bext=/`.
 - `internal/formattington/fprettify.go` — fprettify (Fortran) integration (free-form `.f90`/`.f95`/`.f03`/`.f08`/`.f18` files; PATH-only; GPL-3.0+, never embedded). The `fortran` language alias resolves to `fprettify` in `cli.go`. No native check mode; it is synthesized from `fprettify --diff` output.
 - `internal/formattington/erlfmt.go` — erlfmt (Erlang) integration (`.erl`, `.hrl` files; PATH-only; needs Erlang/OTP 21+). The `erlang` language alias resolves to `erlfmt` in `cli.go`. No diff mode; dry-run maps to `-c`.
+- `internal/formattington/sqlfluff.go` — SQLFluff (SQL) integration (`.sql` files; PATH-only). The `sql` language alias resolves to `sqlfluff` in `cli.go`. `sqlfluff lint` exit 1 is reported as `ExitFormatRequired`; exit 2 (error) passes through. The SQL dialect is never hardcoded; set it in the project config or forward `--dialect`.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 

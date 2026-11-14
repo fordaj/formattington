@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -981,4 +982,93 @@ func TestErlfmtArgv(t *testing.T) {
 			t.Errorf("argv = %v, want %v", recorded, want)
 		}
 	})
+}
+
+func TestSqlfluffArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default fixes in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+			return runSqlfluff(Options{})
+		})
+		want := []string{"fix", "--disable-progress-bar"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check lints without modifying", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+			return runSqlfluff(Options{Check: true})
+		})
+		want := []string{"lint", "--disable-progress-bar"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run shows a diff without writing", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+			return runSqlfluff(Options{DryRun: true})
+		})
+		want := []string{"fix", "--disable-progress-bar", "--dry-run", "--diff"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dialect is never hardcoded and passes through", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+			return runSqlfluff(Options{Check: true, Args: []string{"--dialect", "postgres", "my file.sql"}})
+		})
+		want := []string{"lint", "--disable-progress-bar", "--dialect", "postgres", "my file.sql"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("config is forwarded verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+			return runSqlfluff(Options{Args: []string{"--config", "ci.sqlfluff", "x.sql"}})
+		})
+		want := []string{"fix", "--disable-progress-bar", "--config", "ci.sqlfluff", "x.sql"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+			return runSqlfluff(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+}
+
+func TestSqlfluffCheckExitMapping(t *testing.T) {
+	requirePOSIX(t)
+
+	for _, tc := range []struct{ native, want int }{
+		{1, ExitFormatRequired}, // violations
+		{2, 2},                  // error passes through
+		{0, 0},                  // clean
+	} {
+		binDir := filepath.Join(t.TempDir(), "bin")
+		writeFile(t, filepath.Join(binDir, "sqlfluff"), "#!/bin/sh\nexit "+strconv.Itoa(tc.native)+"\n")
+		if err := chmodExecutable(filepath.Join(binDir, "sqlfluff")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		code, err := runSqlfluff(Options{Check: true})
+		if err != nil {
+			t.Fatalf("native exit %d: runSqlfluff returned an error: %v", tc.native, err)
+		}
+		if code != tc.want {
+			t.Errorf("native exit %d: got %d, want %d", tc.native, code, tc.want)
+		}
+	}
 }

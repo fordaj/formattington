@@ -39,7 +39,7 @@ Output from different formatters may interleave in this mode.
 formattington all --series
 ```
 
-Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt` order) instead of concurrently, for ordered output.
+Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff` order) instead of concurrently, for ordered output.
 
 The flag is also accepted before `all`:
 
@@ -65,6 +65,7 @@ formattington php-cs-fixer
 formattington perltidy
 formattington fprettify
 formattington erlfmt
+formattington sqlfluff
 ```
 
 Pass additional arguments through to the underlying tool:
@@ -101,9 +102,10 @@ formattington php
 formattington perl
 formattington fortran
 formattington erlang
+formattington sql
 ```
 
-Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; `md`/`markdown`/`html` resolve to `prettier`; `go` resolves to `gofmt`; `lua` resolves to `stylua`; `nix` resolves to `nixfmt`; `php` resolves to `php-cs-fixer`; and `perl` resolves to `perltidy`; and `fortran` resolves to `fprettify`; and `erlang` resolves to `erlfmt`. Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
+Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; `md`/`markdown`/`html` resolve to `prettier`; `go` resolves to `gofmt`; `lua` resolves to `stylua`; `nix` resolves to `nixfmt`; `php` resolves to `php-cs-fixer`; and `perl` resolves to `perltidy`; and `fortran` resolves to `fprettify`; and `erlang` resolves to `erlfmt`; and `sql` resolves to `sqlfluff`. Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
 
 ### Run with a configuration file (`.formattington.json`)
 
@@ -133,7 +135,7 @@ formattington --config path/to/config.json all
 formattington --check all --config path/to/config.json
 ```
 
-Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`, `go`, `lua`, `nix`, `php`, `perl`, `fortran`, `erlang`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
+Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`, `go`, `lua`, `nix`, `php`, `perl`, `fortran`, `erlang`, `sql`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
 
 Config discovery precedence (highest first):
 
@@ -200,6 +202,7 @@ Formattington owns the mode flag before the formatter name; arguments after the 
 | perltidy     | `perltidy --assert-tidy` — exit 0 when tidy, non-zero (reported as 1) otherwise                  | `perltidy -d` — print a diff, do not modify                                                       | `perltidy -b -bext=/` — format in place (backups suppressed)                                                      |
 | fprettify    | Synthesized: `fprettify --diff` — non-empty diff output means changes required (exit 1)          | `fprettify --diff` — print a diff, do not modify                                                  | `fprettify` — format in place                                                                                |
 | erlfmt       | `erlfmt -c` — fail if any file needs formatting (exit 1)                                          | `erlfmt -c` (no diff mode exists) — validate without modifying                                      | `erlfmt -w` — format in place                                                                               |
+| sqlfluff     | `sqlfluff lint --disable-progress-bar` — exit 1 on violations (exit 2 = error, passed through)       | `sqlfluff fix --dry-run --diff --disable-progress-bar` — print a diff, do not modify                  | `sqlfluff fix --disable-progress-bar` — fix in place                                                        |
 
 These mode mappings are integration-specific. Future tools may support different operations or native flags, and their integrations should preserve those differences.
 
@@ -213,11 +216,11 @@ formattington: Could not find 'shfmt'. Expected a bundled executable under forma
 
 ) and exits `127`.
 
-This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, and `erlfmt`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
+This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, and `sqlfluff`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
 
 ### Exit-code aggregation with `all`
 
-The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
+The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
 
 The rule is deterministic regardless of completion order in the concurrent default.
 
@@ -248,6 +251,7 @@ Use `--verbose` to see which executable was resolved when a tool is present.
 - `perltidy` is the Perl formatter; install from CPAN (`cpan Perl::Tidy`) or your package manager. It is GPL-2.0+ and is never bundled into the release binaries (and requires `perl` on `PATH` — on Windows, install Strawberry Perl).
 - `fprettify` is the de-facto Fortran formatter; install with `pipx install fprettify` / `pip install fprettify`. It is GPL-3.0+ and Python-based, so it was deliberately rejected for bundling; free-form Fortran only (`.f90`, `.f95`, `.f03`, `.f08`, `.f18`). Its `--diff` does not affect the exit code, so Formattington synthesizes check mode from non-empty diff output.
 - `erlfmt` is the mature Erlang formatter; there are no bundleable binaries (it ships as a rebar3 plugin or escript), so it is PATH-only and needs a working Erlang/OTP 21+ install. Invoke the escript form (`erlfmt -w` / `erlfmt -c`).
+- `sqlfluff` is the dialect-aware SQL linter/formatter; install with `pipx install sqlfluff` / `pip install sqlfluff`. There is no official binary and SQLFluff is Python-only, so it is PATH-only (a shared embedded Python runtime is tracked separately and was not introduced). Set the SQL dialect in the project config (`.sqlfluff` / `[tool.sqlfluff]` in `pyproject.toml`) or pass `--dialect` — Formattington never hardcodes one (SQLFluff falls back to `ansi` otherwise).
 
 Either a bundled copy under `formatters/` (see [Bundled tools](#bundled-tools)) — or, in the full release builds, the copy embedded inside the binary — or an installation on `PATH` satisfies `FindTool()`. `gofmt` and `goimports` are PATH-only and are found via `PATH`.
 
@@ -272,8 +276,9 @@ Formattington integrates existing tools rather than reimplementing their functio
 | [perltidy](https://github.com/perltidy/perltidy)                              | Formatter | Available | Perl (`.pl`, `.pm`, `.t`) — PATH-only, GPL-2.0+            |
 | [fprettify](https://github.com/pseewald/fprettify)                           | Formatter | Available | Fortran free-form (`.f90`…) — PATH-only, GPL-3.0+           |
 | [erlfmt](https://github.com/WhatsApp/erlfmt)                                | Formatter | Available | Erlang (`.erl`, `.hrl`) — PATH-only; needs OTP 21+          |
+| [SQLFluff](https://github.com/sqlfluff/sqlfluff)                          | Linter/Formatter | Available | SQL (`.sql`) via `sqlfluff fix` — PATH-only                 |
 
-Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), `lua` (alias for `stylua`), `nix` (alias for `nixfmt`), `php` (alias for `php-cs-fixer`), `perl` (alias for `perltidy`), `fortran` (alias for `fprettify`), `erlang` (alias for `erlfmt`), and `all` are accepted by the CLI.
+Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), `lua` (alias for `stylua`), `nix` (alias for `nixfmt`), `php` (alias for `php-cs-fixer`), `perl` (alias for `perltidy`), `fortran` (alias for `fprettify`), `erlang` (alias for `erlfmt`), `sql` (alias for `sqlfluff`), and `all` are accepted by the CLI.
 
 Prettier is the sole owner of Markdown formatting. There is no dedicated Markdown formatter module; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown _style_ is a distinct operation and is linted by `formattington markdownlint`: it runs [`markdownlint-cli`](https://github.com/igorshubovych/markdownlint-cli) against `.md`/`.markdown` files, discovery batches files as usual, findings exit `1`, and no flags are injected — the tool is read-only without an explicit `--fix`, and `--fix`, `--config`, and glob patterns are forwarded verbatim, so it edits files only when you ask. Configuration is discovered natively by the tool (for example `.markdownlint.json` in the working directory) and `.prettierrc`'s sibling `.markdownlint.json` needs no Formattington-side setup. Aliases are not involved: use `md`/`markdown` for formatting and `markdownlint` for linting. Unrecognized names still report a usage error (exit 2).
 
@@ -300,6 +305,7 @@ Additional tools may provide other capabilities, such as checking, linting, and 
 | perltidy     | Not bundled (PATH-only; GPL-2.0+; needs `perl` on `PATH`)                                                                                                                | `cpan Perl::Tidy` / OS package manager (Windows: Strawberry Perl)                                              | `PATH` via `FindTool("perltidy")`                                  |
 | fprettify    | Not bundled (PATH-only; GPL-3.0+; needs Python 3 on `PATH`)                                                                                                               | `pipx install fprettify` / `pip install fprettify`                                                             | `PATH` via `FindTool("fprettify")`                                  |
 | erlfmt       | Not bundled (PATH-only; no bundleable binaries; needs Erlang/OTP 21+)                                                                                              | `brew install erlang` / OTP package of choice; escript built from rebar3 (`rebar3 as release escriptize`)   | `PATH` via `FindTool("erlfmt")`                                     |
+| sqlfluff     | Not bundled (PATH-only; Python-only; no official binaries)                                                                                                             | `pipx install sqlfluff` / `pip install sqlfluff`                                                              | `PATH` via `FindTool("sqlfluff")`                                   |
 
 Bundled versions are pinned by the `formatters/<tool>/update.sh` scripts for offline use in the release archives; see [Bundled tools](#bundled-tools) for the layout and refresh process.
 
