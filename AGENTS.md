@@ -47,7 +47,7 @@ Do not force tools into a common feature set when their native capabilities diff
 
 ## Command-Line Interface
 
-The established public interface supports three selection modes.
+The established public interface supports three selection modes, plus the informational `list` and `init` commands.
 
 ### All configured tools
 
@@ -117,6 +117,17 @@ formattington list
 - Probes are bounded by a short timeout and never modify files; a missing executable or an undeterminable version reports `-`.
 - `list` takes no arguments or mode flags — `--check`/`--dry-run`/`--series`/`--config` are usage errors (exit 2) — and exits 0.
 
+### Initialize a project
+
+```bash
+formattington init
+```
+
+- `init` examines the current directory recursively (`git ls-files` — preferred, including submodules — plus untracked files that are not excluded by `.gitignore`, inside a Git repository; every regular file otherwise; hidden directories and the usual generated/vendored/package-manager directory names are always skipped) and writes `./.formattington.json` with the formatter invocations for the file types present, drawn from the embedded catalogue `internal/formattington/init.json` (one command per detected registry tool, in registration order, no file arguments — discovery behaves as usual).
+- A repository encountered during the scan is examined from its own tracked perspective; tracked files deleted from the working tree are not counted.
+- If `./.formattington.json` already exists, `init` asks for confirmation first (`y`/`yes` overwrites); a non-interactive shell refuses without modifying the file.
+- `init` takes no arguments or mode flags — `--check`/`--dry-run`/`--series`/`--config` are usage errors (exit 2) — prints `Examining current directory... found N files across M file extensions.`, and exits 0 on success (2 on usage errors or refusal to overwrite).
+
 ## Architecture
 
 The program lives in `cmd/formattington/` (entry point) and `internal/formattington/` (the whole implementation).
@@ -126,6 +137,8 @@ Important files include:
 - `cmd/formattington/main.go` — process entry point; calls `formattington.Main(os.Args[1:])` and exits with its return code.
 - `internal/formattington/cli.go` — canonical command-line entry point and orchestration (sole `registry` of tools; `languageAliases` map).
 - `internal/formattington/list.go` — the `list` command; reports each registered tool's bundled and PATH versions.
+- `internal/formattington/init.go` — the `init` command; examines the current directory (Git-aware) and writes `./.formattington.json` from the embedded catalogue.
+- `internal/formattington/init.json` — the embedded catalogue `init` draws from: one command per registered tool, in registration order. Mirrors the registry exactly (like the hardcoded order lists in the docs). Validated and round-tripped by `internal/formattington/template_test.go`.
 - `internal/formattington/tools.go` — shared tool discovery (`FindTool`, `FormattersDir`), platform detection (`PlatformDir`), and subprocess helpers (`runTool`).
 - `internal/formattington/embedded.go` — unpacks the formatter executables embedded in the "full" release binary into the per-user cache directory on first use.
 - `internal/formattington/embedded_full.go` / `internal/formattington/embedded_lite.go` — the `go:embed` payload (build tag `full`) and its lite-build stub.
@@ -191,7 +204,7 @@ Do not introduce unnecessary abstractions or a generalized plugin architecture w
 
 User-facing tool and language enumerations default to **Stack Overflow Developer Survey 2026, "Programming, scripting, and markup languages", All Respondents, n = 14,099** (<https://survey.stackoverflow.co/2026/technology/data/languages>), licensed ODbL 1.0 (attribute it, as done here, whenever the ranking is published or repeated). File and folder names, testdata paths, and the bundled-formatter directory layout stay alphabetical — they are lookup paths, not narratives.
 
-Ranked languages are mapped onto the tools that cover them; a tool takes the best rank of any language it covers. Equal-rank ties follow the survey's respondent counts, then the survey table order (Erlang 218 > Julia 211; Ada 172 = F# 172 with Ada first per survey order; Gleam 176 > Ada 172). `gofmt` precedes `goimports` (existing convention — goimports is the superset). Tools with no survey row (`markdownlint`, `taplo` — TOML/YAML/JSON/Markdown have no survey rank) sort **after all ranked tools, alphabetically among themselves**. `.formattington.example.json` and every hardcoded order list in the docs mirror the registry exactly.
+Ranked languages are mapped onto the tools that cover them; a tool takes the best rank of any language it covers. Equal-rank ties follow the survey's respondent counts, then the survey table order (Erlang 218 > Julia 211; Ada 172 = F# 172 with Ada first per survey order; Gleam 176 > Ada 172). `gofmt` precedes `goimports` (existing convention — goimports is the superset). Tools with no survey row (`markdownlint`, `taplo` — TOML/YAML/JSON/Markdown have no survey rank) sort **after all ranked tools, alphabetically among themselves**. `.formattington.json` (this repository's own config, generated by `formattington init` and validated by the test suite), the embedded catalogue `internal/formattington/init.json`, and every hardcoded order list in the docs mirror the registry exactly.
 
 Everything Formattington *presents* to the user (help output, `all`/`--series` execution and exit-code aggregation order, `list` output, README tables and lists, this file's tool lists) follows this order. Re-derive the order on each new survey release — do not re-rank by downloads, stars, or intuition; the survey is the single source of truth.
 

@@ -247,6 +247,31 @@ func Main(argv []string) int {
 		}
 		printList(os.Stdout)
 		return ExitOK
+	} else if formatterName == "init" {
+		// "init" examines the current directory and writes
+		// .formattington.json. It takes no arguments and no mode
+		// flags; --config only changes what 'all' means.
+		if len(formatterArgs) > 0 {
+			usageError(errors.New("extra arguments are not supported with 'init'"))
+			return ExitUsage
+		}
+		if opts.hasConfig {
+			usageError(errors.New("--config is only supported with 'all'"))
+			return ExitUsage
+		}
+		if opts.check {
+			usageError(errors.New("--check is not supported with 'init'"))
+			return ExitUsage
+		}
+		if opts.dryRun {
+			usageError(errors.New("--dry-run is not supported with 'init'"))
+			return ExitUsage
+		}
+		if opts.series {
+			usageError(errors.New("--series is not supported with 'init'"))
+			return ExitUsage
+		}
+		return runInit(opts.verbose)
 	} else {
 		// Config only changes what "all" means: an explicit --config
 		// before a single formatter is a usage error, while the env
@@ -295,11 +320,11 @@ func Main(argv []string) int {
 	return runParallel(names, runOpts)
 }
 
-// findFormatterIndex returns the index of the first formatter, alias, or
-// "all" token, skipping "--config" values. It returns -1 when there is
-// none.
+// findFormatterIndex returns the index of the first formatter, alias, "all",
+// "list", or "init" token, skipping "--config" values. It returns -1 when
+// there is none.
 func findFormatterIndex(argv []string) int {
-	selectors := map[string]bool{"all": true, "list": true}
+	selectors := map[string]bool{"all": true, "list": true, "init": true}
 	for _, tool := range registry {
 		selectors[tool.Name] = true
 	}

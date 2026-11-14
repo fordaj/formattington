@@ -234,7 +234,7 @@ formattington --config path/to/config.json all
 formattington --check all --config path/to/config.json
 ```
 
-Each entry in `commands` is an argv list: element 0 is a formatter name (`prettier`, `sqlfluff`, `black`, `shfmt`, `google-java-format`, `dotnet-format`, `powershell`, `clang-format`, `rustfmt`, `php-cs-fixer`, `gofmt`, `goimports`, `ktfmt`, `stylua`, `swift-format`, `rubocop`, `dart-format`, `styler`, `nixfmt`, `gdformat`, `npm-groovy-lint`, `perltidy`, `zig-fmt`, `mix-format`, `fourmolu`, `scalafmt`, `fprettify`, `erlfmt`, `jlfmt`, `cljfmt`, `gleam-format`, `gnatformat`, `fantomas`, `ocamlformat`, `forge-fmt`, `mojo-format`, `odinfmt`, `elm-format`, `markdownlint`, `taplo`) or a language alias (`md`/`markdown`/`html`, `sql`, `python`/`py`/`micropython`, `bash`, `java`, `csharp`/`vbnet`, `ps1`, `c`/`cpp`/`c++`, `rust`, `php`, `go`, `kotlin`, `lua`, `swift`, `ruby`, `dart`, `r`, `nix`, `gdscript`, `groovy`, `perl`, `zig`, `elixir`, `haskell`, `scala`, `fortran`, `erlang`, `julia`, `clojure`, `gleam`, `ada`, `fsharp`, `ocaml`, `solidity`, `mojo`, `odin`, `elm`, `toml`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered). It showcases every registered tool with its most commonly used formatting invocation — one command each, in registration order — and the test suite keeps it honest: `internal/formattington/example_test.go` generates a `dirty.<ext>` fixture per tool, verifies that `--dry-run` and `--check` report the file as needing formatting, applies the fix (the default in-place mode, or `--fix`/`-x` for markdownlint and rubocop), verifies that both then report it clean, and deletes the temporary file. Tools that cannot format in place (`powershell`, `npm-groovy-lint`) are not round-tripped, and any tool that is not resolvable on the current machine is skipped; the example-validation tests always run.
+Each entry in `commands` is an argv list: element 0 is a formatter name (`prettier`, `sqlfluff`, `black`, `shfmt`, `google-java-format`, `dotnet-format`, `powershell`, `clang-format`, `rustfmt`, `php-cs-fixer`, `gofmt`, `goimports`, `ktfmt`, `stylua`, `swift-format`, `rubocop`, `dart-format`, `styler`, `nixfmt`, `gdformat`, `npm-groovy-lint`, `perltidy`, `zig-fmt`, `mix-format`, `fourmolu`, `scalafmt`, `fprettify`, `erlfmt`, `jlfmt`, `cljfmt`, `gleam-format`, `gnatformat`, `fantomas`, `ocamlformat`, `forge-fmt`, `mojo-format`, `odinfmt`, `elm-format`, `markdownlint`, `taplo`) or a language alias (`md`/`markdown`/`html`, `sql`, `python`/`py`/`micropython`, `bash`, `java`, `csharp`/`vbnet`, `ps1`, `c`/`cpp`/`c++`, `rust`, `php`, `go`, `kotlin`, `lua`, `swift`, `ruby`, `dart`, `r`, `nix`, `gdscript`, `groovy`, `perl`, `zig`, `elixir`, `haskell`, `scala`, `fortran`, `erlang`, `julia`, `clojure`, `gleam`, `ada`, `fsharp`, `ocaml`, `solidity`, `mojo`, `odin`, `elm`, `toml`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. You can generate this file: `formattington init` examines the current directory and writes a `./.formattington.json` with the formatter invocations for the file types it finds (see [Initialize a project](#initialize-a-project-formattington-init)). The catalogue `init` draws from — every registered tool with its most commonly used formatting invocation, one command each, in registration order — is embedded in the binary; it lives in the source tree as `internal/formattington/init.json`, and the test suite keeps it honest: `internal/formattington/template_test.go` generates a `dirty.<ext>` fixture per tool, verifies that `--dry-run` and `--check` report the file as needing formatting, applies the fix (the default in-place mode, or `--fix`/`-x` for markdownlint and rubocop), verifies that both then report it clean, and deletes the temporary file. Tools that cannot format in place (`powershell`, `npm-groovy-lint`) are not round-tripped, and any tool that is not resolvable on the current machine is skipped; the template-validation tests always run.
 
 Config discovery precedence (highest first):
 
@@ -252,6 +252,34 @@ Global flags compose as with a full-registry `all`: `--check`/`--dry-run` and `-
 Empty `commands: []` is valid; `all` then runs nothing and exits `0`.
 
 Shell-string entries (`"black --check"`), object-form entries (`{"tool": "black", "args": [...]}`), and bare top-level arrays (`[["black"]]`) are rejected, as are unknown top-level keys (only `commands` is supported): the validator exits `2` with a `formattington: ...` message naming the file and the offending entry rather than misinterpreting them. Missing files, malformed JSON, and schema violations (missing/non-list `commands`, non-list/non-string/empty entries, unknown formatter/alias in element 0) all exit `2` the same way. A present but malformed `./.formattington.json` also exits `2` and does not silently fall back to the full registry.
+
+### Initialize a project (`formattington init`)
+
+```bash
+formattington init
+```
+
+`init` examines the current directory recursively and writes a `./.formattington.json` tailored to the project. It builds the list of file suffixes present and selects the formatter invocations for those suffixes from the same catalogue `all` uses — every registered tool, one command each, in registration order — so a project with shell and Markdown files gets, for example:
+
+```json
+{
+  "commands": [
+    ["prettier"],
+    ["shfmt", "-i", "2"],
+    ["markdownlint"]
+  ]
+}
+```
+
+Commands carry no file arguments: each formatter discovers its own files later, exactly as with a hand-written config. Scanning is Git-aware and fast:
+
+- **Inside a Git repository**, tracked files are preferred (`git ls-files`), including submodule tracked files; untracked files that are not excluded by `.gitignore` are also counted (so a brand-new, not-yet-committed project still works); tracked files deleted from the working tree are not counted; and a repository encountered during the scan is examined from its own tracked perspective.
+- **Outside a Git repository** (or when git is unavailable), every regular file is examined.
+- **Always skipped**: hidden directories and the generated/vendored/package-manager directories discovery never descends into (`__pycache__`, `node_modules`, `vendor`, `venv`, `dist`, `build`, `tools`, `formatters`) — even if such directories are tracked in Git.
+
+The scan prints `Examining current directory... found N files across M file extensions.` before writing; pass `--verbose` to list the per-extension counts. If no file type matches a registered tool, an empty `commands` array is written (which is valid — `formattington all` then runs nothing).
+
+If `./.formattington.json` already exists, `init` asks for confirmation (`Overwrite? [y/N]`) before overwriting; only an explicit `y`/`yes` overwrites, and a non-interactive shell refuses without touching the file. `init` takes no arguments and no mode flags (`--check`, `--dry-run`, `--series`, `--config` are usage errors) and exits `0` on success, `2` on usage errors and refusals.
 
 ### List tool availability
 
@@ -295,7 +323,7 @@ Formattington preserves underlying formatter exit codes and uses a fixed scheme 
 
 | Code | Meaning                                                                                                                                                                                                                                       |
 | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Success. Formatting applied (or nothing needed formatting); informational commands (`--help`, `--version`, `list`) also exit `0`.                                                                                                                                                                   |
+| 0    | Success. Formatting applied (or nothing needed formatting); informational commands (`--help`, `--version`, `list`, `init`) also exit `0`.                                                                                                                                                                   |
 | 1    | Formatting changes required in check mode.                                                                                                                                                                                                    |
 | 2    | Usage error (for example, unknown formatter, exclusive `--check` and `--dry-run` given together, unexpected arguments parsed by Formattington, or a missing/invalid `--config` / `FORMATTINGTON_CONFIG_PATH` / `./.formattington.json` file). |
 | 127  | Formatter executable not found (no bundled binary and nothing on `PATH`).                                                                                                                                                                     |
@@ -376,7 +404,7 @@ With a config file, the same rule applies in config-command order: the last non-
 
 Use `--verbose` to see which executable was resolved when a tool is present.
 
-`formattington --help`, `formattington --version`, and `formattington list` do not require any formatter executables and continue to work when tools are absent.
+`formattington --help`, `formattington --version`, `formattington list`, and `formattington init` do not require any formatter executables and continue to work when tools are absent.
 
 ### Install hints
 
@@ -710,7 +738,7 @@ On Windows, `PATH` lookup tries both `name` and `name.exe`.
 
 `bin/`, `dist/`, `*.exe`, `*.test`, `*.out`, `.DS_Store`, and `.logs/` are ignored via `.gitignore` and must not be tracked; so is `internal/formattington/assets/`, the staging directory `release.bash` fills with the embedded formatter payload for the full build.
 
-The formatter executables are fetched at release time and are not committed; `tools/` carries only the pinned helper tools (versioner, logamuffin, runner-spawner).
+The formatter executables are fetched at release time and are not committed; `tools/` carries only the pinned helper tools (versioner, logamuffin, runner-spawner). The repository's own `.formattington.json` is committed — it was generated by `formattington init` and is exercised by the test suite like any other config file.
 
 ## Testing
 

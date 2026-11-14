@@ -11,33 +11,18 @@ import (
 	"testing"
 )
 
-// exampleConfigPath resolves the repository's .formattington.example.json
-// relative to this test file (the package directory).
-func exampleConfigPath(t *testing.T) string {
+// templateCommands loads and validates the embedded init template
+// (internal/formattington/init.json) with the same validator the CLI uses
+// for .formattington.json.
+func templateCommands(t *testing.T) [][]string {
 	t.Helper()
-	abs, err := filepath.Abs(filepath.Join("..", "..", ".formattington.example.json"))
-	if err != nil {
-		t.Fatalf("resolve example config path: %v", err)
-	}
-	return abs
-}
-
-// exampleCommands loads and validates .formattington.example.json with the
-// same validator the CLI uses for .formattington.json.
-func exampleCommands(t *testing.T) [][]string {
-	t.Helper()
-	path := exampleConfigPath(t)
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatalf("read %s: %v", path, err)
-	}
 	var parsed any
-	if err := json.Unmarshal(data, &parsed); err != nil {
-		t.Fatalf("parse %s: %v", path, err)
+	if err := json.Unmarshal(initTemplate, &parsed); err != nil {
+		t.Fatalf("parse embedded init template: %v", err)
 	}
-	commands, err := validateConfig(parsed, path)
+	commands, err := validateConfig(parsed, "init.json")
 	if err != nil {
-		t.Fatalf("validate %s: %v", path, err)
+		t.Fatalf("validate embedded init template: %v", err)
 	}
 	return commands
 }
@@ -51,20 +36,20 @@ func registeredToolNames() map[string]bool {
 	return names
 }
 
-// TestExampleConfigIsValid checks that .formattington.example.json parses
+// TestInitTemplateIsValid checks that the embedded init template parses
 // and passes the same validation a user's .formattington.json must pass.
-func TestExampleConfigIsValid(t *testing.T) {
-	commands := exampleCommands(t)
+func TestInitTemplateIsValid(t *testing.T) {
+	commands := templateCommands(t)
 	if len(commands) == 0 {
-		t.Fatal("example config has no commands")
+		t.Fatal("init template has no commands")
 	}
 }
 
-// TestExampleConfigCoversRegistry checks that the example showcases every
+// TestInitTemplateCoversRegistry checks that the template showcases every
 // registered tool exactly once, so the sample stays a complete catalogue
 // as tools are added.
-func TestExampleConfigCoversRegistry(t *testing.T) {
-	commands := exampleCommands(t)
+func TestInitTemplateCoversRegistry(t *testing.T) {
+	commands := templateCommands(t)
 	registered := registeredToolNames()
 
 	seen := make(map[string]int, len(commands))
@@ -74,27 +59,27 @@ func TestExampleConfigCoversRegistry(t *testing.T) {
 
 	for _, tool := range registry {
 		if seen[tool.Name] == 0 {
-			t.Errorf("example config does not showcase registered tool %q", tool.Name)
+			t.Errorf("init template does not showcase registered tool %q", tool.Name)
 		}
 	}
 	for name, count := range seen {
 		if !registered[name] {
-			t.Errorf("example config command references %q, which is not a registered tool", name)
+			t.Errorf("init template command references %q, which is not a registered tool", name)
 		}
 		if count > 1 {
-			t.Errorf("example config lists %q %d times, want exactly once", name, count)
+			t.Errorf("init template lists %q %d times, want exactly once", name, count)
 		}
 	}
 	if len(commands) != len(registry) {
-		t.Errorf("example config has %d commands, want %d (one per registered tool)",
+		t.Errorf("init template has %d commands, want %d (one per registered tool)",
 			len(commands), len(registry))
 	}
 }
 
-// exampleRoundTripExcluded lists registry tools that cannot take part in
+// templateRoundTripExcluded lists registry tools that cannot take part in
 // the dirty-file round trip, with the reason. Every other registry tool
-// must have a case in exampleRoundTripCases.
-var exampleRoundTripExcluded = map[string]string{
+// must have a case in templateRoundTripCases.
+var templateRoundTripExcluded = map[string]string{
 	// PowerShell integration lints via PSScriptAnalyzer and never
 	// rewrites files; there is no fix step to round-trip.
 	"powershell": "linter, never rewrites files; no fix operation exists",
@@ -106,12 +91,12 @@ var exampleRoundTripExcluded = map[string]string{
 	"npm-groovy-lint": "lint-flavored check with project-defined severities; needs the format preset in .groovylintrc",
 }
 
-// exampleRoundTripCase describes a dirty-file fixture for one registered
+// templateRoundTripCase describes a dirty-file fixture for one registered
 // tool. dirty is deliberately mis-formatted but valid input; the test
 // verifies --dry-run and --check report it as needing formatting, the
 // fix invocation rewrites it, --dry-run and --check then report it clean,
 // and the temporary file is deleted.
-type exampleRoundTripCase struct {
+type templateRoundTripCase struct {
 	tool string
 	// binary is the executable FindTool probes for availability; it
 	// defaults to tool. fallbackBinary is tried when binary does not
@@ -134,19 +119,19 @@ type exampleRoundTripCase struct {
 	fixExits []int
 }
 
-// exampleProjectConfig returns a config hook that writes static files,
+// templateStaticConfig returns a config hook that writes static files,
 // or fails the case closed (skip) when a tool errors.
-func exampleStaticConfig(files map[string]string) func(*testing.T, string) (map[string]string, bool) {
+func templateStaticConfig(files map[string]string) func(*testing.T, string) (map[string]string, bool) {
 	return func(t *testing.T, resolved string) (map[string]string, bool) {
 		return files, true
 	}
 }
 
-// exampleVersionConfig returns a config hook that derives the config
+// templateVersionConfig returns a config hook that derives the config
 // version key from `<resolved> --version`, mirroring the version contract
 // of the underlying tool (scalafmt and ocamlformat abort on version
 // mismatch). It skips the case when the version cannot be determined.
-func exampleVersionConfig(name string, template func(version string) map[string]string) func(*testing.T, string) (map[string]string, bool) {
+func templateVersionConfig(name string, template func(version string) map[string]string) func(*testing.T, string) (map[string]string, bool) {
 	return func(t *testing.T, resolved string) (map[string]string, bool) {
 		out, err := exec.Command(resolved, "--version").CombinedOutput()
 		if err != nil {
@@ -162,10 +147,10 @@ func exampleVersionConfig(name string, template func(version string) map[string]
 	}
 }
 
-// exampleProbesShellPackage returns a config hook that skips the case
+// templateProbesShellPackage returns a config hook that skips the case
 // when an R package is not importable (styler is an R package, not a
 // standalone executable).
-func exampleProbesRPackage(pkg string) func(*testing.T, string) (map[string]string, bool) {
+func templateProbesRPackage(pkg string) func(*testing.T, string) (map[string]string, bool) {
 	return func(t *testing.T, resolved string) (map[string]string, bool) {
 		cmd := exec.Command(resolved, "-e", "invisible(library("+pkg+"))")
 		if out, err := cmd.CombinedOutput(); err != nil {
@@ -176,7 +161,7 @@ func exampleProbesRPackage(pkg string) func(*testing.T, string) (map[string]stri
 	}
 }
 
-var exampleRoundTripCases = []exampleRoundTripCase{
+var templateRoundTripCases = []templateRoundTripCase{
 	{tool: "shfmt", file: "dirty.sh", dirty: "if true;then\necho   hi\nfi\n"},
 	{tool: "clang-format", file: "dirty.cpp", dirty: "int main( ){int x=1;return x;}\n"},
 	{tool: "black", file: "dirty.py", dirty: "x=1\n"},
@@ -204,7 +189,7 @@ var exampleRoundTripCases = []exampleRoundTripCase{
 		tool:  "php-cs-fixer",
 		file:  "dirty.php",
 		dirty: "<?php\n\n$x=1;\n",
-		config: exampleStaticConfig(map[string]string{
+		config: templateStaticConfig(map[string]string{
 			".php-cs-fixer.dist.php": "<?php\nreturn (new PhpCsFixer\\Config())->setRules(['@PSR12' => true]);\n",
 		}),
 	},
@@ -223,7 +208,7 @@ var exampleRoundTripCases = []exampleRoundTripCase{
 		tool:  "sqlfluff",
 		file:  "dirty.sql",
 		dirty: "SELECT   1\n",
-		config: exampleStaticConfig(map[string]string{
+		config: templateStaticConfig(map[string]string{
 			// The dialect is a project choice; Formattington never
 			// hardcodes one.
 			".sqlfluff": "[sqlfluff]\ndialect = ansi\n",
@@ -244,7 +229,7 @@ var exampleRoundTripCases = []exampleRoundTripCase{
 		tool:  "scalafmt",
 		file:  "dirty.scala",
 		dirty: "object T{def main(args:Array[String]):Unit={val x=1;println(x)}}\n",
-		config: exampleVersionConfig("scalafmt", func(version string) map[string]string {
+		config: templateVersionConfig("scalafmt", func(version string) map[string]string {
 			// scalafmt aborts when the config version does not match
 			// the binary version, and wants an explicit dialect
 			// rather than a default.
@@ -271,7 +256,7 @@ var exampleRoundTripCases = []exampleRoundTripCase{
 		binary: "Rscript",
 		file:   "dirty.R",
 		dirty:  "x=1\n",
-		config: exampleProbesRPackage("styler"),
+		config: templateProbesRPackage("styler"),
 	},
 	{tool: "jlfmt", file: "dirty.jl", dirty: "x=1\n"},
 	{
@@ -284,7 +269,7 @@ var exampleRoundTripCases = []exampleRoundTripCase{
 		tool:  "ocamlformat",
 		file:  "dirty.ml",
 		dirty: "let x=1\n",
-		config: exampleVersionConfig("ocamlformat", func(version string) map[string]string {
+		config: templateVersionConfig("ocamlformat", func(version string) map[string]string {
 			// ocamlformat requires a .ocamlformat file declaring the
 			// version it was built with.
 			return map[string]string{".ocamlformat": "version = " + version + "\n"}
@@ -312,7 +297,7 @@ var exampleRoundTripCases = []exampleRoundTripCase{
 		binary: "dotnet",
 		file:   "dirty.cs",
 		dirty:  "class T{static void Main(){var x=1;System.Console.WriteLine(x);}}\n",
-		config: exampleStaticConfig(map[string]string{
+		config: templateStaticConfig(map[string]string{
 			".editorconfig": "root = true\n\n[*.cs]\ncsharp_new_line_before_open_brace = true\n",
 		}),
 	},
@@ -355,25 +340,25 @@ var exampleRoundTripCases = []exampleRoundTripCase{
 	{tool: "gnatformat", file: "dirty.adb", dirty: "procedure T is\nx : Integer := 1;\nbegin\nnull;\nend T;\n"},
 }
 
-// TestExampleRoundTripCoversRegistry guards against drift: every
+// TestInitTemplateRoundTripCoversRegistry guards against drift: every
 // registered tool must either have a round-trip case or be explicitly
 // excluded with a reason.
-func TestExampleRoundTripCoversRegistry(t *testing.T) {
+func TestInitTemplateRoundTripCoversRegistry(t *testing.T) {
 	covered := map[string]bool{}
-	for _, tc := range exampleRoundTripCases {
+	for _, tc := range templateRoundTripCases {
 		covered[tc.tool] = true
 	}
 	for _, tool := range registry {
 		if covered[tool.Name] {
 			continue
 		}
-		if reason, excluded := exampleRoundTripExcluded[tool.Name]; excluded {
+		if reason, excluded := templateRoundTripExcluded[tool.Name]; excluded {
 			_ = reason
 			continue
 		}
 		t.Errorf("tool %q has no round-trip case and no exclusion reason", tool.Name)
 	}
-	for tool := range exampleRoundTripExcluded {
+	for tool := range templateRoundTripExcluded {
 		if covered[tool] {
 			t.Errorf("tool %q is excluded but also has a round-trip case", tool)
 		}
@@ -390,7 +375,7 @@ func TestExampleRoundTripCoversRegistry(t *testing.T) {
 // clean, and the temporary file is deleted. Tools that are not
 // resolvable on the current machine are skipped.
 func TestExampleRoundTrip(t *testing.T) {
-	for _, testCase := range exampleRoundTripCases {
+	for _, testCase := range templateRoundTripCases {
 		t.Run(testCase.tool, func(t *testing.T) {
 			binary := testCase.binary
 			if binary == "" {
