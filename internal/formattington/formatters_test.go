@@ -2516,3 +2516,86 @@ func TestMixFormatArgv(t *testing.T) {
 		}
 	})
 }
+
+func TestZigFmtArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"zig"}, func() (int, error) {
+			return runZigFmt(Options{})
+		})
+		want := []string{"fmt"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"zig"}, func() (int, error) {
+			return runZigFmt(Options{Check: true})
+		})
+		want := []string{"fmt", "--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"zig"}, func() (int, error) {
+			return runZigFmt(Options{DryRun: true})
+		})
+		want := []string{"fmt", "--check"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"zig"}, func() (int, error) {
+			return runZigFmt(Options{Args: []string{"version"}})
+		})
+		want := []string{"fmt", "version"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("zon opt-in is forwarded verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"zig"}, func() (int, error) {
+			return runZigFmt(Options{Args: []string{"--zon", "build.zig.zon"}})
+		})
+		want := []string{"fmt", "--zon", "build.zig.zon"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("fixture check does not modify", func(t *testing.T) {
+		fixture := filepath.Join("testdata", "zig-fmt", "fixture.zig")
+		original, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		before := string(original)
+
+		binDir := t.TempDir()
+		writeFile(t, filepath.Join(binDir, "zig"), fakeExecutableScript)
+		if err := chmodExecutable(filepath.Join(binDir, "zig")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		_, err = runZigFmt(Options{Check: true, Args: []string{fixture}})
+		if err != nil {
+			t.Fatalf("runZigFmt returned an error: %v", err)
+		}
+		after, err := os.ReadFile(fixture)
+		if err != nil {
+			t.Fatalf("read fixture: %v", err)
+		}
+		if string(after) != before {
+			t.Error("the fixture was modified in check mode")
+		}
+	})
+}
