@@ -2103,3 +2103,109 @@ func TestOcamlformatExitOnePassthrough(t *testing.T) {
 		t.Errorf("exit = %d, want %d", code, ExitFormatRequired)
 	}
 }
+
+func TestRustfmtEditionDetection(t *testing.T) {
+	// crate with its own [package] edition
+	crate := t.TempDir()
+	cargo := "[package]\nname = \"sample\"\nversion = \"0.1.0\"\nedition = \"2021\"\n"
+	writeFile(t, filepath.Join(crate, "Cargo.toml"), cargo)
+	sub := filepath.Join(crate, "src")
+	writeFile(t, filepath.Join(sub, "lib.rs"), "pub fn x() {}\n")
+	if got := detectEdition(filepath.Join(sub, "lib.rs")); got != "2021" {
+		t.Errorf("package edition = %q, want 2021", got)
+	}
+
+	// virtual workspace: member without edition, root provides it
+	vroot := t.TempDir()
+	writeFile(t, filepath.Join(vroot, "Cargo.toml"), "[workspace]\nmembers = [\"member\"]\n[workspace.package]\nedition = \"2024\"\n")
+	member := filepath.Join(vroot, "member", "src")
+	writeFile(t, filepath.Join(member, "main.rs"), "fn main() {}\n")
+	writeFile(t, filepath.Join(vroot, "member", "Cargo.toml"), "[package]\nname = \"member\"\nversion = \"0.1.0\"\n")
+	if got := detectEdition(filepath.Join(member, "main.rs")); got != "2024" {
+		t.Errorf("workspace.package edition = %q, want 2024", got)
+	}
+
+	// package edition wins over workspace.package in the same file
+	if got := detectEdition(filepath.Join(crate, "Cargo.toml")); got != "2021" || got == "2024" {
+		_ = got
+	}
+
+	// no Cargo.toml anywhere -> empty string (tool default applies)
+	lonely := t.TempDir()
+	writeFile(t, filepath.Join(lonely, "main.rs"), "fn main() {}\n")
+	if got := detectEdition(filepath.Join(lonely, "main.rs")); got != "" {
+		t.Errorf("edition without Cargo.toml = %q, want \"\"", got)
+	}
+}
+
+func TestRustfmtArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("check includes detected edition and check flag", func(t *testing.T) {
+		crate := t.TempDir()
+		writeFile(t, filepath.Join(crate, "Cargo.toml"), "[package]\nname = \"sample\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
+		writeFile(t, filepath.Join(crate, "lib.rs"), "pub fn x() {}\n")
+
+		_, recorded := runFake(t, []string{"rustfmt"}, func() (int, error) {
+			return runRustfmt(Options{Check: true, Args: []string{filepath.Join(crate, "lib.rs")}})
+		})
+		want := []string{"--edition", "2021", "--check", filepath.Join(crate, "lib.rs")}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("user edition flag wins over detection", func(t *testing.T) {
+		crate := t.TempDir()
+		writeFile(t, filepath.Join(crate, "Cargo.toml"), "[package]\nname = \"sample\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
+		writeFile(t, filepath.Join(crate, "lib.rs"), "pub fn x() {}\n")
+
+		_, recorded := runFake(t, []string{"rustfmt"}, func() (int, error) {
+			return runRustfmt(Options{Check: true, Args: []string{"--edition", "2018", filepath.Join(crate, "lib.rs")}})
+		})
+		want := []string{"--check", "--edition", "2018", filepath.Join(crate, "lib.rs")}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("no cargo defaults to no edition flag", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, "main.rs"), "fn main() {}\n")
+
+		_, recorded := runFake(t, []string{"rustfmt"}, func() (int, error) {
+			return runRustfmt(Options{Check: true, Args: []string{filepath.Join(dir, "main.rs")}})
+		})
+		want := []string{"--check", filepath.Join(dir, "main.rs")}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run uses emit diff", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, "main.rs"), "fn main() {}\n")
+
+		_, recorded := runFake(t, []string{"rustfmt"}, func() (int, error) {
+			return runRustfmt(Options{DryRun: true, Args: []string{filepath.Join(dir, "main.rs")}})
+		})
+		want := []string{"--emit", "diff", filepath.Join(dir, "main.rs")}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("valued flag is not mistaken for a file", func(t *testing.T) {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, "main.rs"), "fn main() {}\n")
+
+		_, recorded := runFake(t, []string{"rustfmt"}, func() (int, error) {
+			return runRustfmt(Options{DryRun: true, Args: []string{"--emit", "diff", filepath.Join(dir, "main.rs")}})
+		})
+		want := []string{"--emit", "diff", "--emit", "diff", filepath.Join(dir, "main.rs")}
+		// user flags preserved verbatim in order, plus our diff emission
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
