@@ -1857,3 +1857,56 @@ func TestJlfmtExitMapping(t *testing.T) {
 		}
 	}
 }
+
+func TestElmFormatArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place with yes flag", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"elm-format"}, func() (int, error) {
+			return runElmFormat(Options{})
+		})
+		want := []string{"--yes"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("check uses validate", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"elm-format"}, func() (int, error) {
+			return runElmFormat(Options{Check: true})
+		})
+		want := []string{"--validate"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run maps to check", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"elm-format"}, func() (int, error) {
+			return runElmFormat(Options{DryRun: true})
+		})
+		want := []string{"--validate"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"elm-format"}, func() (int, error) {
+			return runElmFormat(Options{Args: []string{"-h"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"-h"}) {
+			t.Errorf("argv = %v, want [-h]", recorded)
+		}
+	})
+
+	t.Run("forwards args verbatim", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"elm-format"}, func() (int, error) {
+			return runElmFormat(Options{Args: []string{"--elm-version", "0.19", "my file.elm"}})
+		})
+		want := []string{"--yes", "--elm-version", "0.19", "my file.elm"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+}
