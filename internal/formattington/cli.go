@@ -31,6 +31,7 @@ var registry = []Tool{
 	{Name: "gofmt", Extensions: gofmtExtensions, Run: runGofmt},
 	{Name: "goimports", Extensions: goimportsExtensions, Run: runGoimports},
 	{Name: "stylua", Extensions: styluaExtensions, Run: runStylua},
+	{Name: "nixfmt", Extensions: nixfmtExtensions, Run: runNixfmt},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -48,6 +49,7 @@ var languageAliases = map[string]string{
 	"toml":     "taplo",
 	"go":       "gofmt",
 	"lua":      "stylua",
+	"nix":      "nixfmt",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per

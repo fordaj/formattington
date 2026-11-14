@@ -39,7 +39,7 @@ Output from different formatters may interleave in this mode.
 formattington all --series
 ```
 
-Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua` order) instead of concurrently, for ordered output.
+Run formatters one after another (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt` order) instead of concurrently, for ordered output.
 
 The flag is also accepted before `all`:
 
@@ -60,6 +60,7 @@ formattington black
 formattington gofmt
 formattington goimports
 formattington stylua
+formattington nixfmt
 ```
 
 Pass additional arguments through to the underlying tool:
@@ -91,9 +92,10 @@ formattington markdown
 formattington html
 formattington go
 formattington lua
+formattington nix
 ```
 
-Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; `md`/`markdown`/`html` resolve to `prettier`; `go` resolves to `gofmt`; and `lua` resolves to `stylua`. Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
+Language selection lets you target the relevant files without having to remember which tool handles each extension: `c`, `cpp`, and `c++` resolve to `clang-format`; `bash` resolves to `shfmt`; `python`/`py` resolve to `black`; `md`/`markdown`/`html` resolve to `prettier`; `go` resolves to `gofmt`; `lua` resolves to `stylua`; and `nix` resolves to `nixfmt`. Use `goimports` when imports should also be fixed (for example `formattington goimports` or a config command listing `goimports`). Aliases accept the same `--check`/`--dry-run` flags (before the alias) and forwarded arguments (after it) as formatter names. Unrecognized words are a usage error (exit 2).
 
 ### Run with a configuration file (`.formattington.json`)
 
@@ -123,7 +125,7 @@ formattington --config path/to/config.json all
 formattington --check all --config path/to/config.json
 ```
 
-Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`, `go`, `lua`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
+Each entry in `commands` is an argv list: element 0 is a formatter name (`shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`) or a language alias (`bash`, `c`/`cpp`/`c++`, `python`/`py`, `md`/`markdown`/`html`, `ps1`, `toml`, `go`, `lua`, `nix`); the remaining elements are forwarded verbatim to that formatter, exactly as arguments after the formatter name on the CLI (for example, `["black", "--check", "src"]` behaves like `formattington black --check src`). Arguments stay as discrete list entries, so paths with spaces are safe. When a command passes no explicit files, file discovery works as for single-tool runs. A sample is provided as `.formattington.example.json` (it is not auto-discovered).
 
 Config discovery precedence (highest first):
 
@@ -185,6 +187,7 @@ Formattington owns the mode flag before the formatter name; arguments after the 
 | gofmt        | `gofmt -l` — list unformatted files; exit 1 if any listed, else 0                  | `gofmt -d` — display diffs instead of rewriting files                                          | `gofmt -w` — write result to the source file instead of stdout (format in place)                                      |
 | goimports    | `goimports -l` — list files whose formatting differs; exit 1 if any listed, else 0 | `goimports -d` — display diffs instead of rewriting files                                      | `goimports -w` — write result to the source file instead of stdout (format in place, fixing imports)                  |
 | stylua       | `stylua --check` — fail if any file needs formatting; files are not modified                   | `stylua --check --output-format=unified` — print unified diffs, do not modify                    | `stylua` — format in place                                                                                          |
+| nixfmt       | `nixfmt --check` — fail if any file needs formatting (exit 1; also used for parse errors)       | `nixfmt --check` (no diff mode exists) — validate without modifying                               | `nixfmt` — format in place                                                                                       |
 
 These mode mappings are integration-specific. Future tools may support different operations or native flags, and their integrations should preserve those differences.
 
@@ -198,11 +201,11 @@ formattington: Could not find 'shfmt'. Expected a bundled executable under forma
 
 ) and exits `127`.
 
-This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `taplo`, `gofmt`, `goimports`, and `stylua`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
+This happens identically in default, `--check`, and `--dry-run` modes, for `shfmt`, `clang-format`, `black`, `prettier`, `powershell` (resolved as `pwsh`, then `powershell`, plus the PSScriptAnalyzer module), `taplo`, `gofmt`, `goimports`, `stylua`, and `nixfmt`, and under `all` (the remaining formatters still run in both the concurrent default and `--series`).
 
 ### Exit-code aggregation with `all`
 
-The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
+The exit code is the **last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt` order** (a missing tool counts as `127` in its slot), or `0` only if every formatter succeeded.
 
 The rule is deterministic regardless of completion order in the concurrent default.
 
@@ -228,6 +231,7 @@ Use `--verbose` to see which executable was resolved when a tool is present.
 - `gofmt` is part of the [Go](https://go.dev/) installation (install Go for your OS; `gofmt` comes with it).
 - `goimports` formats like `gofmt` and also fixes import grouping; install with `go install golang.org/x/tools/cmd/goimports@latest`.
 - `stylua` is the standard Lua formatter; a pinned copy is bundled in the full release archives, or install with `brew install stylua` / `cargo install stylua`.
+- `nixfmt` is the official Nix formatter (RFC 166); install via Nix (`nixpkgs.nixfmt-rfc-style`) or `brew install nixfmt`.
 
 Either a bundled copy under `formatters/` (see [Bundled tools](#bundled-tools)) — or, in the full release builds, the copy embedded inside the binary — or an installation on `PATH` satisfies `FindTool()`. `gofmt` and `goimports` are PATH-only and are found via `PATH`.
 
@@ -247,8 +251,9 @@ Formattington integrates existing tools rather than reimplementing their functio
 | [goimports](https://pkg.go.dev/golang.org/x/tools/cmd/goimports)  | Formatter | Available | Go (`.go`) with import fixing                           |
 | [markdownlint](https://github.com/DavidAnson/markdownlint)        | Linter    | Available | Markdown style and consistency via `markdownlint-cli`   |
 | [StyLua](https://github.com/JohnnyMorganz/StyLua)                                 | Formatter | Available | Lua (`.lua`)                                            |
+| [nixfmt](https://github.com/NixOS/nixfmt)                                         | Formatter | Available | Nix (`.nix`)                                            |
 
-Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), `lua` (alias for `stylua`), and `all` are accepted by the CLI.
+Only `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `c`/`cpp`/`c++` (aliases for `clang-format`), `bash` (alias for `shfmt`), `python`/`py` (aliases for `black`), `md`/`markdown`/`html` (aliases for `prettier`), `ps1` (alias for `powershell`), `toml` (alias for `taplo`), `go` (alias for `gofmt`), `lua` (alias for `stylua`), `nix` (alias for `nixfmt`), and `all` are accepted by the CLI.
 
 Prettier is the sole owner of Markdown formatting. There is no dedicated Markdown formatter module; `formattington md` and `formattington markdown` resolve to the existing Prettier integration, which covers `.md` and `.markdown` files and respects Prettier's native configuration (such as `.prettierrc`). Markdown _style_ is a distinct operation and is linted by `formattington markdownlint`: it runs [`markdownlint-cli`](https://github.com/igorshubovych/markdownlint-cli) against `.md`/`.markdown` files, discovery batches files as usual, findings exit `1`, and no flags are injected — the tool is read-only without an explicit `--fix`, and `--fix`, `--config`, and glob patterns are forwarded verbatim, so it edits files only when you ask. Configuration is discovered natively by the tool (for example `.markdownlint.json` in the working directory) and `.prettierrc`'s sibling `.markdownlint.json` needs no Formattington-side setup. Aliases are not involved: use `md`/`markdown` for formatting and `markdownlint` for linting. Unrecognized names still report a usage error (exit 2).
 
@@ -270,6 +275,7 @@ Additional tools may provide other capabilities, such as checking, linting, and 
 | goimports    | Not bundled (PATH-only)                                                                                                                                                 | `go install golang.org/x/tools/cmd/goimports@latest` (ensure `$(go env GOPATH)/bin` is on `PATH`)            | `PATH` via `FindTool("goimports")`                                      |
 | markdownlint | Fetched by `formatters/markdownlint/update.sh`; bundled in the full release archives                                                                        | `npm install -g markdownlint-cli`                                                                            | Bundled (or embedded) first, then `PATH` via `FindTool("markdownlint")` |
 | stylua       | Fetched by `formatters/stylua/update.sh`; bundled in the full release archives (no Windows arm64 asset upstream)                                                          | `brew install stylua` or `cargo install stylua`                                                              | Bundled (or embedded) first, then `PATH` via `FindTool("stylua")`     |
+| nixfmt       | Not bundled (PATH-only; upstream publishes only a static Linux x86_64 asset)                                                                                             | `nixpkgs.nixfmt-rfc-style` / `brew install nixfmt`                                                           | `PATH` via `FindTool("nixfmt")`                                      |
 
 Bundled versions are pinned by the `formatters/<tool>/update.sh` scripts for offline use in the release archives; see [Bundled tools](#bundled-tools) for the layout and refresh process.
 
