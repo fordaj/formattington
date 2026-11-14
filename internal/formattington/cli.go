@@ -35,6 +35,7 @@ var registry = []Tool{
 	{Name: "php-cs-fixer", Extensions: phpCsFixerExtensions, Run: runPhpCsFixer},
 	{Name: "perltidy", Extensions: perltidyExtensions, Run: runPerltidy},
 	{Name: "fprettify", Extensions: fprettifyExtensions, Run: runFprettify},
+	{Name: "erlfmt", Extensions: erlfmtExtensions, Run: runErlfmt},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -56,6 +57,7 @@ var languageAliases = map[string]string{
 	"php":      "php-cs-fixer",
 	"perl":     "perltidy",
 	"fortran":  "fprettify",
+	"erlang":   "erlfmt",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per

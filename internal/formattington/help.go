@@ -22,7 +22,8 @@ StyLua); nix uses nixfmt (Nix formatting via nixfmt, RFC 166 "rfc style"); php u
 php-cs-fixer (PHP formatting; "php-cs-fixer check" is non-modifying, exit 8
 is reported as 1). perl uses perltidy (Perl formatting; PATH-only and GPL-2.0+; check mode
 uses "perltidy --assert-tidy"). fortran uses fprettify (Fortran formatting;
-PATH-only and GPL-3.0+; check mode is synthesized via "fprettify --diff").
+PATH-only and GPL-3.0+; check mode is synthesized via "fprettify --diff"). erlang
+uses erlfmt (Erlang formatting via erlfmt; requires Erlang/OTP 21+).
 
 markdownlint lints Markdown files; it never rewrites files without an
 explicit "--fix" argument, so every mode lints (findings exit 1, no
@@ -41,7 +42,7 @@ the "full" release binaries, inside the executable itself; use --verbose
 With 'all', formatters run concurrently by default; use --series (before or
 after 'all', e.g. 'formattington --series all' or 'formattington all
 --series') to run them sequentially in shfmt, clang-format, black, prettier,
-powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify order. Exit code is the
+powershell, markdownlint, taplo, gofmt, goimports, stylua, nixfmt, php-cs-fixer, perltidy, fprettify, erlfmt order. Exit code is the
 last non-zero code
 in that order (missing tool counts as 127, printed to stderr, and does not
 prevent remaining formatters from running); 0 only if all succeed.
