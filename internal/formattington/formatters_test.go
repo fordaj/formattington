@@ -1268,3 +1268,79 @@ func TestKtfmtArgv(t *testing.T) {
 		}
 	})
 }
+
+func TestScalafmtArgv(t *testing.T) {
+	requirePOSIX(t)
+
+	t.Run("default formats in place", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"scalafmt"}, func() (int, error) {
+			return runScalafmt(Options{})
+		})
+		if len(recorded) != 0 {
+			t.Errorf("argv = %v, want []", recorded)
+		}
+	})
+
+	t.Run("check uses test mode", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"scalafmt"}, func() (int, error) {
+			return runScalafmt(Options{Check: true})
+		})
+		want := []string{"--test"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("dry run is scalafmt's diff mode", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"scalafmt"}, func() (int, error) {
+			return runScalafmt(Options{DryRun: true})
+		})
+		want := []string{"--test"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("config is forwarded verbatim and never synthesized", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"scalafmt"}, func() (int, error) {
+			return runScalafmt(Options{Args: []string{"--config", "ci.scalafmt.conf", "my file.scala"}})
+		})
+		want := []string{"--config", "ci.scalafmt.conf", "my file.scala"}
+		if !reflect.DeepEqual(recorded, want) {
+			t.Errorf("argv = %v, want %v", recorded, want)
+		}
+	})
+
+	t.Run("help passthrough", func(t *testing.T) {
+		_, recorded := runFake(t, []string{"scalafmt"}, func() (int, error) {
+			return runScalafmt(Options{Args: []string{"--version"}})
+		})
+		if !reflect.DeepEqual(recorded, []string{"--version"}) {
+			t.Errorf("argv = %v, want [--version]", recorded)
+		}
+	})
+}
+
+func TestScalafmtBitfieldExitCodesPassThrough(t *testing.T) {
+	requirePOSIX(t)
+
+	// 1 = TestError (files mis-formatted) is the only bit mapped; every
+	// other bit passes through verbatim.
+	for _, code := range []int{1, 2, 4, 8, 16, 24} {
+		binDir := filepath.Join(t.TempDir(), "bin")
+		writeFile(t, filepath.Join(binDir, "scalafmt"), "#!/bin/sh\nexit "+strconv.Itoa(code)+"\n")
+		if err := chmodExecutable(filepath.Join(binDir, "scalafmt")); err != nil {
+			t.Fatalf("chmod: %v", err)
+		}
+		t.Setenv("FORMATTINGTON_FORMATTERS_DIR", t.TempDir())
+		t.Setenv("PATH", binDir)
+
+		got, err := runScalafmt(Options{Check: true})
+		if err != nil {
+			t.Fatalf("scalafmt exit %d: runScalafmt returned an error: %v", code, err)
+		}
+		if got != code {
+			t.Errorf("scalafmt exit %d: got %d, want %d (bitfield passes through untouched)", code, got, code)
+		}
+	}
+}

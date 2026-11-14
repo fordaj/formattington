@@ -59,7 +59,7 @@ formattington all --series
 - `all` runs all configured formatter integrations against their matching files.
 - By default, formatters run concurrently via goroutines.
 - `--series` (before or after `all`, e.g. `formattington all --series`) requests sequential execution in registration order.
-- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt` order (missing tool = 127); `0` only if all succeed.
+- Exit code is the last non-zero code in `shfmt`, `clang-format`, `black`, `prettier`, `powershell`, `markdownlint`, `taplo`, `gofmt`, `goimports`, `stylua`, `nixfmt`, `php-cs-fixer`, `perltidy`, `fprettify`, `erlfmt`, `sqlfluff`, `gdformat`, `google-java-format`, `ktfmt`, `scalafmt` order (missing tool = 127); `0` only if all succeed.
 - A missing or failing formatter never prevents the others from running.
 
 Until explicitly changed, `all` remains formatter-focused. Do not automatically introduce linting, fixing, or other operations into its execution.
@@ -140,6 +140,7 @@ Important files include:
 - `internal/formattington/gdformat.go` — gdformat (GDScript) integration (`.gd` files; PATH-only; Godot 4 / gdtoolkit 4.x). The `gdscript` language alias resolves to `gdformat` in `cli.go`.
 - `internal/formattington/google_java_format.go` — google-java-format (Java) integration (`.java` files; bundled for macOS arm64, Linux arm64/x86_64, Windows x86_64; PATH-only on the rest). The `java` language alias resolves to `google-java-format` in `cli.go`. Whitespace-only diffs by default (`--cleanup=false` unless the user forwards their own `--cleanup`).
 - `internal/formattington/ktfmt.go` — ktfmt (Kotlin) integration (`.kt`/`.kts` files; bundled for Linux x86_64, macOS arm64, Windows x86_64; PATH-only on the rest). The `kotlin` language alias resolves to `ktfmt` in `cli.go`. No style flag is ever injected.
+- `internal/formattington/scalafmt.go` — scalafmt (Scala) integration (`.scala`/`.sbt`/`.sc` files; PATH-only — the upstream natives fail hard on any `.scalafmt.conf` whose `version =` differs from the compiled-in one, so no bundle is shipped). The `scala` language alias resolves to `scalafmt` in `cli.go`.
 
 `cli.go` is the single canonical entry point and the sole tool registry.
 
