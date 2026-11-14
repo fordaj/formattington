@@ -44,6 +44,7 @@ var registry = []Tool{
 	{Name: "npm-groovy-lint", Extensions: npmGroovyLintExtensions, Run: runNpmGroovyLint},
 	{Name: "cljfmt", Extensions: cljfmtExtensions, Run: runCljfmt},
 	{Name: "fantomas", Extensions: fantomasExtensions, Run: runFantomas},
+	{Name: "rubocop", Extensions: rubocopExtensions, Run: runRubocop},
 }
 
 // languageAliases maps language or file-type names onto formatter names.
@@ -75,6 +76,7 @@ var languageAliases = map[string]string{
 	"micropython": "black",
 	"clojure":     "cljfmt",
 	"fsharp":      "fantomas",
+	"ruby":        "rubocop",
 }
 
 // maxFilesPerInvocation is the upper bound on discovered files per
