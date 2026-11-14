@@ -583,7 +583,7 @@ smoke_full_binary() {
 
 	# The formatters registered in the CLI. Every bundled tool is exercised
 	# through the CLI here; the direct check below covers all of them too.
-	local cli_tools=(shfmt clang-format black prettier taplo markdownlint)
+	local cli_tools=(shfmt clang-format black prettier taplo markdownlint stylua)
 
 	local smoke_home
 	smoke_home="$(mktemp -d)"
