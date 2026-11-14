@@ -518,7 +518,7 @@ go install github.com/fordaj/formattington/cmd/formattington@latest
 
 Formattington orchestrates external tools; it does not automatically make every tool available simply by building the program.
 
-A fresh clone contains no formatter binaries (they are not committed); fetch them into your checkout with `formatters/<tool>/update.sh`, or download a `formattington-full-<platform>` release archive, which is a single self-contained binary with the formatters embedded.
+A fresh clone contains no formatter binaries (they are not committed); fetch them into your checkout with `formatters/<tool>/update.sh`, or download a `formattington-<platform>-full` release archive, which is a single self-contained binary with the formatters embedded.
 
 If you prefer a system installation, put the tool on `PATH` instead — `FindTool()` prefers bundled copies and falls back to `PATH`.
 
@@ -549,7 +549,7 @@ formatters/<name>/v<version>/<platform>/
 
 Here, `<platform>` is the hyphenated `<os>-<arch>` name returned by `PlatformDir()` (for example `linux-x86_64`, `macos-arm64`, `windows-x86_64`). The bundled executables are not committed to the repository; `release.bash` fetches them at release time by running `formatters/<name>/update.sh`, and that directory (or a `FORMATTINGTON_FORMATTERS_DIR` override) is the lookup root.
 
-The release `formattington-full-<platform>` binaries embed their platform's `formatters/` tree as a zip inside the executable (Go `full` build tag + `go:embed`). On first use the tree is unpacked into the per-user cache directory (`formatters/` under `os.UserCacheDir()`, for example `~/Library/Caches/formattington/formatters` on macOS) and reused from then on; upgrading to a binary with different embedded formatters replaces the extraction wholesale. The `formattington-lite-<platform>` binaries embed nothing.
+The release `formattington-<platform>-full` binaries embed their platform's `formatters/` tree as a zip inside the executable (Go `full` build tag + `go:embed`). On first use the tree is unpacked into the per-user cache directory (`formatters/` under `os.UserCacheDir()`, for example `~/Library/Caches/formattington/formatters` on macOS) and reused from then on; upgrading to a binary with different embedded formatters replaces the extraction wholesale. The `formattington-<platform>-lite` binaries embed nothing.
 
 Bundled tools are preferred; when none is found, lookup falls back to `PATH`. `formattington list` reports which bundled and PATH versions Formattington sees.
 
@@ -602,20 +602,20 @@ That is a thin wrapper around `go test ./...`. Tests live next to the code in `i
 ./release.bash --dry-run      # compute + verify + build, touch nothing remote
 ```
 
-Two archives are produced per platform — `formattington-full-<platform>` and `formattington-lite-<platform>`. The **full** binary embeds the formatter executables for its target platform inside itself (Go `full` build tag + `go:embed`, as a zip unpacked into the per-user cache on first use), so it is a single self-contained executable; the **lite** binary is just `formattington`. All formatter integrations resolve their bundled copies through `FormattersDir()` at runtime: the `FORMATTINGTON_FORMATTERS_DIR` environment variable wins, then the embedded formatters (full builds), then a `formatters/` directory next to the executable or in an ancestor directory (a repository checkout), then `PATH`.
+Two archives are produced per platform — `formattington-<platform>-full` and `formattington-<platform>-lite`. The **full** binary embeds the formatter executables for its target platform inside itself (Go `full` build tag + `go:embed`, as a zip unpacked into the per-user cache on first use), so it is a single self-contained executable; the **lite** binary is just `formattington`. All formatter integrations resolve their bundled copies through `FormattersDir()` at runtime: the `FORMATTINGTON_FORMATTERS_DIR` environment variable wins, then the embedded formatters (full builds), then a `formatters/` directory next to the executable or in an ancestor directory (a repository checkout), then `PATH`.
 
 The cross-compile matrix (CGO disabled, so the binaries are statically linked and portable):
 
 | Platform        | `GOOS`/`GOARCH`   | Binary in `dist/`                                  | Release asset                                  |
 | --------------- | ----------------- | -------------------------------------------------- | ---------------------------------------------- |
-| `linux-x64`     | `linux`/`amd64`   | `dist/{lite,full}/linux-x64/formattington`         | `formattington-{lite,full}-linux-x64.tar.gz`   |
-| `linux-arm64`   | `linux`/`arm64`   | `dist/{lite,full}/linux-arm64/formattington`       | `formattington-{lite,full}-linux-arm64.tar.gz` |
-| `macos-x64`     | `darwin`/`amd64`  | `dist/{lite,full}/macos-x64/formattington`         | `formattington-{lite,full}-macos-x64.tar.gz`   |
-| `macos-arm64`   | `darwin`/`arm64`  | `dist/{lite,full}/macos-arm64/formattington`       | `formattington-{lite,full}-macos-arm64.tar.gz` |
-| `windows-x64`   | `windows`/`amd64` | `dist/{lite,full}/windows-x64/formattington.exe`   | `formattington-{lite,full}-windows-x64.zip`    |
-| `windows-arm64` | `windows`/`arm64` | `dist/{lite,full}/windows-arm64/formattington.exe` | `formattington-{lite,full}-windows-arm64.zip`  |
+| `linux-x64`     | `linux`/`amd64`   | `dist/{lite,full}/linux-x64/formattington`         | `formattington-linux-x64-{lite,full}.tar.gz`   |
+| `linux-arm64`   | `linux`/`arm64`   | `dist/{lite,full}/linux-arm64/formattington`       | `formattington-linux-arm64-{lite,full}.tar.gz` |
+| `macos-x64`     | `darwin`/`amd64`  | `dist/{lite,full}/macos-x64/formattington`         | `formattington-macos-x64-{lite,full}.tar.gz`   |
+| `macos-arm64`   | `darwin`/`arm64`  | `dist/{lite,full}/macos-arm64/formattington`       | `formattington-macos-arm64-{lite,full}.tar.gz` |
+| `windows-x64`   | `windows`/`amd64` | `dist/{lite,full}/windows-x64/formattington.exe`   | `formattington-windows-x64-{lite,full}.zip`    |
+| `windows-arm64` | `windows`/`arm64` | `dist/{lite,full}/windows-arm64/formattington.exe` | `formattington-windows-arm64-{lite,full}.zip`  |
 
-Each archive contains a top-level `formattington-{lite,full}-<platform>/` directory holding the binary. The release version is stamped into every binary with `-ldflags -X`, so a binary downloaded from a release reports the version it was released as even outside the repository.
+Each archive contains a top-level `formattington-<platform>-{lite,full}/` directory holding the binary. The release version is stamped into every binary with `-ldflags -X`, so a binary downloaded from a release reports the version it was released as even outside the repository.
 
 `FORMATTER_VERSION` controls which formatter release to fetch (default `latest`, resolved independently per tool). Forms that publish no suitable asset for a platform (for example `shfmt` and Windows arm64) are built anyway for the platforms they do support; missing tools are omitted from that platform's full binary and reported with a warning. Black's macOS x86_64 build (no upstream standalone asset) is compiled from source by `formatters/black/update.sh` on a native Intel Mac when one is available.
 
@@ -638,7 +638,7 @@ source scripts/entry.sh
 
 The committed `.runner-spawner.json` (owner `fordaj`, repo `formattington`, `runnerNames: ["runner01"]`) drives the default; edit it per host for more runners. A caller-provided `RUNNER_SPAWNER_BIN` wins over the bundle. `create` downloads the actions runner archive once into `.runners/cache` and installs the service; on Windows it must run with admin privileges and `--windows-username`/`--windows-password` (or the env vars); on macOS it installs via `svc.sh`.
 
-Go 1.24+ must be on `PATH` on each host — the Checks step runs `make check` (which builds the binary, vets it, and runs `go test ./...`; the suite is the primary gate). No formatter binaries are committed to the repository; `formattington --check all` exits `127` on a fresh checkout unless the tools are installed on the host or fetched with `formatters/<tool>/update.sh` (or the check is run through a `formattington-full-<platform>` release binary, which carries the formatters inside itself). `pull_request_caller.yml` and `nightly_caller.yml` pass secrets with `secrets: inherit` so the reusable workflow's checkout can clone with `GITHUB_TOKEN`. Linux is not yet in the OS matrices — runner-spawner supports macOS and Windows runners only (Linux binaries ship for `list`/`status` diagnostics).
+Go 1.24+ must be on `PATH` on each host — the Checks step runs `make check` (which builds the binary, vets it, and runs `go test ./...`; the suite is the primary gate). No formatter binaries are committed to the repository; `formattington --check all` exits `127` on a fresh checkout unless the tools are installed on the host or fetched with `formatters/<tool>/update.sh` (or the check is run through a `formattington-<platform>-full` release binary, which carries the formatters inside itself). `pull_request_caller.yml` and `nightly_caller.yml` pass secrets with `secrets: inherit` so the reusable workflow's checkout can clone with `GITHUB_TOKEN`. Linux is not yet in the OS matrices — runner-spawner supports macOS and Windows runners only (Linux binaries ship for `list`/`status` diagnostics).
 
 ## Project status
 
