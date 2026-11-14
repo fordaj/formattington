@@ -17,7 +17,8 @@ markdownlint tool); html uses prettier; ps1 uses powershell
 (PSScriptAnalyzer linting of PowerShell scripts); toml uses taplo (TOML
 formatting via taplo fmt); go uses gofmt (Go formatting via gofmt; goimports
 additionally fixes imports, so use it via the goimports name or a config
-command for import-aware formatting).
+command for import-aware formatting); lua uses stylua (Lua formatting via
+StyLua).
 
 markdownlint lints Markdown files; it never rewrites files without an
 explicit "--fix" argument, so every mode lints (findings exit 1, no
@@ -36,7 +37,7 @@ the "full" release binaries, inside the executable itself; use --verbose
 With 'all', formatters run concurrently by default; use --series (before or
 after 'all', e.g. 'formattington --series all' or 'formattington all
 --series') to run them sequentially in shfmt, clang-format, black, prettier,
-powershell, markdownlint, taplo, gofmt, goimports order. Exit code is the
+powershell, markdownlint, taplo, gofmt, goimports, stylua order. Exit code is the
 last non-zero code
 in that order (missing tool counts as 127, printed to stderr, and does not
 prevent remaining formatters from running); 0 only if all succeed.
