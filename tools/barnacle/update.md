@@ -1,5 +1,13 @@
 # The barnacle bundle (`tools/barnacle/`)
 
+```mermaid
+flowchart TD
+    Release[fordaj/barnacle<br/>GitHub release] -->|update.sh| Bundle[tools/barnacle/v0.0.1.0.17/<br/>per-platform binaries + LICENSE]
+    Bundle -->|BARNACLE_BIN| Docs[scripts/docs.sh]
+    Docs --> Site[./site — git-ignored]
+    click Docs href "../../scripts/docs.sh.md"
+```
+
 [Barnacle](https://github.com/fordaj/barnacle) is a documentation-site generator: it renders the `.md` and `.mmd` files scattered through a repository into a static, navigable HTML site. Formattington uses it to render *this* documentation; the site you may be reading was built by it.
 
 ## Layout
@@ -7,14 +15,19 @@
 ```text
 tools/barnacle/
   update.sh                     # refresh from fordaj/barnacle releases
-  v0.0.1.0.5/
-    LICENSE                       # upstream MIT text, retained unmodified
+  v0.0.1.0.17/
     macos-arm64/barnacle
+    macos-arm64/LICENSE           # upstream MIT text, retained unmodified
     macos-x86_64/barnacle
+    macos-x86_64/LICENSE
     linux-arm64/barnacle
+    linux-arm64/LICENSE
     linux-x86_64/barnacle
+    linux-x86_64/LICENSE
     windows-arm64/barnacle.exe
+    windows-arm64/LICENSE
     windows-x86_64/barnacle.exe
+    windows-x86_64/LICENSE
 ```
 
 ## `update.sh` in detail
@@ -24,16 +37,16 @@ Adapted to barnacle's release format (unlike the `.7z` bundles elsewhere in `too
 The script:
 
 1. Resolves the tag (latest release, or `--tag vX.Y.Z...`), validating the tag shape.
-2. Downloads via `gh`, then verifies every archive against the upstream `SHA256SUMS.txt` (`shasum -a 256 -c` or `sha256sum -c`). A mismatch is fatal.
+2. Downloads via `gh`, then verifies every archive against the upstream `checksums.txt` (`shasum -a 256 -c` or `sha256sum -c`). A mismatch is fatal.
 3. Extracts each archive (`tar` for `.tar.gz`; `unzip`, falling back to `7z`/`7zz` for `.zip`), copies the binary into `v<tag>/<platform>/`, and makes it executable.
-4. Compares every archive's `LICENSE`; if they differ it refuses to keep one. Otherwise it retains it as `v<tag>/LICENSE`.
+4. Copies each archive's `LICENSE` (archive root or one level down, like the binary) into the platform directory.
 5. Swaps in the new version directory and deletes superseded ones, then smoke-tests the host binary (`barnacle --version`).
 
-Licenses: MIT — see `v0.0.1.0.5/LICENSE`. Environment overrides: `BARNACLE_REPO`, `BARNACLE_TAG`. `--dry-run` lists assets without touching anything.
+Licenses: MIT — see `v0.0.1.0.17/<platform>/LICENSE`. Environment overrides: `BARNACLE_REPO`, `BARNACLE_TAG`. `--dry-run` lists assets without touching anything.
 
 ## How the repository uses it
 
-[scripts/docs.sh](../../scripts/docs.md) resolves `BARNACLE_BIN` through the [env cascade](../../scripts/env.md) and generates `./site/` from the repo root; the output is git-ignored.
+[scripts/docs.sh](../../scripts/docs.sh.md) resolves `BARNACLE_BIN` through the [env cascade](../../scripts/env.sh.md) and generates `./site/` from the repo root; the output is git-ignored.
 
 ## Related pages
 
