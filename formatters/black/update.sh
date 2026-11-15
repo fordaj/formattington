@@ -2,14 +2,14 @@
 set -euo pipefail
 
 # Usage:
-#   ./update.bash [version] [target...]
+#   ./update.sh [version] [target...]
 #
 # Examples:
-#   ./update.bash
-#   ./update.bash latest
-#   ./update.bash 26.10.1
-#   ./update.bash latest windows-x86_64 macos-arm64
-#   ./update.bash latest macos-x86_64   (builds from source; needs a native Intel Mac)
+#   ./update.sh
+#   ./update.sh latest
+#   ./update.sh 26.10.1
+#   ./update.sh latest windows-x86_64 macos-arm64
+#   ./update.sh latest macos-x86_64   (builds from source; needs a native Intel Mac)
 #
 # Requirements: curl, jq (plus git, uv, xcrun, and lipo on a native
 # Intel Mac, for the locally built macOS x86_64 binary)

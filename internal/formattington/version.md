@@ -14,10 +14,10 @@
 
 ## Why not a constant
 
-Release binaries must report the exact tag their archive was built from, even outside a repository. Computing the version with [versioner](../../tools/versioner/update.md) at link time — and again at run time as a fallback — keeps one source of truth shared with `scripts/version.bash` and the release pipeline.
+Release binaries must report the exact tag their archive was built from, even outside a repository. Computing the version with [versioner](../../tools/versioner/update.md) at link time — and again at run time as a fallback — keeps one source of truth shared with `scripts/version.sh` and the release pipeline.
 
 ## Related pages
 
-- [scripts/version.bash](../../scripts/version.md)
+- [scripts/version.sh](../../scripts/version.md)
 - [Tool discovery, bundling, and shared subprocess helpers](tools.md)
 - [Command dispatch and the tool registry](cli.md)

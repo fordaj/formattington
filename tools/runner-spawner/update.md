@@ -21,7 +21,7 @@ The runner tree itself (`.runners/`) is machine-local state and is not committed
 
 The pinned binary selection goes through the [env cascade](../../scripts/env.md) (`RUNNER_SPAWNER_BIN`); `RUNNER_SPAWNER_REPO` is intentionally **not** the upstream — the scripts set `RUNNER_SPAWNER_TOOL_REPO=fordaj/runner-spawner` for the bundle refresh instead.
 
-## `update.bash`
+## `update.sh`
 
 Refreshes from `fordaj/runner-spawner` releases: assets named `RunnerSpawner_<tag>_<os>-<arch>.tar.gz`/`.zip` (legacy `.7z` accepted) mapped onto the bundle layout. Verification is mandatory: a release with no `checksums.txt` aborts the refresh. Only the binary is kept. See [../README.md](../README.md) for the shared bundle contract (`--dry-run`, `--tag`, staged atomic swap).
 

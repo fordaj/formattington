@@ -4,8 +4,8 @@ set -euo pipefail
 # Build Black's standalone macOS x86_64 executable.
 #
 # Usage:
-#   ./build-black-macos-x86_64.bash
-#   ./build-black-macos-x86_64.bash 26.10.1
+#   ./build_macos-x64.sh
+#   ./build_macos-x64.sh 26.10.1
 #
 # Requirements: git, uv, Xcode Command Line Tools
 

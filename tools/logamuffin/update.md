@@ -8,7 +8,7 @@ The scripts themselves document the contract (`log INFO "..."`), the `LOG_LEVEL`
 
 `v0.1.3.0.35/macos-arm64`, `macos-x86_64`, `linux-arm64`, `linux-x86_64`, `windows-arm64`, `windows-x86_64` (the linker picks the host's platform via `LOGAMUFFIN_BIN`).
 
-## `update.bash`
+## `update.sh`
 
 Refreshes from `fordaj/logamuffin` releases: assets named `Logamuffin_<tag>_<os>-<arch>.tar.gz`/`.zip` (legacy `.7z` accepted) mapped onto the bundle layout, verified against the release's `checksums.txt` when present. Only the binary is kept. See [../README.md](../README.md) for the shared bundle contract (`--dry-run`, `--tag`, staged atomic swap).
 

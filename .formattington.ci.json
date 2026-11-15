@@ -8,9 +8,9 @@
       "-i",
       "2",
       "scripts/release.sh",
-      "demo.bash",
+      "demo.sh",
       "scripts/entry.sh",
-      "scripts/version.bash",
+      "scripts/version.sh",
       "scripts/docs.sh"
     ]
   ]

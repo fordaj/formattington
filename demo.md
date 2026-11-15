@@ -1,6 +1,6 @@
-# The end-to-end tour (`demo.bash`)
+# The end-to-end tour (`demo.sh`)
 
-`demo.bash` runs a scripted, narrated tour of Formattington against throwaway files — a safe way to see the CLI's behavior end to end.
+`demo.sh` runs a scripted, narrated tour of Formattington against throwaway files — a safe way to see the CLI's behavior end to end.
 
 ## What it does
 
@@ -11,8 +11,8 @@
 ## Usage
 
 ```bash
-./demo.bash          # run the whole tour (single non-interactive pass)
-./demo.bash --help   # usage
+./demo.sh          # run the whole tour (single non-interactive pass)
+./demo.sh --help   # usage
 ```
 
 ## Prerequisites and environment

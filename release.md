@@ -13,7 +13,7 @@ Both archives carry the binary plus `NOTICE.md` and `LICENSES/` with every bundl
 
 ## The pipeline
 
-1. Computes the next version with the pinned [versioner](tools/versioner/update.md) (via [scripts/entry.sh](scripts/entry.md) and [scripts/version.bash](scripts/version.md)), using `.versioner.json`. The working tree must be clean for a real release.
+1. Computes the next version with the pinned [versioner](tools/versioner/update.md) (via [scripts/entry.sh](scripts/entry.md) and [scripts/version.sh](scripts/version.md)), using `.versioner.json`. The working tree must be clean for a real release.
 2. Fetches the bundled formatters with per-tool `formatters/<tool>/update.sh` (or `FORMATTER_VERSION=<pin>`), each verified at fetch time; a tool that cannot be fetched for a platform is omitted from that platform's full binary with a warning, and a release refuses to proceed when a tool cannot be fetched for any platform. `make dist` runs the same fetch/build/package sequence without tagging.
 3. Cross-compiles CGO-disabled binaries into `dist/` with `-ldflags -X ...buildVersion=<version>` stamping.
 4. Smoke-tests the host's full binary — with a stripped `PATH` and empty `HOME`, every embedded formatter is invoked with `--version`.

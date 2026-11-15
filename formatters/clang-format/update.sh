@@ -2,13 +2,13 @@
 set -euo pipefail
 
 # Usage:
-#   ./update.bash [version] [target...]
+#   ./update.sh [version] [target...]
 #
 # Examples:
-#   ./update.bash
-#   ./update.bash 23
-#   ./update.bash 23.1.5
-#   ./update.bash latest windows-x86_64 macos-arm64
+#   ./update.sh
+#   ./update.sh 23
+#   ./update.sh 23.1.5
+#   ./update.sh latest windows-x86_64 macos-arm64
 #
 # Requirements: curl, jq, sha512sum or shasum
 

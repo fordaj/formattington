@@ -339,7 +339,7 @@ The repository's documentation is a set of Markdown (`.md`) and Mermaid (`.mmd`)
 Layout — documentation lives next to the code it describes:
 
 - One sibling `.md` per Go integration and core file in `internal/formattington/` (for example `black.go` → `black.md`, `cli.go` → [cli.md](internal/formattington/cli.md)), plus `README.md` as the package hub and `architecture.mmd` for the standalone diagram.
-- One sibling `.md` per bash script (`scripts/entry.sh` → `entry.md`, `scripts/env.sh` → `env.md`, `scripts/version.bash` → `version.md`, `scripts/docs.sh` → `docs.md`, root `release.sh` → `release.md`, root `demo.bash` → `demo.md`), plus `scripts/README.md` as the hub.
+- One sibling `.md` per bash script (`scripts/entry.sh` → `entry.md`, `scripts/env.sh` → `env.md`, `scripts/version.sh` → `version.md`, `scripts/docs.sh` → `docs.md`, root `release.sh` → `release.md`, root `demo.sh` → `demo.md`), plus `scripts/README.md` as the hub.
 - One sibling `.md` per bundle in `tools/` (`tools/<name>/update.md`), plus `tools/README.md` as the hub.
 
 Rules for keeping these files current:

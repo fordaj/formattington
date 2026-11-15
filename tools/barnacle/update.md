@@ -6,7 +6,7 @@
 
 ```text
 tools/barnacle/
-  update.bash                     # refresh from fordaj/barnacle releases
+  update.sh                     # refresh from fordaj/barnacle releases
   v0.0.1.0.5/
     LICENSE                       # upstream MIT text, retained unmodified
     macos-arm64/barnacle
@@ -17,7 +17,7 @@ tools/barnacle/
     windows-x86_64/barnacle.exe
 ```
 
-## `update.bash` in detail
+## `update.sh` in detail
 
 Adapted to barnacle's release format (unlike the `.7z` bundles elsewhere in `tools/`): assets are `barnacle-<platform>.tar.gz` (macOS/Linux) and `barnacle-<platform>.zip` (Windows), each carrying a top-level `barnacle-<platform>/` directory with the binary, `LICENSE`, and `README.md`.
 
