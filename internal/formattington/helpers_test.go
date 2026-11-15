@@ -17,9 +17,31 @@ const fakeExecutableScript = "#!/bin/sh\n" +
 	"printf '%s\\n' \"$@\" >> \"${FAKE_ARGV_FILE:-/dev/null}\"\n" +
 	"exit 0\n"
 
+// hostPlatform returns the bundled-tools platform directory of the host,
+// so tests create fixtures for the platform FindTool actually resolves.
+func hostPlatform(t *testing.T) string {
+	t.Helper()
+	platform, err := platformDir(runtime.GOOS, runtime.GOARCH)
+	if err != nil {
+		t.Fatalf("platformDir(%q, %q): %v", runtime.GOOS, runtime.GOARCH, err)
+	}
+	return platform
+}
+
+// hostExecutable returns the executable name a binary has on the host
+// (finder code resolves bundled and PATH executables with a ".exe" suffix
+// on Windows).
+func hostExecutable(name string) string {
+	if runtime.GOOS == "windows" {
+		return name + ".exe"
+	}
+	return name
+}
+
 // writeFakeExecutable creates a fake executable named name in dir.
 func writeFakeExecutable(t *testing.T, dir, name string) string {
 	t.Helper()
+	name = hostExecutable(name)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatalf("mkdir %s: %v", dir, err)
 	}
@@ -36,6 +58,9 @@ func writeFakeExecutable(t *testing.T, dir, name string) string {
 // invocations in.
 func fakeTools(t *testing.T, names ...string) (binDir, argvFile, calledFile string) {
 	t.Helper()
+	if runtime.GOOS == "windows" {
+		t.Skip("test harness uses #!/bin/sh fake executables; see https://github.com/fordaj/formattington/issues/154")
+	}
 	root := t.TempDir()
 	binDir = filepath.Join(root, "bin")
 	argvFile = filepath.Join(root, "argv.txt")

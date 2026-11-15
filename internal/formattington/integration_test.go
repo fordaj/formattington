@@ -11,7 +11,7 @@ func installBundled(t *testing.T, name, version, platform, exe string) (toolsDir
 	t.Helper()
 	root := t.TempDir()
 	toolsDir = filepath.Join(root, "tools")
-	bundled := filepath.Join(toolsDir, name, "v"+version, platform, exe)
+	bundled := filepath.Join(toolsDir, name, "v"+version, platform, hostExecutable(exe))
 	writeFile(t, bundled, fakeExecutableScript)
 	if err := chmodExecutable(bundled); err != nil {
 		t.Fatalf("chmod: %v", err)
@@ -31,7 +31,7 @@ func installBundled(t *testing.T, name, version, platform, exe string) (toolsDir
 func TestBundledFakeIsResolved(t *testing.T) {
 	requirePOSIX(t)
 
-	_, argvFile := installBundled(t, "shfmt", "3.14.1", "macos-x86_64", "shfmt")
+	_, argvFile := installBundled(t, "shfmt", "3.14.1", hostPlatform(t), "shfmt")
 
 	code, err := runShfmt(Options{})
 	if err != nil {
@@ -48,7 +48,7 @@ func TestBundledFakeIsResolved(t *testing.T) {
 func TestBundledFakeBatchesManyPathsInOneInvocation(t *testing.T) {
 	requirePOSIX(t)
 
-	_, argvFile := installBundled(t, "shfmt", "3.14.1", "macos-x86_64", "shfmt")
+	_, argvFile := installBundled(t, "shfmt", "3.14.1", hostPlatform(t), "shfmt")
 
 	paths := []string{"a.sh", "b with spaces.sh", "very/long/path/to/c.sh", "d.sh"}
 	if _, err := runShfmt(Options{Args: paths}); err != nil {
@@ -65,7 +65,7 @@ func TestBundledFakeBatchesManyPathsInOneInvocation(t *testing.T) {
 func TestBundledFakeCheckMode(t *testing.T) {
 	requirePOSIX(t)
 
-	_, argvFile := installBundled(t, "shfmt", "3.14.1", "macos-x86_64", "shfmt")
+	_, argvFile := installBundled(t, "shfmt", "3.14.1", hostPlatform(t), "shfmt")
 
 	if _, err := runShfmt(Options{Check: true}); err != nil {
 		t.Fatalf("runShfmt: %v", err)

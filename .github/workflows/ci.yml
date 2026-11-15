@@ -7,6 +7,10 @@ on:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-formatting:
     name: Check Formatting
@@ -17,6 +21,7 @@ jobs:
           - { os: macOS, labels: [self-hosted, macOS] }
           - { os: Windows, labels: [self-hosted, Windows] }
     runs-on: ${{ matrix.labels }}
+    timeout-minutes: 15
     defaults:
       run:
         shell: bash
@@ -28,16 +33,22 @@ jobs:
       # repo's own .formattington.json lists many formatters that are not
       # installable in CI, so the check is scoped to the toolchain every
       # runner can provide.
+      #
+      # cache: false — the setup-go post-run cache step hangs indefinitely
+      # on these persistent self-hosted runners.
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          cache: false
 
       - name: Build formattington
         run: CGO_ENABLED=0 go build -o bin/formattington ./cmd/formattington
 
       # goimports via `go install` (lands in $(go env GOPATH)/bin).
+      # Pinned: @latest now requires go >= 1.26, newer than the go.mod
+      # toolchain these runners provide.
       - name: Install goimports
-        run: go install golang.org/x/tools/cmd/goimports@latest
+        run: go install golang.org/x/tools/cmd/goimports@v0.30.0
 
       # node + npm for the PATH-only formatter CLIs (prettier).
       - uses: actions/setup-node@v7
@@ -86,6 +97,7 @@ jobs:
           - { os: macOS, labels: [self-hosted, macOS] }
           - { os: Windows, labels: [self-hosted, Windows] }
     runs-on: ${{ matrix.labels }}
+    timeout-minutes: 15
     defaults:
       run:
         shell: bash
@@ -93,10 +105,22 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      # cache: false — the setup-go post-run cache step hangs indefinitely
+      # on these persistent self-hosted runners.
       - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          cache: false
       - run: go vet ./...
       - run: gofmt -l . && test -z "$(gofmt -l .)"
-      - run: go test ./...
+      # The Windows suite cannot run as-is: the test harness relies on
+      # #!/bin/sh fake executables that cannot be executed or resolved on
+      # Windows (https://github.com/fordaj/formattington/issues/154).
+      # Windows therefore runs build + vet + gofmt only until the harness
+      # is fixed; macOS runs the full suite. The dotnet-format round trip
+      # additionally probes the tool and skips when it is not usable
+      # (https://github.com/fordaj/formattington/issues/155).
+      - name: Test (macOS)
+        if: matrix.os == 'macOS'
+        run: go test ./...
       - run: go build ./...

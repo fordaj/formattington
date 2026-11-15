@@ -1,6 +1,7 @@
 package formattington
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 // templateCommands loads and validates the embedded init template
@@ -117,6 +119,13 @@ type templateRoundTripCase struct {
 	// fixExits lists the allowed exit codes for the fix invocation;
 	// it defaults to [ExitOK].
 	fixExits []int
+	// probeArgs, when non-nil, makes the guard run the resolved tool
+	// with these arguments before the round trip; an error (including a
+	// non-zero exit) skips the case. Used for tools that are present
+	// but not usable on a machine (e.g. dotnet-format, which exists on
+	// the Windows runner but fails with 0x8000FFFF; see
+	// https://github.com/fordaj/formattington/issues/155).
+	probeArgs []string
 }
 
 // templateStaticConfig returns a config hook that writes static files,
@@ -295,8 +304,12 @@ var templateRoundTripCases = []templateRoundTripCase{
 	{
 		tool:   "dotnet-format",
 		binary: "dotnet",
-		file:   "dirty.cs",
-		dirty:  "class T{static void Main(){var x=1;System.Console.WriteLine(x);}}\n",
+		// The tool is installed on the Windows runner but every
+		// invocation fails with 0x8000FFFF there (issue #155), so probe
+		// usability and skip instead of reporting a hard failure.
+		probeArgs: []string{"format", "--version"},
+		file:      "dirty.cs",
+		dirty:     "class T{static void Main(){var x=1;System.Console.WriteLine(x);}}\n",
 		config: templateStaticConfig(map[string]string{
 			".editorconfig": "root = true\n\n[*.cs]\ncsharp_new_line_before_open_brace = true\n",
 		}),
@@ -387,6 +400,19 @@ func TestExampleRoundTrip(t *testing.T) {
 			}
 			if err != nil {
 				t.Skipf("%s is not resolvable on this machine; skipping round trip", binary)
+			}
+			if testCase.probeArgs != nil {
+				// Probe that the tool actually works on this machine
+				// before round-tripping it; an installed but broken
+				// tool is skipped, not failed (see issue #155).
+				ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+				probe := exec.CommandContext(ctx, resolved, testCase.probeArgs...)
+				probeErr := probe.Run()
+				cancel()
+				if probeErr != nil {
+					t.Skipf("%s is not usable on this machine (%s %s failed: %v); skipping round trip (see https://github.com/fordaj/formattington/issues/155)",
+						testCase.tool, resolved, strings.Join(testCase.probeArgs, " "), probeErr)
+				}
 			}
 
 			dir := t.TempDir()

@@ -65,9 +65,11 @@ func TestVersionKeyOrdering(t *testing.T) {
 }
 
 // makeBundledLayout creates tools/<name>/v<version>/<platform>/<exe>.
+// The executable gets the host suffix (".exe" on Windows), mirroring how
+// the resolver looks bundled tools up.
 func makeBundledLayout(t *testing.T, toolsDir, name, version, platform, exe string) string {
 	t.Helper()
-	path := filepath.Join(toolsDir, name, "v"+version, platform, exe)
+	path := filepath.Join(toolsDir, name, "v"+version, platform, hostExecutable(exe))
 	writeFile(t, path, "")
 	return path
 }
@@ -75,10 +77,10 @@ func makeBundledLayout(t *testing.T, toolsDir, name, version, platform, exe stri
 func TestFindToolPrefersBundled(t *testing.T) {
 	toolsDir := t.TempDir()
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", toolsDir)
-	expected := makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", "macos-x86_64", "shfmt")
+	expected := makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", hostPlatform(t), "shfmt")
 
 	binDir := filepath.Join(t.TempDir(), "bin")
-	writeFile(t, filepath.Join(binDir, "shfmt"), "#!/bin/sh\nexit 0\n")
+	writeFile(t, filepath.Join(binDir, hostExecutable("shfmt")), "#!/bin/sh\nexit 0\n")
 	t.Setenv("PATH", binDir)
 
 	got, err := FindTool("shfmt", "", false)
@@ -93,7 +95,7 @@ func TestFindToolPrefersBundled(t *testing.T) {
 func TestFindToolExplicitVersion(t *testing.T) {
 	toolsDir := t.TempDir()
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", toolsDir)
-	expected := makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", "macos-x86_64", "shfmt")
+	expected := makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", hostPlatform(t), "shfmt")
 	t.Setenv("PATH", t.TempDir())
 
 	for _, version := range []string{"v3.14.1", "3.14.1"} {
@@ -110,8 +112,8 @@ func TestFindToolExplicitVersion(t *testing.T) {
 func TestFindToolPrefersNewestVersion(t *testing.T) {
 	toolsDir := t.TempDir()
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", toolsDir)
-	makeBundledLayout(t, toolsDir, "clang-format", "22.1.8", "macos-x86_64", "clang-format")
-	newest := makeBundledLayout(t, toolsDir, "clang-format", "23.1.3", "macos-x86_64", "clang-format")
+	makeBundledLayout(t, toolsDir, "clang-format", "22.1.8", hostPlatform(t), "clang-format")
+	newest := makeBundledLayout(t, toolsDir, "clang-format", "23.1.3", hostPlatform(t), "clang-format")
 	t.Setenv("PATH", t.TempDir())
 
 	got, err := FindTool("clang-format", "", false)
@@ -126,8 +128,8 @@ func TestFindToolPrefersNewestVersion(t *testing.T) {
 func TestFindToolNumericVersionOrdering(t *testing.T) {
 	toolsDir := t.TempDir()
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", toolsDir)
-	makeBundledLayout(t, toolsDir, "clang-format", "9.0.0", "macos-x86_64", "clang-format")
-	newest := makeBundledLayout(t, toolsDir, "clang-format", "10.0.0", "macos-x86_64", "clang-format")
+	makeBundledLayout(t, toolsDir, "clang-format", "9.0.0", hostPlatform(t), "clang-format")
+	newest := makeBundledLayout(t, toolsDir, "clang-format", "10.0.0", hostPlatform(t), "clang-format")
 	t.Setenv("PATH", t.TempDir())
 
 	got, err := FindTool("clang-format", "", false)
@@ -196,7 +198,13 @@ func TestFindToolMissingEverywhere(t *testing.T) {
 func TestFindToolSkipsOtherPlatforms(t *testing.T) {
 	toolsDir := t.TempDir()
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", toolsDir)
-	makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", "linux-x86_64", "shfmt")
+	// Use a platform that is not the host so the bundled fixture must be
+	// skipped (on a Linux x86_64 host, use the macOS fixture instead).
+	other := "linux-x86_64"
+	if hostPlatform(t) == other {
+		other = "macos-x86_64"
+	}
+	makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", other, "shfmt")
 
 	binDir := filepath.Join(t.TempDir(), "bin")
 	expected := writeFakeExecutable(t, binDir, "shfmt")
@@ -214,7 +222,7 @@ func TestFindToolSkipsOtherPlatforms(t *testing.T) {
 func TestVerboseResolutionReportsBundled(t *testing.T) {
 	toolsDir := t.TempDir()
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", toolsDir)
-	expected := makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", "macos-x86_64", "shfmt")
+	expected := makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", hostPlatform(t), "shfmt")
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("FORMATTINGTON_VERBOSE", "")
 
@@ -260,7 +268,7 @@ func TestVerboseResolutionReportsPath(t *testing.T) {
 func TestVerboseResolutionViaEnvironment(t *testing.T) {
 	toolsDir := t.TempDir()
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", toolsDir)
-	makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", "macos-x86_64", "shfmt")
+	makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", hostPlatform(t), "shfmt")
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("FORMATTINGTON_VERBOSE", "1")
 
@@ -280,7 +288,7 @@ func TestVerboseResolutionViaEnvironment(t *testing.T) {
 func TestNotVerboseByDefault(t *testing.T) {
 	toolsDir := t.TempDir()
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", toolsDir)
-	makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", "macos-x86_64", "shfmt")
+	makeBundledLayout(t, toolsDir, "shfmt", "3.14.1", hostPlatform(t), "shfmt")
 	t.Setenv("PATH", t.TempDir())
 	t.Setenv("FORMATTINGTON_VERBOSE", "")
 

@@ -81,14 +81,14 @@ func TestBundledVersionerIsResolved(t *testing.T) {
 	if err != nil {
 		t.Skipf("unsupported platform: %v", err)
 	}
-	writeFile(t, filepath.Join(toolsDir, "v0.0.3.0.5", platform, "versioner"), "#!/bin/sh\nexit 0\n")
+	writeFile(t, filepath.Join(toolsDir, "v0.0.3.0.5", platform, hostExecutable("versioner")), "#!/bin/sh\nexit 0\n")
 	t.Setenv("FORMATTINGTON_FORMATTERS_DIR", filepath.Join(root, "tools"))
 
 	got := bundledVersioner(root)
 	if got == "" {
 		t.Fatal("expected the bundled versioner to be found")
 	}
-	if !strings.HasSuffix(got, filepath.Join("versioner", "v0.0.3.0.5", platform, "versioner")) {
+	if !strings.HasSuffix(got, filepath.Join("versioner", "v0.0.3.0.5", platform, hostExecutable("versioner"))) {
 		t.Errorf("bundledVersioner = %q, want the newest bundled version", got)
 	}
 }
