@@ -7,7 +7,7 @@
       "shfmt",
       "-i",
       "2",
-      "release.sh",
+      "scripts/release.sh",
       "demo.bash",
       "scripts/entry.sh",
       "scripts/version.bash",

@@ -19,7 +19,7 @@ Sources [entry.md](entry.md) for the cascade and `log()`. If `VERSIONER_BIN` is 
 
 ## Consumers
 
-- `release.sh` — computes the next tag, stamps it into the binaries, pushes the tag.
+- `scripts/release.sh` — computes the next tag, stamps it into the binaries, pushes the tag.
 - The release binary itself — see [internal/formattington/version.md](../internal/formattington/version.md) for how `--version` resolves at run time.
 
 ## Related pages

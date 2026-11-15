@@ -1,6 +1,6 @@
-# The release pipeline (`release.sh`)
+# The release pipeline (`scripts/release.sh`)
 
-`release.sh` versions, builds, packages, tags, and publishes a GitHub release — two archives per platform. Everything it does flows through the [scripts](scripts/README.md) tooling it dogfoods.
+`scripts/release.sh` versions, builds, packages, tags, and publishes a GitHub release — two archives per platform. Everything it does flows through the [scripts](scripts/README.md) tooling it dogfoods.
 
 ## What a release produces
 
@@ -19,7 +19,7 @@ Both archives carry the binary plus `NOTICE.md` and `LICENSES/` with every bundl
 4. Smoke-tests the host's full binary — with a stripped `PATH` and empty `HOME`, every embedded formatter is invoked with `--version`.
 5. Tags `v<version>`, pushes it, and creates the GitHub release with the archives (and `checksums.txt`) attached. Re-running attaches/refreshes assets on an existing tag instead of failing.
 
-`./release.sh --build-only` stops after step 4; `--dry-run` computes and builds but touches nothing remote; `--allow-latest` permits fetching `FORMATTER_VERSION=latest`. Prerequisites: git, Go 1.24+, and `gh` authenticated for real releases.
+`scripts/release.sh --build-only` stops after step 4; `--dry-run` computes and builds but touches nothing remote; `--allow-latest` permits fetching `FORMATTER_VERSION=latest`. Prerequisites: git, Go 1.24+, and `gh` authenticated for real releases.
 
 ## Related pages
 

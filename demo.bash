@@ -299,4 +299,4 @@ log INFO "missing PATH-only backend is one line, no traceback, exit 127 (powersh
 demo_run powershell --help
 log INFO "you saw: one interface, aliases, --check/--dry-run, --series all, --config, --verbose, bundled-vs-PATH, spaces-safe explicit paths, discovery, and 0/1/2/127 exits"
 log INFO "all demo files lived in $TMP_DIR and were not part of the repo; nothing in $REPO_ROOT was modified (besides .logs/log.log and bin/, both gitignored)"
-log INFO "next: read README.md (usage), run 'make test' for the suite, or ./release.sh --dry-run for the versioner dogfood"
+log INFO "next: read README.md (usage), run 'make test' for the suite, or scripts/release.sh --dry-run for the versioner dogfood"

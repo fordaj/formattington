@@ -352,7 +352,7 @@ for archive in "${archives[@]}"; do
     done
     if [[ -z "$bin_src" ]]; then
         # Some archives nest everything under a single top-level directory.
-        for cand in $NESTED_BIN_CANDS; do
+        for cand in "$extract_dir"/*/runner-spawner "$extract_dir"/*/runner-spawner.exe; do
             if [[ -f "$cand" ]]; then
                 bin_src="$cand"
                 break
@@ -411,7 +411,7 @@ if [[ -n "$host_bin" ]]; then
     host_ver="$("$host_bin" --version 2>&1 || true)"
     log INFO "host binary $host_platform reports: $host_ver"
     case "$host_ver" in
-    *"$TAG"*) ;;
+    *"$TAG"* | *"${TAG#v}"*) ;;
     *) log WARNING "host binary version '$host_ver' does not contain $TAG" ;;
     esac
 else

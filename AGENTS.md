@@ -222,7 +222,7 @@ make check
 
 `make build` writes the binary to `./bin/formattington`; `make test` runs `go test ./...`; `make check` runs `go vet ./...`, verifies `gofmt` has nothing to change, and runs the test suite.
 
-`make dist` (equivalently `./release.sh --build-only`) fetches the bundled formatters, cross-compiles the lite and full release binaries into `dist/`, smoke-tests the host's full binary, and packages the per-platform `formattington-<platform>-lite` / `formattington-<platform>-full` archives; `./release.sh` additionally verifies the version against versioner, tags, pushes, and creates the GitHub release with those archives attached.
+`make dist` (equivalently `scripts/release.sh --build-only`) fetches the bundled formatters, cross-compiles the lite and full release binaries into `dist/`, smoke-tests the host's full binary, and packages the per-platform `formattington-<platform>-lite` / `formattington-<platform>-full` archives; `scripts/release.sh` additionally verifies the version against versioner, tags, pushes, and creates the GitHub release with those archives attached.
 
 Go 1.24 or newer is required (`go.mod` declares the language version).
 
@@ -289,7 +289,7 @@ Examples of native configuration files include:
 - `.markdownlint.json`
 - `pyproject.toml`
 
-Bundled formatter binaries are not committed. `release.sh` fetches them at release time with `formatters/<tool>/update.sh` and the `formattington-<platform>-full` binaries embed them (`go:embed`, build tag `full`); on first use they are unpacked into the per-user cache directory. The `formattington-<platform>-lite` binaries embed none. `tools/` only holds the bundled build/helper tools (versioner, logamuffin, runner-spawner, barnacle), which are pinned and tracked. `FORMATTINGTON_FORMATTERS_DIR` overrides the formatter lookup; `FindTool()` prefers bundled (or embedded) copies, then falls back to `PATH`.
+Bundled formatter binaries are not committed. `scripts/release.sh` fetches them at release time with `formatters/<tool>/update.sh` and the `formattington-<platform>-full` binaries embed them (`go:embed`, build tag `full`); on first use they are unpacked into the per-user cache directory. The `formattington-<platform>-lite` binaries embed none. `tools/` only holds the bundled build/helper tools (versioner, logamuffin, runner-spawner, barnacle), which are pinned and tracked. `FORMATTINGTON_FORMATTERS_DIR` overrides the formatter lookup; `FindTool()` prefers bundled (or embedded) copies, then falls back to `PATH`.
 
 ## Testing and Validation
 

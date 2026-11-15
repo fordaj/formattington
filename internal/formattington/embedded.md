@@ -4,7 +4,7 @@ The release ships two binaries per platform. The **lite** binary is just Formatt
 
 ## How the payload travels
 
-`embedded_full.go` (build tag `full`) carries `assets/formatters.zip` — one archive holding the whole `<tool>/v<version>/<platform>/<executable>` tree for the build platform. `assets/` is not committed; `release.sh` fills it before compiling with `-tags full`. `embedded_lite.go` (build tag `!full`) declares the same variable empty.
+`embedded_full.go` (build tag `full`) carries `assets/formatters.zip` — one archive holding the whole `<tool>/v<version>/<platform>/<executable>` tree for the build platform. `assets/` is not committed; `scripts/release.sh` fills it before compiling with `-tags full`. `embedded_lite.go` (build tag `!full`) declares the same variable empty.
 
 `go:embed` cannot execute embedded bytes in place, so `embedded.go` unpacks the archive into a per-user cache directory on first use:
 

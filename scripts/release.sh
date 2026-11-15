@@ -33,9 +33,9 @@
 # `formattington --version` agree by construction.
 #
 # Usage:
-#   ./release.sh                # version, build, tag, push, release + upload
-#   ./release.sh --build-only   # cross-compile into dist/ only
-#   ./release.sh --dry-run      # compute + verify + build, touch nothing remote
+#   scripts/release.sh             # version, build, tag, push, release + upload
+#   scripts/release.sh --build-only   # cross-compile into dist/ only
+#   scripts/release.sh --dry-run      # compute + verify + build, touch nothing remote
 #
 # Prerequisites: git, a Go toolchain (1.24+), gh authenticated via
 # `gh auth login` (real release), and bundled versioner/logamuffin binaries
@@ -60,12 +60,13 @@ set -euo pipefail
 # with printf fallback until tools/logamuffin is populated). Source the
 # entry point first: it pulls in the env cascade and defines log().
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-if [[ ! -f "$SCRIPT_DIR/scripts/entry.sh" ]]; then
-  printf 'release.sh: error: script entry point not found: %s/scripts/entry.sh\n' "$SCRIPT_DIR" >&2
+REPO_ROOT_FOR_ENV=$(cd -- "$SCRIPT_DIR/.." &>/dev/null && pwd)
+if [[ ! -f "$REPO_ROOT_FOR_ENV/scripts/entry.sh" ]]; then
+  printf 'release.sh: error: script entry point not found: %s/scripts/entry.sh\n' "$REPO_ROOT_FOR_ENV" >&2
   exit 1
 fi
 # shellcheck disable=SC1091
-. "$SCRIPT_DIR/scripts/entry.sh"
+. "$REPO_ROOT_FOR_ENV/scripts/entry.sh"
 
 DRY_RUN=0
 BUILD_ONLY=0
@@ -98,7 +99,7 @@ VERSION_VARIABLE="buildVersion"
 
 usage() {
   cat <<'EOF'
-Usage: ./release.sh [--build-only | --dry-run]
+Usage: scripts/release.sh [--build-only | --dry-run]
 
 Compute the next VERSION/TAG with versioner itself (dogfooding, bundled
 binary selected via scripts/entry.sh), fetch the bundled formatters with

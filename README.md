@@ -760,12 +760,12 @@ That is a thin wrapper around `go test ./...`. Tests live next to the code in `i
 
 ## Releases
 
-`release.sh` computes the next version with [versioner](https://github.com/fordaj/Versioner) (the bundled binary, selected via `scripts/entry.sh`), fetches the bundled formatter executables with `formatters/<tool>/update.sh`, cross-compiles the program for every supported platform, smoke-tests the freshly built full binary on the host, tags the commit, pushes the tag, and creates a GitHub release with the per-platform archives attached.
+`scripts/release.sh` computes the next version with [versioner](https://github.com/fordaj/Versioner) (the bundled binary, selected via `scripts/entry.sh`), fetches the bundled formatter executables with `formatters/<tool>/update.sh`, cross-compiles the program for every supported platform, smoke-tests the freshly built full binary on the host, tags the commit, pushes the tag, and creates a GitHub release with the per-platform archives attached.
 
 ```bash
-./release.sh                # version, fetch, build, tag, push, release + upload
-./release.sh --build-only   # fetch, cross-compile into dist/, smoke-test, package; stop
-./release.sh --dry-run      # compute + verify + build, touch nothing remote
+scripts/release.sh                # version, fetch, build, tag, push, release + upload
+scripts/release.sh --build-only   # fetch, cross-compile into dist/, smoke-test, package; stop
+scripts/release.sh --dry-run      # compute + verify + build, touch nothing remote
 ```
 
 Two archives are produced per platform — `formattington-<platform>-full` and `formattington-<platform>-lite`. The **full** binary embeds the formatter executables for its target platform inside itself (Go `full` build tag + `go:embed`, as a zip unpacked into the per-user cache on first use), so it is a single self-contained executable; the **lite** binary is just `formattington`. All formatter integrations resolve their bundled copies through `FormattersDir()` at runtime: the `FORMATTINGTON_FORMATTERS_DIR` environment variable wins, then the embedded formatters (full builds), then a `formatters/` directory next to the executable or in an ancestor directory of the executable (a repository checkout), then `PATH`.

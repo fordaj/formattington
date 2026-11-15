@@ -45,7 +45,7 @@ check: vet fmt-check test
 # per-platform release archives. Shares its implementation with
 # release.sh so the two can never drift.
 dist:
-	./release.sh --build-only
+	scripts/release.sh --build-only
 
 clean:
 	rm -rf $(BIN_DIR) $(DIST_DIR)
