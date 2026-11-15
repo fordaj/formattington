@@ -26,3 +26,6 @@ vendor/
 
 # Bundled helper tool Windows executables under tools/ are tracked despite *.exe above
 !tools/**/*.exe
+
+# Git worktrees
+.worktrees/
