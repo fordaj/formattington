@@ -41,5 +41,5 @@ tools/barnacle/update.sh --dry-run  # show what would change
 
 - [scripts/env.md](../scripts/env.md) — how the cascade selects these binaries
 - [scripts/docs.md](../scripts/docs.md) — barnacle in action
-- [../release.md](../release.md) — the release pipeline
+- [../scripts/release.md](../scripts/release.md) — the release pipeline
 - [README.md — repository hygiene](../README.md)

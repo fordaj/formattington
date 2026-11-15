@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# demo.sh — end-to-end tour of Formattington, logged with logamuffin.
+# scripts/demo.sh — end-to-end tour of Formattington, logged with logamuffin.
 #
 # Shows the main features an end user would use — one interface, tool
 # and language selection, check/dry-run modes, sequential `all`,
@@ -14,11 +14,11 @@
 # All narration goes through `log <level> <message>` from
 # scripts/entry.sh (logamuffin, with printf fallback), never by calling
 # the logamuffin binary directly. The per-call LOG_SOURCE field shows
-# demo.sh file:line as messages log.
+# scripts/demo.sh file:line as messages log.
 #
 # Usage:
-#   ./demo.sh          # run the whole tour (single non-interactive run)
-#   ./demo.sh --help   # usage
+#   ./scripts/demo.sh          # run the whole tour (single non-interactive run)
+#   ./scripts/demo.sh --help   # usage
 #
 # Prerequisites: the formattington binary (built with `make build`, on
 # PATH, or pointed at by FORMATTINGTON_BIN) and the bundled tools under
@@ -41,7 +41,7 @@ set -euo pipefail
 # entry point first: it pulls in the env cascade and defines log().
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 if [[ ! -f "$SCRIPT_DIR/scripts/entry.sh" ]]; then
-  printf 'demo.sh: error: script entry point not found: %s/scripts/entry.sh\n' "$SCRIPT_DIR" >&2
+  printf 'scripts/demo.sh: error: script entry point not found: %s/scripts/entry.sh\n' "$SCRIPT_DIR" >&2
   exit 1
 fi
 # shellcheck disable=SC1091
@@ -49,7 +49,7 @@ fi
 
 usage() {
   cat <<'EOF'
-Usage: ./demo.sh [--help]
+Usage: ./scripts/demo.sh [--help]
 
 Run a non-destructive, single-pass tour of Formattington: logamuffin
 logging, --help/--version, --verbose resolution, single-tool and

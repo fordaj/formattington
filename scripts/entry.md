@@ -24,4 +24,4 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 
 - [env.md](env.md) — the cascade `entry.sh` loads
 - [version.md](version.md) — the version script that sources `entry.sh`
-- [../release.md](../release.md) — the release pipeline that sources `entry.sh`
+- [release.md](release.md) — the release pipeline that sources `entry.sh`

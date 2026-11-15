@@ -25,4 +25,4 @@ Sources [entry.md](entry.md) for the cascade and `log()`. If `VERSIONER_BIN` is 
 ## Related pages
 
 - [entry.md](entry.md) · [env.md](env.md)
-- [../release.md](../release.md)
+- [release.md](release.md)

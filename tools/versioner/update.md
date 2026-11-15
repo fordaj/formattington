@@ -16,4 +16,4 @@ Refreshes from `fordaj/Versioner` releases: assets named `Versioner_<tag>_<os>-<
 
 - [../README.md](../README.md) — the bundle index
 - [../../scripts/version.md](../../scripts/version.md)
-- [../../release.md](../../release.md)
+- [../../scripts/release.md](../../scripts/release.md)
