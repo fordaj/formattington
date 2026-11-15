@@ -14,7 +14,7 @@ Vernacular used in the headers (`log INFO`, `$REPO_ROOT_DIR`, `VERSIONER_BIN`): 
 
 - [version.bash](version.md) — print the repository version computed by versioner (`--format text|shell|json`).
 - [docs.sh](docs.md) — generate the documentation site you are reading, with the bundled barnacle.
-- [../release.sh](../release.md) — version, fetch formatters, cross-compile, tag, and publish the GitHub release.
+- [../release.md](../release.md) — version, fetch formatters, cross-compile, tag, and publish the GitHub release.
 - [../demo.bash](../demo.md) — end-to-end tour of the CLI in a sandbox (never touches your tree).
 
 ## Related pages

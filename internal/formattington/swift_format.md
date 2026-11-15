@@ -4,13 +4,13 @@ swift-format is the official Swift formatter (swiftlang/swift-format), covering 
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `swift-format` (standalone, preferred) or `swift` via `swift format` |
-| Resolution | PATH-only (Swift 6+ toolchains; standalone tried first, then `swift format`) |
-| Extensions | `.swift` |
-| Operations | Format, Lint / Check |
-| Language aliases | `swift` -> `swift-format` |
+|                      |                                                                                           |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| Executable           | `swift-format` (standalone, preferred) or `swift` via `swift format`                      |
+| Resolution           | PATH-only (Swift 6+ toolchains; standalone tried first, then `swift format`)              |
+| Extensions           | `.swift`                                                                                  |
+| Operations           | Format, Lint / Check                                                                      |
+| Language aliases     | `swift` -> `swift-format`                                                                 |
 | Native configuration | `.swift-format` (JSON; discovered walking up from each file; `--configuration` overrides) |
 
 ## Behavior

@@ -4,14 +4,14 @@ scalafmt is the standard Scala formatter, covering `.scala`, `.sbt`, and `.sc` (
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `scalafmt` |
-| Resolution | PATH-only (via coursier, `cs install scalafmt`, or `brew install scalafmt`; JVM launcher) |
-| Extensions | `.scala`, `.sbt`, `.sc` |
-| Operations | Format, Check |
-| Language aliases | `scala` -> `scalafmt` |
-| Native configuration | `.scalafmt.conf` (requires a `version = <x.y.z>` line since 3.1.0) |
+|                      |                                                                                           |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| Executable           | `scalafmt`                                                                                |
+| Resolution           | PATH-only (via coursier, `cs install scalafmt`, or `brew install scalafmt`; JVM launcher) |
+| Extensions           | `.scala`, `.sbt`, `.sc`                                                                   |
+| Operations           | Format, Check                                                                             |
+| Language aliases     | `scala` -> `scalafmt`                                                                     |
+| Native configuration | `.scalafmt.conf` (requires a `version = <x.y.z>` line since 3.1.0)                        |
 
 ## Behavior
 

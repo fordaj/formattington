@@ -4,14 +4,14 @@ Taplo formats TOML files via `taplo fmt`, respecting project `taplo.toml` config
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `taplo` (invoked as `taplo fmt`) |
-| Resolution | Bundled in the full release archives (`formatters/taplo/<version>/<platform>/`), then `PATH` via `FindTool` |
-| Extensions | `.toml` |
-| Operations | Format, Check |
-| Language aliases | `toml` -> `taplo` |
-| Native configuration | `taplo.toml` / `.taplo.toml` |
+|                      |                                                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Executable           | `taplo` (invoked as `taplo fmt`)                                                                            |
+| Resolution           | Bundled in the full release archives (`formatters/taplo/<version>/<platform>/`), then `PATH` via `FindTool` |
+| Extensions           | `.toml`                                                                                                     |
+| Operations           | Format, Check                                                                                               |
+| Language aliases     | `toml` -> `taplo`                                                                                           |
+| Native configuration | `taplo.toml` / `.taplo.toml`                                                                                |
 
 ## Behavior
 

@@ -4,14 +4,14 @@ styler is the de-facto R formatter (tidyverse style), covering `.R` and `.r` fil
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `Rscript` (invoked as `Rscript -e '<expression>'`) |
-| Resolution | PATH-only (needs a working R installation plus `install.packages("styler")`) |
-| Extensions | `.R`, `.r` |
-| Operations | Format, Check |
-| Language aliases | `r` -> `styler` |
-| Native configuration | none discovered |
+|                      |                                                                              |
+| -------------------- | ---------------------------------------------------------------------------- |
+| Executable           | `Rscript` (invoked as `Rscript -e '<expression>'`)                           |
+| Resolution           | PATH-only (needs a working R installation plus `install.packages("styler")`) |
+| Extensions           | `.R`, `.r`                                                                   |
+| Operations           | Format, Check                                                                |
+| Language aliases     | `r` -> `styler`                                                              |
+| Native configuration | none discovered                                                              |
 
 ## Behavior
 

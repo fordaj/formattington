@@ -4,14 +4,14 @@ PHP-CS-Fixer is the de-facto PHP fixer, covering `.php` files. It is integrated 
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `php-cs-fixer` |
-| Resolution | PATH-only (needs a PHP ≥ 7.4 interpreter on `PATH`) |
-| Extensions | `.php` |
-| Operations | Fix, Format, Check |
-| Language aliases | `php` -> `php-cs-fixer` |
-| Native configuration | `.php-cs-fixer.php` / `.php-cs-fixer.dist.php` |
+|                      |                                                     |
+| -------------------- | --------------------------------------------------- |
+| Executable           | `php-cs-fixer`                                      |
+| Resolution           | PATH-only (needs a PHP ≥ 7.4 interpreter on `PATH`) |
+| Extensions           | `.php`                                              |
+| Operations           | Fix, Format, Check                                  |
+| Language aliases     | `php` -> `php-cs-fixer`                             |
+| Native configuration | `.php-cs-fixer.php` / `.php-cs-fixer.dist.php`      |
 
 ## Behavior
 

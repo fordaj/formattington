@@ -4,13 +4,13 @@ Fantomas (github.com/fsprojects/fantomas) is the F# toolchain formatter. Formatt
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `fantomas` |
-| Resolution | PATH-only (ships only as a .NET global tool; needs the .NET SDK ≥ 8) |
-| Extensions | `.fs`, `.fsi`, `.fsx` |
-| Operations | Format, Check |
-| Language aliases | `fsharp` → `fantomas` |
+|                      |                                                                                                                                              |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `fantomas`                                                                                                                                   |
+| Resolution           | PATH-only (ships only as a .NET global tool; needs the .NET SDK ≥ 8)                                                                         |
+| Extensions           | `.fs`, `.fsi`, `.fsx`                                                                                                                        |
+| Operations           | Format, Check                                                                                                                                |
+| Language aliases     | `fsharp` → `fantomas`                                                                                                                        |
 | Native configuration | `.editorconfig` (many options are picked up automatically) plus `.fantomasignore` for exclusions — discovered by the tool itself (data-only) |
 
 ## Behavior

@@ -4,12 +4,12 @@
 
 ## `Options`
 
-| Field | Meaning |
-| --- | --- |
-| `Check` | Report violations without modifying files. |
-| `DryRun` | Validate without modifying files (most tools alias this to their check mode; a few have no native check mode and synthesize one — see the integration docs, e.g. [mojo_format.md](mojo_format.md) and [odinfmt.md](odinfmt.md)). |
-| `Args` | Arguments forwarded verbatim to the underlying tool. |
-| `Verbose` | Report the resolved executable on stderr. |
+| Field     | Meaning                                                                                                                                                                                                                          |
+| --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Check`   | Report violations without modifying files.                                                                                                                                                                                       |
+| `DryRun`  | Validate without modifying files (most tools alias this to their check mode; a few have no native check mode and synthesize one — see the integration docs, e.g. [mojo_format.md](mojo_format.md) and [odinfmt.md](odinfmt.md)). |
+| `Args`    | Arguments forwarded verbatim to the underlying tool.                                                                                                                                                                             |
+| `Verbose` | Report the resolved executable on stderr.                                                                                                                                                                                        |
 
 ## `Formatter`
 

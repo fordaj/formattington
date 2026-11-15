@@ -4,14 +4,14 @@ rustfmt is the standard Rust formatter, covering `.rs` files. Formattington dete
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `rustfmt` |
-| Resolution | PATH-only (rustup component; install with `rustup component add rustfmt`) |
-| Extensions | `.rs` |
-| Operations | Format, Check |
-| Language aliases | `rust` -> `rustfmt` |
-| Native configuration | `rustfmt.toml` |
+|                      |                                                                           |
+| -------------------- | ------------------------------------------------------------------------- |
+| Executable           | `rustfmt`                                                                 |
+| Resolution           | PATH-only (rustup component; install with `rustup component add rustfmt`) |
+| Extensions           | `.rs`                                                                     |
+| Operations           | Format, Check                                                             |
+| Language aliases     | `rust` -> `rustfmt`                                                       |
+| Native configuration | `rustfmt.toml`                                                            |
 
 ## Behavior
 

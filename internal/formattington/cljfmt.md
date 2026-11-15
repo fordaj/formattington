@@ -4,14 +4,14 @@ cljfmt is a Clojure code formatter (github.com/weavejester/cljfmt). Formattingto
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `cljfmt` |
-| Resolution | Resolved from PATH or the bundled formatters (bundled for macOS arm64, Linux arm64, Linux x86_64 static, Windows x86_64; no macOS x86_64 or Windows arm64 asset exists upstream) |
-| Extensions | `.clj`, `.cljs`, `.cljc`, `.edn` |
-| Operations | Format, Check |
-| Language aliases | `clojure` → `cljfmt` |
-| Native configuration | `.cljfmt.edn` / `cljfmt.edn` (discovered by the tool itself; data-only) |
+|                      |                                                                                                                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `cljfmt`                                                                                                                                                                         |
+| Resolution           | Resolved from PATH or the bundled formatters (bundled for macOS arm64, Linux arm64, Linux x86_64 static, Windows x86_64; no macOS x86_64 or Windows arm64 asset exists upstream) |
+| Extensions           | `.clj`, `.cljs`, `.cljc`, `.edn`                                                                                                                                                 |
+| Operations           | Format, Check                                                                                                                                                                    |
+| Language aliases     | `clojure` → `cljfmt`                                                                                                                                                             |
+| Native configuration | `.cljfmt.edn` / `cljfmt.edn` (discovered by the tool itself; data-only)                                                                                                          |
 
 ## Behavior
 

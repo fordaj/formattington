@@ -4,13 +4,13 @@
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `dotnet` (via `dotnet format`) |
-| Resolution | PATH-only (ships in-box with the .NET SDK ≥ 6) |
-| Extensions | `.cs`, `.vb` |
-| Operations | Format, Check |
-| Language aliases | `csharp` → `dotnet-format`, `vbnet` → `dotnet-format` |
+|                      |                                                                                |
+| -------------------- | ------------------------------------------------------------------------------ |
+| Executable           | `dotnet` (via `dotnet format`)                                                 |
+| Resolution           | PATH-only (ships in-box with the .NET SDK ≥ 6)                                 |
+| Extensions           | `.cs`, `.vb`                                                                   |
+| Operations           | Format, Check                                                                  |
+| Language aliases     | `csharp` → `dotnet-format`, `vbnet` → `dotnet-format`                          |
 | Native configuration | `.editorconfig` only (whitespace mode; the project is never built) (data-only) |
 
 ## Behavior

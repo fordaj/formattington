@@ -4,14 +4,14 @@ erlfmt (github.com/WhatsApp/erlfmt) is the mature Erlang formatter. Formattingto
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `erlfmt` |
-| Resolution | PATH-only (no bundleable binaries; ships as a rebar3 plugin or escript built from it; needs Erlang/OTP 21+) |
-| Extensions | `.erl`, `.hrl` |
-| Operations | Format, Check |
-| Language aliases | `erlang` → `erlfmt` |
-| Native configuration | none (erlfmt takes no configuration file by design) |
+|                      |                                                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Executable           | `erlfmt`                                                                                                    |
+| Resolution           | PATH-only (no bundleable binaries; ships as a rebar3 plugin or escript built from it; needs Erlang/OTP 21+) |
+| Extensions           | `.erl`, `.hrl`                                                                                              |
+| Operations           | Format, Check                                                                                               |
+| Language aliases     | `erlang` → `erlfmt`                                                                                         |
+| Native configuration | none (erlfmt takes no configuration file by design)                                                         |
 
 ## Behavior
 

@@ -4,14 +4,14 @@ nixfmt is the official Nix formatter (RFC 166, "rfc style"). It covers `.nix` fi
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `nixfmt` |
-| Resolution | PATH-only (install via Nix `nixpkgs.nixfmt-rfc-style` or `brew install nixfmt`; upstream publishes no bundleable release matrix) |
-| Extensions | `.nix` |
-| Operations | Format, Check |
-| Language aliases | `nix` -> `nixfmt` |
-| Native configuration | none (no configuration file; `--width`/`--indent` exist as flags only) |
+|                      |                                                                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `nixfmt`                                                                                                                         |
+| Resolution           | PATH-only (install via Nix `nixpkgs.nixfmt-rfc-style` or `brew install nixfmt`; upstream publishes no bundleable release matrix) |
+| Extensions           | `.nix`                                                                                                                           |
+| Operations           | Format, Check                                                                                                                    |
+| Language aliases     | `nix` -> `nixfmt`                                                                                                                |
+| Native configuration | none (no configuration file; `--width`/`--indent` exist as flags only)                                                           |
 
 ## Behavior
 

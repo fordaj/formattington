@@ -4,13 +4,13 @@ fprettify (github.com/pseewald/fprettify) is the de-facto Fortran free-form sour
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `fprettify` |
-| Resolution | PATH-only (never embedded — GPL-3.0+ and pure Python; install with `pipx install fprettify` / `pip install fprettify`) |
-| Extensions | `.f90`, `.f95`, `.f03`, `.f08`, `.f18` |
-| Operations | Format, Check (synthesized) |
-| Language aliases | `fortran` → `fprettify` |
+|                      |                                                                                                                            |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `fprettify`                                                                                                                |
+| Resolution           | PATH-only (never embedded — GPL-3.0+ and pure Python; install with `pipx install fprettify` / `pip install fprettify`)     |
+| Extensions           | `.f90`, `.f95`, `.f03`, `.f08`, `.f18`                                                                                     |
+| Operations           | Format, Check (synthesized)                                                                                                |
+| Language aliases     | `fortran` → `fprettify`                                                                                                    |
 | Native configuration | `-c`/`--config-file` selects a configuration file; `.fprettify.ini` / `setup.cfg` are discovered tool-natively (data-only) |
 
 ## Behavior

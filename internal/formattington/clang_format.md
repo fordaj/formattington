@@ -4,14 +4,14 @@ clang-format is LLVM's C/C++/Objective-C family code formatter. Formattington re
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `clang-format` |
-| Resolution | Resolved from PATH or the bundled formatters (bundled in the full release archives) |
-| Extensions | `.c`, `.cc`, `.cpp`, `.cxx`, `.c++`, `.h`, `.hh`, `.hpp`, `.hxx` |
-| Operations | Format, Check |
-| Language aliases | `c` → `clang-format`, `cpp` → `clang-format`, `c++` → `clang-format` |
-| Native configuration | `.clang-format` (data-only) |
+|                      |                                                                                     |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| Executable           | `clang-format`                                                                      |
+| Resolution           | Resolved from PATH or the bundled formatters (bundled in the full release archives) |
+| Extensions           | `.c`, `.cc`, `.cpp`, `.cxx`, `.c++`, `.h`, `.hh`, `.hpp`, `.hxx`                    |
+| Operations           | Format, Check                                                                       |
+| Language aliases     | `c` → `clang-format`, `cpp` → `clang-format`, `c++` → `clang-format`                |
+| Native configuration | `.clang-format` (data-only)                                                         |
 
 ## Behavior
 

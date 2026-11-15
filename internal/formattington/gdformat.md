@@ -4,13 +4,13 @@ gdformat (github.com/Scony/godot-gdscript-toolkit) is the Godot 4 GDScript forma
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `gdformat` |
-| Resolution | PATH-only (pure-Python package with no release binaries; on all six targets) |
-| Extensions | `.gd` |
-| Operations | Format, Check |
-| Language aliases | `gdscript` → `gdformat` |
+|                      |                                                                                                 |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| Executable           | `gdformat`                                                                                      |
+| Resolution           | PATH-only (pure-Python package with no release binaries; on all six targets)                    |
+| Extensions           | `.gd`                                                                                           |
+| Operations           | Format, Check                                                                                   |
+| Language aliases     | `gdscript` → `gdformat`                                                                         |
 | Native configuration | `gdformatrc` / `.gdformatrc`, discovered by walking up from the working directory (tool-native) |
 
 ## Behavior

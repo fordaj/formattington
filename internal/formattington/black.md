@@ -4,14 +4,14 @@ Black is the uncompromising Python code formatter. It covers `.py` files and is 
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `black` |
-| Resolution | Resolved from PATH or the bundled formatters (bundled in the full release archives) |
-| Extensions | `.py` |
-| Operations | Format, Check |
-| Language aliases | `python` → `black`, `py` → `black`, `micropython` → `black` |
-| Native configuration | `pyproject.toml` `[tool.black]` (data-only) |
+|                      |                                                                                     |
+| -------------------- | ----------------------------------------------------------------------------------- |
+| Executable           | `black`                                                                             |
+| Resolution           | Resolved from PATH or the bundled formatters (bundled in the full release archives) |
+| Extensions           | `.py`                                                                               |
+| Operations           | Format, Check                                                                       |
+| Language aliases     | `python` → `black`, `py` → `black`, `micropython` → `black`                         |
+| Native configuration | `pyproject.toml` `[tool.black]` (data-only)                                         |
 
 ## Behavior
 

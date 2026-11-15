@@ -4,13 +4,13 @@ npm-groovy-lint is the only viable Groovy formatter (Spotless is a Gradle/Maven 
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `npm-groovy-lint` |
-| Resolution | PATH-only (`npm install -g npm-groovy-lint`; needs Node >= 18 and Java 11+ on `PATH`) |
-| Extensions | `.groovy`, `.gradle` |
-| Operations | Format (layout-only), Lint |
-| Language aliases | `groovy` -> `npm-groovy-lint` |
+|                      |                                                                                                                            |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `npm-groovy-lint`                                                                                                          |
+| Resolution           | PATH-only (`npm install -g npm-groovy-lint`; needs Node >= 18 and Java 11+ on `PATH`)                                      |
+| Extensions           | `.groovy`, `.gradle`                                                                                                       |
+| Operations           | Format (layout-only), Lint                                                                                                 |
+| Language aliases     | `groovy` -> `npm-groovy-lint`                                                                                              |
 | Native configuration | `.groovylintrc` (`.js`/`.cjs`/`.json`/`.yml`, via cosmiconfig) or `package.json`; `-c` forwarded to point at a config file |
 
 ## Behavior

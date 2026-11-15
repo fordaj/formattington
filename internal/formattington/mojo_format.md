@@ -4,14 +4,14 @@ mojo format is the formatter built into the Mojo toolchain (Modular). It covers 
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `mojo` via `mojo format` |
-| Resolution | PATH-only (Linux glibc ≥ 2.34, x86-64-v3 / Neoverse N1+; macOS Apple silicon; Windows via WSL) |
-| Extensions | `.mojo` |
-| Operations | Format, Check |
-| Language aliases | `mojo` -> `mojo-format` |
-| Native configuration | none (no configuration file exists, and none is invented) |
+|                      |                                                                                                |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| Executable           | `mojo` via `mojo format`                                                                       |
+| Resolution           | PATH-only (Linux glibc ≥ 2.34, x86-64-v3 / Neoverse N1+; macOS Apple silicon; Windows via WSL) |
+| Extensions           | `.mojo`                                                                                        |
+| Operations           | Format, Check                                                                                  |
+| Language aliases     | `mojo` -> `mojo-format`                                                                        |
+| Native configuration | none (no configuration file exists, and none is invented)                                      |
 
 ## Behavior
 

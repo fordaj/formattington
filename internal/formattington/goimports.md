@@ -4,14 +4,14 @@ goimports formats Go files like gofmt and additionally fixes import grouping: mi
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `goimports` |
-| Resolution | PATH-only (`go install golang.org/x/tools/cmd/goimports@latest`; ensure `$(go env GOPATH)/bin` is on `PATH`) |
-| Extensions | `.go` |
-| Operations | Format, Check |
-| Language aliases | none (invoke `goimports` directly; `go` resolves to `gofmt`) |
-| Native configuration | none (individual import options such as `-local` are forwarded verbatim and not overridden) |
+|                      |                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Executable           | `goimports`                                                                                                  |
+| Resolution           | PATH-only (`go install golang.org/x/tools/cmd/goimports@latest`; ensure `$(go env GOPATH)/bin` is on `PATH`) |
+| Extensions           | `.go`                                                                                                        |
+| Operations           | Format, Check                                                                                                |
+| Language aliases     | none (invoke `goimports` directly; `go` resolves to `gofmt`)                                                 |
+| Native configuration | none (individual import options such as `-local` are forwarded verbatim and not overridden)                  |
 
 ## Behavior
 

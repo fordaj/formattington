@@ -4,14 +4,14 @@ ktfmt formats Kotlin source files (github.com/Kotlin/ktfmt). It covers `.kt` and
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `ktfmt` |
-| Resolution | Bundled (Linux x86_64, macOS arm64, Windows x86_64; no Linux arm64, macOS x86_64, or Windows arm64 asset exists upstream — those stay PATH-only), then `PATH` |
-| Extensions | `.kt`, `.kts` |
-| Operations | Format, Check |
-| Language aliases | `kotlin` -> `ktfmt` |
-| Native configuration | none (no configuration file by design; `.editorconfig` is honored only with `--enable-editorconfig`) |
+|                      |                                                                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `ktfmt`                                                                                                                                                       |
+| Resolution           | Bundled (Linux x86_64, macOS arm64, Windows x86_64; no Linux arm64, macOS x86_64, or Windows arm64 asset exists upstream — those stay PATH-only), then `PATH` |
+| Extensions           | `.kt`, `.kts`                                                                                                                                                 |
+| Operations           | Format, Check                                                                                                                                                 |
+| Language aliases     | `kotlin` -> `ktfmt`                                                                                                                                           |
+| Native configuration | none (no configuration file by design; `.editorconfig` is honored only with `--enable-editorconfig`)                                                          |
 
 ## Behavior
 

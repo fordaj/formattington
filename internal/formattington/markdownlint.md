@@ -4,13 +4,13 @@ markdownlint runs `markdownlint-cli` to lint Markdown files for style and consis
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `markdownlint` (markdownlint-cli) |
-| Resolution | Resolved from PATH or the bundled formatters (bundled in the full release archives) |
-| Extensions | `.md`, `.markdown` |
-| Operations | Lint (Fix only via an explicitly forwarded `--fix`) |
-| Language aliases | none (invoke it as `markdownlint`) |
+|                      |                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| Executable           | `markdownlint` (markdownlint-cli)                                                                       |
+| Resolution           | Resolved from PATH or the bundled formatters (bundled in the full release archives)                     |
+| Extensions           | `.md`, `.markdown`                                                                                      |
+| Operations           | Lint (Fix only via an explicitly forwarded `--fix`)                                                     |
+| Language aliases     | none (invoke it as `markdownlint`)                                                                      |
 | Native configuration | `.markdownlint.json` / `.yaml` / `.yml` (and other markdownlint-cli configuration), discovered natively |
 
 ## Behavior

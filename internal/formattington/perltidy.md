@@ -4,14 +4,14 @@ perltidy is the Perl formatter. It covers `.pl`, `.pm`, and `.t` files. It is GP
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `perltidy` |
-| Resolution | PATH-only (`cpan Perl::Tidy` or your package manager; needs `perl` on `PATH`) |
-| Extensions | `.pl`, `.pm`, `.t` |
-| Operations | Format, Check |
-| Language aliases | `perl` -> `perltidy` |
-| Native configuration | `.perltidyrc` (**executed code** — Perl), discovered by the tool itself |
+|                      |                                                                               |
+| -------------------- | ----------------------------------------------------------------------------- |
+| Executable           | `perltidy`                                                                    |
+| Resolution           | PATH-only (`cpan Perl::Tidy` or your package manager; needs `perl` on `PATH`) |
+| Extensions           | `.pl`, `.pm`, `.t`                                                            |
+| Operations           | Format, Check                                                                 |
+| Language aliases     | `perl` -> `perltidy`                                                          |
+| Native configuration | `.perltidyrc` (**executed code** — Perl), discovered by the tool itself       |
 
 ## Behavior
 
