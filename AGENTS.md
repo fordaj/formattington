@@ -289,7 +289,7 @@ Examples of native configuration files include:
 - `.markdownlint.json`
 - `pyproject.toml`
 
-Bundled formatter binaries are not committed. `release.bash` fetches them at release time with `formatters/<tool>/update.sh` and the `formattington-<platform>-full` binaries embed them (`go:embed`, build tag `full`); on first use they are unpacked into the per-user cache directory. The `formattington-<platform>-lite` binaries embed none. `tools/` only holds the bundled build/helper tools (versioner, logamuffin, runner-spawner), which are pinned and tracked. `FORMATTINGTON_FORMATTERS_DIR` overrides the formatter lookup; `FindTool()` prefers bundled (or embedded) copies, then falls back to `PATH`.
+Bundled formatter binaries are not committed. `release.bash` fetches them at release time with `formatters/<tool>/update.sh` and the `formattington-<platform>-full` binaries embed them (`go:embed`, build tag `full`); on first use they are unpacked into the per-user cache directory. The `formattington-<platform>-lite` binaries embed none. `tools/` only holds the bundled build/helper tools (versioner, logamuffin, runner-spawner, barnacle), which are pinned and tracked. `FORMATTINGTON_FORMATTERS_DIR` overrides the formatter lookup; `FindTool()` prefers bundled (or embedded) copies, then falls back to `PATH`.
 
 ## Testing and Validation
 
@@ -332,6 +332,28 @@ Use the project's existing linting, formatting, and test tools where available. 
 - Prefer extending existing integrations over introducing parallel implementations of the same functionality.
 - Preserve existing behavior unless a change explicitly requires otherwise.
 
+## Documentation files (barnacle)
+
+The repository's documentation is a set of Markdown (`.md`) and Mermaid (`.mmd`) source files rendered into a static site by the pinned [barnacle](https://github.com/fordaj/barnacle) binary (`tools/barnacle/`, wired into the environment cascade as `BARNACLE_BIN`). Generate the site with `scripts/docs.sh`; the output (`./site/`) is git-ignored and never committed.
+
+Layout — documentation lives next to the code it describes:
+
+- One sibling `.md` per Go integration and core file in `internal/formattington/` (for example `black.go` → `black.md`, `cli.go` → [cli.md](internal/formattington/cli.md)), plus `README.md` as the package hub and `architecture.mmd` for the standalone diagram.
+- One sibling `.md` per bash script (`scripts/entry.sh` → `entry.md`, `scripts/env.sh` → `env.md`, `scripts/version.bash` → `version.md`, `scripts/docs.sh` → `docs.md`, root `release.sh` → `release.md`, root `demo.bash` → `demo.md`), plus `scripts/README.md` as the hub.
+- One sibling `.md` per bundle in `tools/` (`tools/<name>/update.md`), plus `tools/README.md` as the hub.
+
+Rules for keeping these files current:
+
+- When you add, rename, remove, or repurpose a documented file — an integration, a core file, a script, or a bundle — update its sibling `.md` **in the same change**. A new file without its page is incomplete work; a stale page is worse than none.
+- Source every fact: the `.go`/`.sh` file itself, this file (AGENTS.md), and README.md are the accepted sources. Never invent flags, exit codes, extensions, or bundle-platform matrices.
+- Use plain relative links (`cli.md`, `../../README.md`) with the linking file's `.md` path — barnacle rewrites them to `.html`. Do not link to files barnacle does not render (binaries, `.sh`, `LICENSE`); link the related `.md` page (for external references, a full `https://` URL is fine).
+- A `foo.md` and a `foo.mmd` may not coexist for the same stem — barnacle fails the whole site rather than overwriting.
+- Hub pages (`README.md` in each documented directory) list their siblings; adding a page means linking it from the hub too, in registry order where a registry order exists.
+- Barnacle skips hidden files by default, so the `.common.env` and `.<platform>.env` cascade is documented inside `scripts/env.md` — keep it accurate there instead of adding hidden doc files.
+- Regenerate and self-review the site before publishing: `scripts/docs.sh`, then click through the changed pages. The generator output must remain free of broken local links.
+
+Definition of Done addition: a change that touches any documented file updates (or creates) its sibling page in the same commit.
+
 ## Definition of Done
 
 A change is complete when it:
@@ -342,4 +364,4 @@ A change is complete when it:
 - Handles errors and subprocess execution appropriately.
 - Remains compatible with the project's supported platforms.
 - Includes or updates tests where appropriate.
-- Updates relevant documentation.
+- Updates relevant documentation — including the sibling `.md`/`.mmd` pages above for every Go, bash, or tools/ file touched.

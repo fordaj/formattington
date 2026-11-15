@@ -1,0 +1,14 @@
+flowchart TD
+    A["main.go (cmd/formattington)<br/>os.Exit(formattington.Main(argv))"] --> B
+    B["cli.go Main()<br/>parse globals: --verbose --config --series --check --dry-run"] --> C{"findFormatterIndex"}
+    C -->|"list"| D["list.go<br/>bundled vs PATH versions"]
+    C -->|"init"| E["init.go<br/>scan git files, write .formattington.json"]
+    C -->|"all"| F["registry loop (registration order)"]
+    C -->|"tool name or alias"| G["lookupTool(cli.go)"]
+    F --> G
+    G --> H["DiscoverFiles(discovery.go)<br/>batch by maxFilesPerInvocation"]
+    H --> I["integration runToolName()<br/>tool-specific invocation"]
+    I --> J["tools.go FindTool()<br/>bundled -> PATH"]
+    J --> K["runTool() subprocess<br/>args as slice, capture stdout/stderr"]
+    K --> L["formatterResult<br/>missing tool = 127"]
+    L --> M["aggregateCodes()<br/>last non-zero wins; 0 only if all succeed"]
