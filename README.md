@@ -1,5 +1,23 @@
 # Formattington
 
+```mermaid
+flowchart TD
+    Repo["your repository<br/>many languages, one project"] --> Fmt[formattington]
+    Fmt --> All["formattington all<br/>every configured tool · concurrent or --series"]
+    Fmt --> One["formattington black<br/>one tool · args forwarded verbatim"]
+    Fmt --> Alias["formattington python<br/>language and file-type aliases"]
+    Fmt --> List["formattington list<br/>bundled vs PATH versions"]
+    Fmt --> Init["formattington init<br/>write .formattington.json from git ls-files"]
+    All --> Bins["PATH or bundled binaries<br/>never reimplemented"]
+    One --> Bins
+    Alias --> Bins
+    click All href "internal/formattington/cli.go.md"
+    click One href "internal/formattington/README.md"
+    click Alias href "internal/formattington/cli.go.md"
+    click List href "internal/formattington/list.go.md"
+    click Init href "internal/formattington/init.go.md"
+```
+
 **One interface for your project's formatting and code-quality tools.**
 
 Formattington brings code formatters, linters, and other automated quality tools together under one roof. Python, C++, JavaScript, Bash, Markdown, and more — one command to keep multidisciplinary projects consistently formatted and maintained.
@@ -737,14 +755,14 @@ The formatter executables are fetched at release time and are not committed; `to
 
 ## Documentation
 
-The repository's Markdown documentation — the root docs (`README.md`, `AGENTS.md`, `NOTICE.md`), the agent prompts under `agents/`, and the source-adjacent pages barnacle renders (one page per Go integration and core file under `internal/formattington/`, per script under `scripts/` and at the root, and per bundle under `tools/`) — is rendered into a static, navigable site with [barnacle](https://github.com/fordaj/barnacle):
+The repository's Markdown documentation — the root docs (`README.md`, `AGENTS.md`, `NOTICE.md`), the agent prompts under `agents/`, and the source-adjacent pages barnacle renders — is rendered into a static, navigable site with [barnacle](https://github.com/fordaj/barnacle):
 
 ```bash
 scripts/docs.sh                       # generates ./site/ (git-ignored)
 scripts/docs.sh --site ./public       # barnacle options are forwarded verbatim
 ```
 
-`scripts/docs.sh` runs barnacle from the repository root. The documentation lives next to the code it describes; [AGENTS.md](AGENTS.md), "Documentation files (barnacle)", records the rules that keep those pages current.
+The documentation lives next to the code it describes: one sibling page per Go file under `internal/formattington/` (for example `cli.go` → [cli.go.md](internal/formattington/cli.go.md)), per script under `scripts/` (for example `scripts/docs.sh` → [scripts/docs.sh.md](scripts/docs.sh.md)), and per pinned bundle under `tools/` (excluded from the site via `.barnacle.json`). Documentation pages keep the documented file's suffix in their name (`main.go.md`, `docs.sh.md`), hub pages keep their plain `README.md` names, and every page opens with a Mermaid diagram under its heading — the diagram is the map of what the page covers, and diagram nodes and edges link to the pages they describe. [AGENTS.md](AGENTS.md), "Documentation files (barnacle)", records the rules that keep those pages current.
 
 ## Testing
 

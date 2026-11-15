@@ -1,0 +1,39 @@
+# Embedded formatter payloads (`embedded.go`, `embedded_full.go`, `embedded_lite.go`)
+
+```mermaid
+flowchart TD
+    Build["scripts/release.sh<br/>-tags full"] --> Payload["embedded_full.go<br/>assets/formatters.zip — not committed"]
+    Payload --> FirstUse["first use: installEmbeddedFormatters"]
+    FirstUse --> Cache{"zipFingerprint matches<br/>the existing extraction?"}
+    Cache -->|yes| Reuse[reuse the per-user cache]
+    Cache -->|no| Extract["extract under os.UserCacheDir()/formatters<br/>secureMkdirAll + entry guards<br/>collectGarbage prunes superseded entries"]
+    Reuse --> Dir[FormattersDir resolution]
+    Extract --> Dir
+    Lite["embedded_lite.go (!full)<br/>empty payload · lite builds skip this"] -.-> Dir
+    Dir --> FindTool[FindTool resolves executables]
+    click Dir href "tools.go.md"
+    click FindTool href "tools.go.md"
+```
+
+The release ships two binaries per platform. The **lite** binary is just Formattington; the **full** binary embeds its platform's formatter executables and unpacks them on first use.
+
+## How the payload travels
+
+`embedded_full.go` (build tag `full`) carries `assets/formatters.zip` — one archive holding the whole `<tool>/v<version>/<platform>/<executable>` tree for the build platform. `assets/` is not committed; `scripts/release.sh` fills it before compiling with `-tags full`. `embedded_lite.go` (build tag `!full`) declares the same variable empty.
+
+`go:embed` cannot execute embedded bytes in place, so `embedded.go` unpacks the archive into a per-user cache directory on first use:
+
+`installEmbeddedFormatters` (line ~93) extracts the payload under `embeddedFormattersCacheDir()` (line ~64) — `formatters/` under `os.UserCacheDir()` (for example `~/Library/Caches/formattington/formatters` on macOS) — keyed by a `zipFingerprint` (line ~255) of the embedded archive's contents. `extractedFormattersMatch` (line ~266) reuses an existing extraction when fingerprints agree and replaces it wholesale otherwise, so upgrading the full binary never serves stale tools. `collectGarbage` (line ~175) prunes superseded cache entries; `secureMkdirAll` (line ~76) and `regularZipFiles`/`extractZipMember` guard the extraction against pathological zip entries.
+
+## Resolution order
+
+`FormattersDir()` in [tools.go.md](tools.go.md) prefers a `FORMATTINGTON_FORMATTERS_DIR` override, then the unpacked embedded payload (full builds), then a `formatters/` directory in a checkout (executable-adjacent or ancestor), then `PATH`. Lite builds skip the embedded branch entirely.
+
+## Running the payload out of tree
+
+The full release binary smoke-tests its embedded formatters before publishing: with a stripped `PATH` and an empty `HOME`, it invokes each embedded formatter with `--version`. If the embedded payload cannot unpack or run on the release host, the release fails.
+
+## Related pages
+
+- [Tool discovery, bundling, and shared subprocess helpers](tools.go.md)
+- [Command dispatch and the tool registry](cli.go.md)

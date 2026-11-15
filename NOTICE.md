@@ -1,5 +1,13 @@
 # NOTICE — third-party formatters redistributed by Formattington
 
+```mermaid
+flowchart LR
+    Fmt["formattington<br/>MIT"] --> Full["full release binaries<br/>redistribute unmodified upstream tools"]
+    Full --> Verified["fetched at release time<br/>SHA-256/SHA-512 verified · hard-fail on mismatch"]
+    Verified --> Licenses["LICENSES/<br/>one license text per tool"]
+    Fmt --> Lite["lite binaries<br/>redistribute nothing"]
+```
+
 Formattington orchestrates existing open-source tools. The `formattington-<platform>-full` release binaries redistribute unmodified upstream executables for the tools listed below (and, for Prettier and markdownlint, binaries built at release time from pinned upstream npm sources with Bun). The `formattington-<platform>-lite` binaries redistribute nothing. This file and the `LICENSES/` directory are included in every release archive so the notices below travel with the binaries.
 
 Each tool belongs to its upstream project and remains under its own license. Formattington does not reimplement these tools. Upstream sources, licenses, and copyright attributions (license texts are in `LICENSES/<tool>.txt`):

@@ -1,5 +1,14 @@
 # Pinned helper tools (`tools/`)
 
+```mermaid
+flowchart TD
+    Upstream["GitHub releases<br/>fordaj/* · upstream projects"] --> Update["tools/<name>/update.sh<br/>gh · checksum verify · stage · swap"]
+    Update --> Pin["tools/<name>/v<version>/<platform>/<br/>pinned by *_VERSION_DIR in scripts/.common.env"]
+    Pin --> Scripts["scripts/<br/>build · release · docs · log · CI"]
+    Pin --> Logs["log() in scripts<br/>via LOGAMUFFIN_BIN"]
+    click Update href "barnacle/update.sh.md"
+```
+
 `tools/` carries the repository's pinned helper binaries — build, release, logging, and docs tooling — plus one `update.sh` per tool that refreshes them. These are **not** the formatters Formattington orchestrates (those live in `formatters/` and are fetched at release time); they are the tools used to build, test, log, and document this repository itself.
 
 ## Bundling convention
@@ -12,21 +21,22 @@ tools/<name>/
   v<version>/<platform>/<binary>[.exe]
 ```
 
-- Binaries are pinned by version directory; the pinned version is named by `*_VERSION_DIR` in [`scripts/.common.env`](../scripts/env.md).
+- Binaries are pinned by version directory; the pinned version is named by `*_VERSION_DIR` in [`scripts/.common.env`](../scripts/env.sh.md).
 - `<platform>` is the hyphenated `<os>-<arch>` name (`linux-x86_64`, `macos-arm64`, `windows-x86_64`, …), matching `PlatformDir()`.
 - `update.sh` downloads the latest (or `--tag`ged) upstream release via `gh`, verifies checksums, stages into a temporary directory, swaps in atomically, and deletes superseded version folders only after the new one is staged — a failed refresh leaves the previous bundle intact. Each script has `--dry-run`, `--help`, and resolves its own directory, so it can run from anywhere.
-- Only the binary is kept, except [barnacle](barnacle/update.md), which also retains the upstream MIT `LICENSE` as `<tag>/LICENSE`.
+- Only the binary is kept, except [barnacle](barnacle/update.sh.md), which also retains the upstream MIT `LICENSE` as `<tag>/<platform>/LICENSE`.
 
 ## The bundles
 
-| Tool | Used for | Docs |
-| --- | --- | --- |
-| [versioner](versioner/update.md) | Computes the repository version (tag) for builds and releases | [update.sh](versioner/update.md) |
-| [logamuffin](logamuffin/update.md) | Structured logging backend for `log()` in the scripts | [update.sh](logamuffin/update.md) |
-| [runner-spawner](runner-spawner/update.md) | Manages self-hosted CI runners (driven by `.runner-spawner.json`) | [update.sh](runner-spawner/update.md) |
-| [barnacle](barnacle/update.md) | Renders this documentation site | [update.sh](barnacle/update.md) |
+| Tool                                                  | Used for                                                               | Docs                                         |
+| ----------------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------- |
+| [versioner](versioner/update.sh.md)                   | Computes the repository version (tag) for builds and releases          | [update.sh](versioner/update.sh.md)          |
+| [logamuffin](logamuffin/update.sh.md)                 | Structured logging backend for `log()` in the scripts                  | [update.sh](logamuffin/update.sh.md)         |
+| [runner-spawner](runner-spawner/update.sh.md)         | Manages self-hosted CI runners (driven by `.runner-spawner.json`)      | [update.sh](runner-spawner/update.sh.md)     |
+| [barnacle](barnacle/update.sh.md)                     | Renders this documentation site                                        | [update.sh](barnacle/update.sh.md)           |
+| [formattington-lite](formattington-lite/update.sh.md) | Stages the released lite binaries locally (not wired into the cascade) | [update.sh](formattington-lite/update.sh.md) |
 
-`scripts/.common.env` and `scripts/.<platform>.env` select these via `*_VERSION_DIR`/`*_BIN`; see [env.md](../scripts/env.md). Archives are platform-native (`.tar.gz` on macOS/Linux, `.zip` on Windows); there is no 7zip dependency anywhere in this repository.
+`scripts/.common.env` and `scripts/.<platform>.env` select these via `*_VERSION_DIR`/`*_BIN`; see [env.sh.md](../scripts/env.sh.md). Archives are platform-native (`.tar.gz` on macOS/Linux, `.zip` on Windows); there is no 7zip dependency anywhere in this repository.
 
 ## Refreshing a pinned tool
 
@@ -39,7 +49,7 @@ tools/barnacle/update.sh --dry-run  # show what would change
 
 ## Related pages
 
-- [scripts/env.md](../scripts/env.md) — how the cascade selects these binaries
-- [scripts/docs.md](../scripts/docs.md) — barnacle in action
-- [../scripts/release.md](../scripts/release.md) — the release pipeline
+- [scripts/env.sh.md](../scripts/env.sh.md) — how the cascade selects these binaries
+- [scripts/docs.sh.md](../scripts/docs.sh.md) — barnacle in action
+- [../scripts/release.sh.md](../scripts/release.sh.md) — the release pipeline
 - [README.md — repository hygiene](../README.md)
