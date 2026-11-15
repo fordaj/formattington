@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# release.bash — compute the next version with versioner (dogfooding),
+# release.sh — compute the next version with versioner (dogfooding),
 # fetch the bundled formatters, cross-compile the binaries, tag HEAD,
 # push the tag, and create a GitHub release with the archives attached.
 #
@@ -33,9 +33,9 @@
 # `formattington --version` agree by construction.
 #
 # Usage:
-#   ./release.bash                # version, build, tag, push, release + upload
-#   ./release.bash --build-only   # cross-compile into dist/ only
-#   ./release.bash --dry-run      # compute + verify + build, touch nothing remote
+#   ./release.sh                # version, build, tag, push, release + upload
+#   ./release.sh --build-only   # cross-compile into dist/ only
+#   ./release.sh --dry-run      # compute + verify + build, touch nothing remote
 #
 # Prerequisites: git, a Go toolchain (1.24+), gh authenticated via
 # `gh auth login` (real release), and bundled versioner/logamuffin binaries
@@ -61,7 +61,7 @@ set -euo pipefail
 # entry point first: it pulls in the env cascade and defines log().
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 if [[ ! -f "$SCRIPT_DIR/scripts/entry.sh" ]]; then
-	printf 'release.bash: error: script entry point not found: %s/scripts/entry.sh\n' "$SCRIPT_DIR" >&2
+	printf 'release.sh: error: script entry point not found: %s/scripts/entry.sh\n' "$SCRIPT_DIR" >&2
 	exit 1
 fi
 # shellcheck disable=SC1091
@@ -98,7 +98,7 @@ VERSION_VARIABLE="buildVersion"
 
 usage() {
 	cat <<'EOF'
-Usage: ./release.bash [--build-only | --dry-run]
+Usage: ./release.sh [--build-only | --dry-run]
 
 Compute the next VERSION/TAG with versioner itself (dogfooding, bundled
 binary selected via scripts/entry.sh), fetch the bundled formatters with
@@ -159,7 +159,7 @@ done
 # nothing is tagged or published); a real release requires the operator to
 # pass --allow-latest explicitly if they really want latest.
 if [[ "$BUILD_ONLY" -eq 0 && "$DRY_RUN" -eq 0 && "$FORMATTER_VERSION" == "latest" && "$ALLOW_LATEST" -eq 0 ]]; then
-	printf 'release.bash: FORMATTER_VERSION=latest is refused for releases; pass --allow-latest to override, or pin a version explicitly.\n' >&2
+	printf 'release.sh: FORMATTER_VERSION=latest is refused for releases; pass --allow-latest to override, or pin a version explicitly.\n' >&2
 	exit 2
 fi
 
@@ -230,13 +230,13 @@ if [[ -n "${LOGAMUFFIN_BIN:-}" && -x "${LOGAMUFFIN_BIN}" ]]; then
 else
 	log WARNING "logamuffin not found; falling back to printf logging (run tools/logamuffin/update.bash)"
 fi
-"$VERSIONER_BIN" --version | sed 's/^/release.bash:   /'
+"$VERSIONER_BIN" --version | sed 's/^/release.sh:   /'
 
 # --- Compute VERSION/TAG with versioner (dogfooding) ------------------
 log INFO "computing version with versioner (dogfooding)..."
 VERSION_OUT="$("$VERSIONER_BIN" --repo-dir "$REPO_ROOT" --quiet)"
 log INFO "versioner output:"
-printf '%s\n' "$VERSION_OUT" | sed 's/^/release.bash:   /'
+printf '%s\n' "$VERSION_OUT" | sed 's/^/release.sh:   /'
 
 VERSION="$(printf '%s\n' "$VERSION_OUT" | sed -n 's/^VERSION=//p' | tail -1)"
 TAG="$(printf '%s\n' "$VERSION_OUT" | sed -n 's/^TAG=//p' | tail -1)"
@@ -303,7 +303,7 @@ fi
 # programs; the archives are built from a staging tree and land in dist/.
 DIST_DIR="$REPO_ROOT/dist"
 # The full build embeds the payload from here (see embedded_full.go);
-# release.bash stages it per platform and removes it again on exit.
+# release.sh stages it per platform and removes it again on exit.
 ASSETS_DIR="$REPO_ROOT/internal/formattington/assets"
 RELEASE_ASSETS=()
 STAGE_DIR=""
@@ -473,7 +473,7 @@ run_update() {
 		return 0
 	fi
 	log WARNING "$tool: formatters/$tool/update.sh $FORMATTER_VERSION $* failed; last log lines:"
-	tail -n 10 "$STAGE_DIR/$tool.log" 2>/dev/null | sed 's/^/release.bash:   /' || true
+	tail -n 10 "$STAGE_DIR/$tool.log" 2>/dev/null | sed 's/^/release.sh:   /' || true
 	return 1
 }
 
