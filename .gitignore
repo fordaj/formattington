@@ -3,6 +3,7 @@
 /dist/
 /formattington
 /site/
+*.DS_Store
 # Scratch directory for the embedded formatters staged per release build
 /internal/formattington/assets/
 
