@@ -1,0 +1,17 @@
+{
+  "commands": [
+    ["prettier"],
+    ["gofmt"],
+    ["goimports"],
+    [
+      "shfmt",
+      "-i",
+      "2",
+      "release.sh",
+      "demo.bash",
+      "scripts/entry.sh",
+      "scripts/version.bash",
+      "scripts/docs.sh"
+    ]
+  ]
+}

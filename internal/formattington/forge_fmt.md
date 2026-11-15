@@ -4,13 +4,13 @@
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `forge` (via `forge fmt`) |
-| Resolution | PATH-only (ships with Foundry — `foundryup`, Homebrew, npm, or release tarballs) |
-| Extensions | `.sol` |
-| Operations | Format, Check |
-| Language aliases | `solidity` → `forge-fmt` |
+|                      |                                                                                                                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `forge` (via `forge fmt`)                                                                                                                                                                                                     |
+| Resolution           | PATH-only (ships with Foundry — `foundryup`, Homebrew, npm, or release tarballs)                                                                                                                                              |
+| Extensions           | `.sol`                                                                                                                                                                                                                        |
+| Operations           | Format, Check                                                                                                                                                                                                                 |
+| Language aliases     | `solidity` → `forge-fmt`                                                                                                                                                                                                      |
 | Native configuration | `[fmt]` table in `foundry.toml` (line length, tab width, quote style, `int_types`, `sort_imports`, `ignore`, ...), discovered from the project root/git root; `--nearest` uses each file's nearest `foundry.toml` (data-only) |
 
 ## Behavior

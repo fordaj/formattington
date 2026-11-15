@@ -4,14 +4,14 @@ odinfmt formats Odin source files. It ships only as part of the Odin Language Se
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `odinfmt` |
-| Resolution | PATH-only (`brew install odinfmt` or build from ols source; no release binaries, no Windows binary) |
-| Extensions | `.odin` |
-| Operations | Format, Check |
-| Language aliases | `odin` -> `odinfmt` |
-| Native configuration | `odinfmt.json` (discovered by walking up from each file; `--config` overrides) |
+|                      |                                                                                                     |
+| -------------------- | --------------------------------------------------------------------------------------------------- |
+| Executable           | `odinfmt`                                                                                           |
+| Resolution           | PATH-only (`brew install odinfmt` or build from ols source; no release binaries, no Windows binary) |
+| Extensions           | `.odin`                                                                                             |
+| Operations           | Format, Check                                                                                       |
+| Language aliases     | `odin` -> `odinfmt`                                                                                 |
+| Native configuration | `odinfmt.json` (discovered by walking up from each file; `--config` overrides)                      |
 
 ## Behavior
 

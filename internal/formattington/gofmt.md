@@ -4,14 +4,14 @@ gofmt is the canonical Go formatter and ships with the Go installation. It cover
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `gofmt` |
-| Resolution | PATH-only (part of the Go installation; `gofmt` comes with Go) |
-| Extensions | `.go` |
-| Operations | Format, Check |
-| Language aliases | `go` -> `gofmt` |
-| Native configuration | none (zero-configuration) |
+|                      |                                                                |
+| -------------------- | -------------------------------------------------------------- |
+| Executable           | `gofmt`                                                        |
+| Resolution           | PATH-only (part of the Go installation; `gofmt` comes with Go) |
+| Extensions           | `.go`                                                          |
+| Operations           | Format, Check                                                  |
+| Language aliases     | `go` -> `gofmt`                                                |
+| Native configuration | none (zero-configuration)                                      |
 
 ## Behavior
 

@@ -27,48 +27,48 @@ Every integration is a function with the signature `func(Options) (int, error)` 
 
 The order mirrors the registry — Stack Overflow Developer Survey 2026 popularity order (see [AGENTS.md](../../AGENTS.md)), not alphabetical:
 
-| Tool | Language(s) | Docs |
-| --- | --- | --- |
-| prettier | JS/TS/CSS/HTML/Markdown/JSON/YAML | [prettier.md](prettier.md) |
-| sqlfluff | SQL | [sqlfluff.md](sqlfluff.md) |
-| black | Python | [black.md](black.md) |
-| shfmt | Shell | [shfmt.md](shfmt.md) |
-| google-java-format | Java | [google_java_format.md](google_java_format.md) |
-| dotnet-format | C#/VB.NET | [dotnet_format.md](dotnet_format.md) |
-| powershell | PowerShell | [powershell.md](powershell.md) |
-| clang-format | C/C++/Obj-C/… | [clang_format.md](clang_format.md) |
-| rustfmt | Rust | [rustfmt.md](rustfmt.md) |
-| php-cs-fixer | PHP | [php_cs_fixer.md](php_cs_fixer.md) |
-| gofmt | Go | [gofmt.md](gofmt.md) |
-| goimports | Go | [goimports.md](goimports.md) |
-| ktfmt | Kotlin | [ktfmt.md](ktfmt.md) |
-| stylua | Lua | [stylua.md](stylua.md) |
-| swift-format | Swift | [swift_format.md](swift_format.md) |
-| rubocop | Ruby | [rubocop.md](rubocop.md) |
-| dart-format | Dart | [dart_format.md](dart_format.md) |
-| styler | R | [styler.md](styler.md) |
-| nixfmt | Nix | [nixfmt.md](nixfmt.md) |
-| gdformat | GDScript | [gdformat.md](gdformat.md) |
-| npm-groovy-lint | Groovy | [npm_groovy_lint.md](npm_groovy_lint.md) |
-| perltidy | Perl | [perltidy.md](perltidy.md) |
-| zig-fmt | Zig | [zig_fmt.md](zig_fmt.md) |
-| mix-format | Elixir | [mix_format.md](mix_format.md) |
-| fourmolu | Haskell | [fourmolu.md](fourmolu.md) |
-| scalafmt | Scala | [scalafmt.md](scalafmt.md) |
-| fprettify | Fortran | [fprettify.md](fprettify.md) |
-| erlfmt | Erlang | [erlfmt.md](erlfmt.md) |
-| jlfmt | Julia | [jlfmt.md](jlfmt.md) |
-| cljfmt | Clojure | [cljfmt.md](cljfmt.md) |
-| gleam-format | Gleam | [gleam_format.md](gleam_format.md) |
-| gnatformat | Ada | [gnatformat.md](gnatformat.md) |
-| fantomas | F# | [fantomas.md](fantomas.md) |
-| ocamlformat | OCaml | [ocamlformat.md](ocamlformat.md) |
-| forge-fmt | Solidity | [forge_fmt.md](forge_fmt.md) |
-| mojo-format | Mojo | [mojo_format.md](mojo_format.md) |
-| odinfmt | Odin | [odinfmt.md](odinfmt.md) |
-| elm-format | Elm | [elm_format.md](elm_format.md) |
-| markdownlint | Markdown (lint) | [markdownlint.md](markdownlint.md) |
-| taplo | TOML | [taplo.md](taplo.md) |
+| Tool               | Language(s)                       | Docs                                           |
+| ------------------ | --------------------------------- | ---------------------------------------------- |
+| prettier           | JS/TS/CSS/HTML/Markdown/JSON/YAML | [prettier.md](prettier.md)                     |
+| sqlfluff           | SQL                               | [sqlfluff.md](sqlfluff.md)                     |
+| black              | Python                            | [black.md](black.md)                           |
+| shfmt              | Shell                             | [shfmt.md](shfmt.md)                           |
+| google-java-format | Java                              | [google_java_format.md](google_java_format.md) |
+| dotnet-format      | C#/VB.NET                         | [dotnet_format.md](dotnet_format.md)           |
+| powershell         | PowerShell                        | [powershell.md](powershell.md)                 |
+| clang-format       | C/C++/Obj-C/…                     | [clang_format.md](clang_format.md)             |
+| rustfmt            | Rust                              | [rustfmt.md](rustfmt.md)                       |
+| php-cs-fixer       | PHP                               | [php_cs_fixer.md](php_cs_fixer.md)             |
+| gofmt              | Go                                | [gofmt.md](gofmt.md)                           |
+| goimports          | Go                                | [goimports.md](goimports.md)                   |
+| ktfmt              | Kotlin                            | [ktfmt.md](ktfmt.md)                           |
+| stylua             | Lua                               | [stylua.md](stylua.md)                         |
+| swift-format       | Swift                             | [swift_format.md](swift_format.md)             |
+| rubocop            | Ruby                              | [rubocop.md](rubocop.md)                       |
+| dart-format        | Dart                              | [dart_format.md](dart_format.md)               |
+| styler             | R                                 | [styler.md](styler.md)                         |
+| nixfmt             | Nix                               | [nixfmt.md](nixfmt.md)                         |
+| gdformat           | GDScript                          | [gdformat.md](gdformat.md)                     |
+| npm-groovy-lint    | Groovy                            | [npm_groovy_lint.md](npm_groovy_lint.md)       |
+| perltidy           | Perl                              | [perltidy.md](perltidy.md)                     |
+| zig-fmt            | Zig                               | [zig_fmt.md](zig_fmt.md)                       |
+| mix-format         | Elixir                            | [mix_format.md](mix_format.md)                 |
+| fourmolu           | Haskell                           | [fourmolu.md](fourmolu.md)                     |
+| scalafmt           | Scala                             | [scalafmt.md](scalafmt.md)                     |
+| fprettify          | Fortran                           | [fprettify.md](fprettify.md)                   |
+| erlfmt             | Erlang                            | [erlfmt.md](erlfmt.md)                         |
+| jlfmt              | Julia                             | [jlfmt.md](jlfmt.md)                           |
+| cljfmt             | Clojure                           | [cljfmt.md](cljfmt.md)                         |
+| gleam-format       | Gleam                             | [gleam_format.md](gleam_format.md)             |
+| gnatformat         | Ada                               | [gnatformat.md](gnatformat.md)                 |
+| fantomas           | F#                                | [fantomas.md](fantomas.md)                     |
+| ocamlformat        | OCaml                             | [ocamlformat.md](ocamlformat.md)               |
+| forge-fmt          | Solidity                          | [forge_fmt.md](forge_fmt.md)                   |
+| mojo-format        | Mojo                              | [mojo_format.md](mojo_format.md)               |
+| odinfmt            | Odin                              | [odinfmt.md](odinfmt.md)                       |
+| elm-format         | Elm                               | [elm_format.md](elm_format.md)                 |
+| markdownlint       | Markdown (lint)                   | [markdownlint.md](markdownlint.md)             |
+| taplo              | TOML                              | [taplo.md](taplo.md)                           |
 
 ## Testing
 

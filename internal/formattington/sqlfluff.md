@@ -4,14 +4,14 @@ SQLFluff is the dialect-aware SQL linter/formatter, covering `.sql` files. The S
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `sqlfluff` |
-| Resolution | PATH-only (Python-only; no official binaries; install with `pipx install sqlfluff` / `pip install sqlfluff`) |
-| Extensions | `.sql` |
-| Operations | Lint / Check, Format |
-| Language aliases | `sql` -> `sqlfluff` |
-| Native configuration | `.sqlfluff`, `[tool.sqlfluff]` in `pyproject.toml` |
+|                      |                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Executable           | `sqlfluff`                                                                                                   |
+| Resolution           | PATH-only (Python-only; no official binaries; install with `pipx install sqlfluff` / `pip install sqlfluff`) |
+| Extensions           | `.sql`                                                                                                       |
+| Operations           | Lint / Check, Format                                                                                         |
+| Language aliases     | `sql` -> `sqlfluff`                                                                                          |
+| Native configuration | `.sqlfluff`, `[tool.sqlfluff]` in `pyproject.toml`                                                           |
 
 ## Behavior
 

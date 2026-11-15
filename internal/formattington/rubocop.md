@@ -4,14 +4,14 @@ RuboCop is a **linter with ~100 layout cops** for Ruby (`.rb`, `.rake`, `.gemspe
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `rubocop` |
-| Resolution | PATH-only (gem-only; bundling was considered and rejected) |
-| Extensions | `.rb`, `.rake`, `.gemspec`, `.ru` |
-| Operations | Lint |
-| Language aliases | `ruby` -> `rubocop` |
-| Native configuration | `.rubocop.yml` (hierarchical, `inherit_from` supported) |
+|                      |                                                            |
+| -------------------- | ---------------------------------------------------------- |
+| Executable           | `rubocop`                                                  |
+| Resolution           | PATH-only (gem-only; bundling was considered and rejected) |
+| Extensions           | `.rb`, `.rake`, `.gemspec`, `.ru`                          |
+| Operations           | Lint                                                       |
+| Language aliases     | `ruby` -> `rubocop`                                        |
+| Native configuration | `.rubocop.yml` (hierarchical, `inherit_from` supported)    |
 
 ## Behavior
 

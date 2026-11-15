@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+jobs:
+  check-formatting:
+    name: Check Formatting
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macOS, labels: [self-hosted, macOS] }
+          - { os: Windows, labels: [self-hosted, Windows] }
+    runs-on: ${{ matrix.labels }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+
+      # The repository dogfoods itself: build formattington from source and
+      # run it against the minimal CI config (.formattington.ci.json). The
+      # repo's own .formattington.json lists many formatters that are not
+      # installable in CI, so the check is scoped to the toolchain every
+      # runner can provide.
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Build formattington
+        run: CGO_ENABLED=0 go build -o bin/formattington ./cmd/formattington
+
+      # goimports via `go install` (lands in $(go env GOPATH)/bin).
+      - name: Install goimports
+        run: go install golang.org/x/tools/cmd/goimports@latest
+
+      # node + npm for the PATH-only formatter CLIs (prettier).
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Install prettier
+        run: npm install --global prettier
+
+      # shfmt — pinned release, installed into a scratch bin dir.
+      - name: Install shfmt
+        run: |
+          set -euo pipefail
+          bin_dir="$RUNNER_TEMP/fmt-bin"
+          mkdir -p "$bin_dir"
+          case "$(uname -s)-$(uname -m)" in
+            Darwin-x86_64)                 s=shfmt_v3.14.1_darwin_amd64 ;;
+            Darwin-arm64)                  s=shfmt_v3.14.1_darwin_arm64 ;;
+            Linux-x86_64)                  s=shfmt_v3.14.1_linux_amd64 ;;
+            Linux-aarch64|Linux-arm64)     s=shfmt_v3.14.1_linux_arm64 ;;
+            MINGW*-x86_64|MSYS*-x86_64|CYGWIN*-x86_64) s=shfmt_v3.14.1_windows_amd64.exe ;;
+            MINGW*-aarch64|MSYS*-aarch64|CYGWIN*-aarch64|*arm64)   s=shfmt_v3.14.1_windows_amd64.exe ;;
+            *) echo "unsupported platform: $(uname -s) $(uname -m)" >&2; exit 2 ;;
+          esac
+          curl -fsSL "https://github.com/mvdan/sh/releases/download/v3.14.1/$s" -o "$bin_dir/shfmt"
+          chmod +x "$bin_dir/shfmt"
+          echo "$bin_dir" >> "$GITHUB_PATH"
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Tool versions
+        run: |
+          go version
+          prettier --version
+          shfmt --version
+          goimports -h 2>&1 | head -1 || true
+
+      - name: Run formattington format check
+        run: ./bin/formattington --check --config .formattington.ci.json all
+
+  test:
+    name: Test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macOS, labels: [self-hosted, macOS] }
+          - { os: Windows, labels: [self-hosted, Windows] }
+    runs-on: ${{ matrix.labels }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - run: gofmt -l . && test -z "$(gofmt -l .)"
+      - run: go test ./...
+      - run: go build ./...

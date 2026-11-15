@@ -4,14 +4,14 @@ GNATformat (AdaCore/GNATformat) formats Ada source files; it is a port of the Pr
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `gnatformat` |
-| Resolution | PATH-only (ships with GNAT Pro, or via Alire `alr install gnatformat`, binary crate `gnatformat_bin`; no standalone release binary exists to bundle) |
-| Extensions | `.ads`, `.adb` |
-| Operations | Format, Check |
-| Language aliases | `ada` -> `gnatformat` |
-| Native configuration | `.gpr` project file (options come from it; auto-loaded when exactly one exists in the cwd) |
+|                      |                                                                                                                                                      |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `gnatformat`                                                                                                                                         |
+| Resolution           | PATH-only (ships with GNAT Pro, or via Alire `alr install gnatformat`, binary crate `gnatformat_bin`; no standalone release binary exists to bundle) |
+| Extensions           | `.ads`, `.adb`                                                                                                                                       |
+| Operations           | Format, Check                                                                                                                                        |
+| Language aliases     | `ada` -> `gnatformat`                                                                                                                                |
+| Native configuration | `.gpr` project file (options come from it; auto-loaded when exactly one exists in the cwd)                                                           |
 
 ## Behavior
 

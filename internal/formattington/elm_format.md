@@ -4,14 +4,14 @@
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `elm-format` |
-| Resolution | Resolved from PATH or the bundled formatters (bundled for Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64; no Windows arm64 asset exists upstream, so that platform stays PATH-only) |
-| Extensions | `.elm` |
-| Operations | Format, Check |
-| Language aliases | `elm` → `elm-format` |
-| Native configuration | none (zero-configuration by design) |
+|                      |                                                                                                                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `elm-format`                                                                                                                                                                                |
+| Resolution           | Resolved from PATH or the bundled formatters (bundled for Linux x86_64/arm64, macOS x86_64/arm64, Windows x86_64; no Windows arm64 asset exists upstream, so that platform stays PATH-only) |
+| Extensions           | `.elm`                                                                                                                                                                                      |
+| Operations           | Format, Check                                                                                                                                                                               |
+| Language aliases     | `elm` → `elm-format`                                                                                                                                                                        |
+| Native configuration | none (zero-configuration by design)                                                                                                                                                         |
 
 ## Behavior
 

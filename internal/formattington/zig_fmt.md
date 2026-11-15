@@ -4,13 +4,13 @@ zig fmt formats Zig files via the `zig fmt` subcommand that ships with every Zig
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `zig` (invoked as `zig fmt`) |
-| Resolution | PATH-only (ships with the Zig toolchain) |
-| Extensions | `.zig` (`.zon` is NOT registered) |
-| Operations | Format, Check |
-| Language aliases | `zig` -> `zig-fmt` |
+|                      |                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------- |
+| Executable           | `zig` (invoked as `zig fmt`)                                                     |
+| Resolution           | PATH-only (ships with the Zig toolchain)                                         |
+| Extensions           | `.zig` (`.zon` is NOT registered)                                                |
+| Operations           | Format, Check                                                                    |
+| Language aliases     | `zig` -> `zig-fmt`                                                               |
 | Native configuration | none (zero configuration by design — no config file exists and none is invented) |
 
 ## Behavior

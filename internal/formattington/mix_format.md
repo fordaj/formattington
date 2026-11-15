@@ -4,13 +4,13 @@ mix format is Elixir's built-in formatter; it ships with the Elixir installation
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `mix` via `mix format` |
-| Resolution | PATH-only (ships with Elixir; needs Erlang/OTP on `PATH`) |
-| Extensions | `.ex`, `.exs` |
-| Operations | Format, Check |
-| Language aliases | `elixir` -> `mix-format` |
+|                      |                                                                                                                                                 |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `mix` via `mix format`                                                                                                                          |
+| Resolution           | PATH-only (ships with Elixir; needs Erlang/OTP on `PATH`)                                                                                       |
+| Extensions           | `.ex`, `.exs`                                                                                                                                   |
+| Operations           | Format, Check                                                                                                                                   |
+| Language aliases     | `elixir` -> `mix-format`                                                                                                                        |
 | Native configuration | `.formatter.exs` (**executed code** — returns a keyword list of formatter inputs/plugins; discovered from the current directory, not walked up) |
 
 ## Behavior

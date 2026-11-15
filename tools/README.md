@@ -26,7 +26,7 @@ tools/<name>/
 | [runner-spawner](runner-spawner/update.md) | Manages self-hosted CI runners (driven by `.runner-spawner.json`) | [update.bash](runner-spawner/update.md) |
 | [barnacle](barnacle/update.md) | Renders this documentation site | [update.bash](barnacle/update.md) |
 
-`scripts/.common.env` and `scripts/.<platform>.env` select these via `*_VERSION_DIR`/`*_BIN`; see [env.md](../scripts/env.md). The `tools/7zip` tree referenced there is not committed.
+`scripts/.common.env` and `scripts/.<platform>.env` select these via `*_VERSION_DIR`/`*_BIN`; see [env.md](../scripts/env.md). Archives are platform-native (`.tar.gz` on macOS/Linux, `.zip` on Windows); there is no 7zip dependency anywhere in this repository.
 
 ## Refreshing a pinned tool
 
@@ -35,7 +35,7 @@ tools/barnacle/update.bash            # download the latest release, verify, swa
 tools/barnacle/update.bash --dry-run  # show what would change
 ```
 
-(Same flags for `versioner`, `logamuffin`, `runner-spawner`.) Refreshes are checksum-verified; [barnacle](barnacle/update.md) verifies against the upstream `SHA256SUMS.txt`, the others against `checksums.txt` (when present — a missing checksum file is a warning, never a silent pass).
+(Same flags for `versioner`, `logamuffin`, `runner-spawner`.) Refreshes are checksum-verified; All four verifiers accept `checksums.txt` or `SHA256SUMS.txt` (missing file: a warning, except runner-spawner, which refuses to install unverified binaries). Legacy `.7z` assets are still readable (a p7zip install is only needed until new releases ship platform-native archives).
 
 ## Related pages
 

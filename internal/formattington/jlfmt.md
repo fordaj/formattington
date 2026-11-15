@@ -4,14 +4,14 @@ jlfmt is the Julia formatter, distributed as a Julia app from JuliaFormatter.jl 
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `jlfmt` (Julia app executable on PATH) |
-| Resolution | PATH-only — Julia is ~600 MB installed, a bundle was never on the table; Windows on ARM has no Julia build at all |
-| Extensions | `.jl` |
-| Operations | Format / Check / Diff |
-| Language aliases | `julia` → `jlfmt` |
-| Native configuration | `.JuliaFormatter.toml`, discovered by walking up from each file |
+|                      |                                                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Executable           | `jlfmt` (Julia app executable on PATH)                                                                            |
+| Resolution           | PATH-only — Julia is ~600 MB installed, a bundle was never on the table; Windows on ARM has no Julia build at all |
+| Extensions           | `.jl`                                                                                                             |
+| Operations           | Format / Check / Diff                                                                                             |
+| Language aliases     | `julia` → `jlfmt`                                                                                                 |
+| Native configuration | `.JuliaFormatter.toml`, discovered by walking up from each file                                                   |
 
 ## Behavior
 

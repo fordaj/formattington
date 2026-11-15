@@ -4,13 +4,13 @@
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `gleam` (via `gleam format`) |
-| Resolution | PATH-only (ships with the Gleam toolchain) |
-| Extensions | `.gleam` |
-| Operations | Format, Check |
-| Language aliases | `gleam` → `gleam-format` |
+|                      |                                                    |
+| -------------------- | -------------------------------------------------- |
+| Executable           | `gleam` (via `gleam format`)                       |
+| Resolution           | PATH-only (ships with the Gleam toolchain)         |
+| Extensions           | `.gleam`                                           |
+| Operations           | Format, Check                                      |
+| Language aliases     | `gleam` → `gleam-format`                           |
 | Native configuration | none by design (fixed style), and none is invented |
 
 ## Behavior

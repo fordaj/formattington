@@ -4,14 +4,14 @@ PowerShell integration: lints `.ps1` and `.psm1` files with [PSScriptAnalyzer](h
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `pwsh` (PowerShell 7+), falling back to `powershell` (Windows PowerShell 5.1); invoked as `pwsh -NoProfile -Command …` |
-| Resolution | PATH-only (PSScriptAnalyzer is a module; nothing is bundled) |
-| Extensions | `.ps1`, `.psm1` |
-| Operations | Lint |
-| Language aliases | `ps1` -> `powershell` |
-| Native configuration | `PSScriptAnalyzerSettings.psd1` (read via `Import-PowerShellDataFile`) |
+|                      |                                                                                                                        |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `pwsh` (PowerShell 7+), falling back to `powershell` (Windows PowerShell 5.1); invoked as `pwsh -NoProfile -Command …` |
+| Resolution           | PATH-only (PSScriptAnalyzer is a module; nothing is bundled)                                                           |
+| Extensions           | `.ps1`, `.psm1`                                                                                                        |
+| Operations           | Lint                                                                                                                   |
+| Language aliases     | `ps1` -> `powershell`                                                                                                  |
+| Native configuration | `PSScriptAnalyzerSettings.psd1` (read via `Import-PowerShellDataFile`)                                                 |
 
 ## Behavior
 

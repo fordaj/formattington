@@ -4,14 +4,14 @@ Fourmolu (github.com/fourmolu/fourmolu) is a Haskell source code formatter. Form
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `fourmolu` |
-| Resolution | Resolved from PATH or the bundled formatters (bundled for macOS arm64, macOS x86_64, Linux arm64, Linux x86_64; no Windows asset upstream, so Windows stays PATH-only; Linux builds are glibc-dynamic — musl/Alpine users need the PATH route) |
-| Extensions | `.hs` |
-| Operations | Format, Check |
-| Language aliases | `haskell` → `fourmolu` |
-| Native configuration | `fourmolu.yaml` (walks up from each file); `--no-cabal` ignores `.cabal` files' `default-extensions`; `--config` forwarded verbatim (data-only) |
+|                      |                                                                                                                                                                                                                                                |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `fourmolu`                                                                                                                                                                                                                                     |
+| Resolution           | Resolved from PATH or the bundled formatters (bundled for macOS arm64, macOS x86_64, Linux arm64, Linux x86_64; no Windows asset upstream, so Windows stays PATH-only; Linux builds are glibc-dynamic — musl/Alpine users need the PATH route) |
+| Extensions           | `.hs`                                                                                                                                                                                                                                          |
+| Operations           | Format, Check                                                                                                                                                                                                                                  |
+| Language aliases     | `haskell` → `fourmolu`                                                                                                                                                                                                                         |
+| Native configuration | `fourmolu.yaml` (walks up from each file); `--no-cabal` ignores `.cabal` files' `default-extensions`; `--config` forwarded verbatim (data-only)                                                                                                |
 
 ## Behavior
 

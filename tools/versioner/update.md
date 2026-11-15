@@ -10,7 +10,7 @@ The pinned binary selection goes through the [env cascade](../../scripts/env.md)
 
 ## `update.bash`
 
-Refreshes from `fordaj/Versioner` releases: `.7z` assets named `<os>-<arch>` (mapped onto the bundle layout, e.g. `darwin-amd64` → `macos-x86_64`), verified against the release's `checksums.txt` when present. Only the binary is kept; docs are discarded. See [../README.md](../README.md) for the shared bundle contract and `--dry-run`/`--tag` usage.
+Refreshes from `fordaj/Versioner` releases: assets named `Versioner_<tag>_<os>-<arch>.tar.gz`/`.zip` (legacy `.7z` accepted), mapped onto the bundle layout (e.g. `darwin-amd64` → `macos-x86_64`), verified against the release's `checksums.txt` when present. Only the binary is kept; docs are discarded. See [../README.md](../README.md) for the shared bundle contract and `--dry-run`/`--tag` usage.
 
 ## Related pages
 

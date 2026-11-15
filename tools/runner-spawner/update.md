@@ -23,7 +23,7 @@ The pinned binary selection goes through the [env cascade](../../scripts/env.md)
 
 ## `update.bash`
 
-Refreshes from `fordaj/runner-spawner` releases: `.7z` assets mapped onto the bundle layout, verified against the release's `checksums.txt` when present. Only the binary is kept. See [../README.md](../README.md) for the shared bundle contract (`--dry-run`, `--tag`, staged atomic swap).
+Refreshes from `fordaj/runner-spawner` releases: assets named `RunnerSpawner_<tag>_<os>-<arch>.tar.gz`/`.zip` (legacy `.7z` accepted) mapped onto the bundle layout. Verification is mandatory: a release with no `checksums.txt` aborts the refresh. Only the binary is kept. See [../README.md](../README.md) for the shared bundle contract (`--dry-run`, `--tag`, staged atomic swap).
 
 ## Related pages
 

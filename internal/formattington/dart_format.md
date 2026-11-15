@@ -4,13 +4,13 @@
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `dart` (via `dart format`) |
-| Resolution | PATH-only (ships with the Dart SDK); invoked via `FindTool("dart")` |
-| Extensions | `.dart` |
-| Operations | Format, Check |
-| Language aliases | `dart` → `dart-format` |
+|                      |                                                                                                                                                                                                              |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Executable           | `dart` (via `dart format`)                                                                                                                                                                                   |
+| Resolution           | PATH-only (ships with the Dart SDK); invoked via `FindTool("dart")`                                                                                                                                          |
+| Extensions           | `.dart`                                                                                                                                                                                                      |
+| Operations           | Format, Check                                                                                                                                                                                                |
+| Language aliases     | `dart` → `dart-format`                                                                                                                                                                                       |
 | Native configuration | `analysis_options.yaml` `formatter:` section (`page_width`, `trailing_commas: preserve`; language version ≥ 3.7) and per-file `// dart format width=NNN` markers — discovered by the tool itself (data-only) |
 
 ## Behavior

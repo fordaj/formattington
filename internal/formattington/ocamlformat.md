@@ -4,14 +4,14 @@ ocamlformat formats OCaml source files. It covers `.ml` and `.mli` files.
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `ocamlformat` |
-| Resolution | PATH-only (`opam install ocamlformat`; ships only as opam source built against your switch — no native binaries exist to bundle) |
-| Extensions | `.ml`, `.mli` |
-| Operations | Format, Check |
-| Language aliases | `ocaml` -> `ocamlformat` |
-| Native configuration | `.ocamlformat` (requires a `version = <installed release>` line); `.ocamlformat-ignore` also exists |
+|                      |                                                                                                                                  |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `ocamlformat`                                                                                                                    |
+| Resolution           | PATH-only (`opam install ocamlformat`; ships only as opam source built against your switch — no native binaries exist to bundle) |
+| Extensions           | `.ml`, `.mli`                                                                                                                    |
+| Operations           | Format, Check                                                                                                                    |
+| Language aliases     | `ocaml` -> `ocamlformat`                                                                                                         |
+| Native configuration | `.ocamlformat` (requires a `version = <installed release>` line); `.ocamlformat-ignore` also exists                              |
 
 ## Behavior
 
@@ -24,7 +24,7 @@ ocamlformat formats OCaml source files. It covers `.ml` and `.mli` files.
 ## Notes
 
 - **The `.ocamlformat` file requires a `version = <installed release>` line** and the tool refuses to run on a mismatch — a common failure mode; pin `version =` to the release you have installed (or run `dune build`, which pins it).
-- `--check` exit 1 means formatting needed *or* error (indistinguishable — stderr disambiguates).
+- `--check` exit 1 means formatting needed _or_ error (indistinguishable — stderr disambiguates).
 - `.ocamlformat-ignore` exists for excluding files from formatting.
 - `dune fmt` wraps ocamlformat for dune projects.
 - MIT; PATH-only, never redistributed by Formattington.

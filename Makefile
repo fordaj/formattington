@@ -43,9 +43,9 @@ check: vet fmt-check test
 
 # Cross-compile every supported platform into ./dist and package the
 # per-platform release archives. Shares its implementation with
-# release.bash so the two can never drift.
+# release.sh so the two can never drift.
 dist:
-	./release.bash --build-only
+	./release.sh --build-only
 
 clean:
 	rm -rf $(BIN_DIR) $(DIST_DIR)

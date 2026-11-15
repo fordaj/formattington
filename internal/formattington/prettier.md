@@ -4,13 +4,13 @@ Prettier is the JavaScript/TypeScript-family formatter covering JS, TS, JSX/TSX,
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `prettier` |
-| Resolution | Bundled in the full release archives (or the embedded full binary), then `PATH` via `FindTool` |
-| Extensions | `.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`, `.markdown` |
-| Operations | Format, Check |
-| Language aliases | `md`/`markdown`/`html` -> `prettier` |
+|                      |                                                                                                                                        |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `prettier`                                                                                                                             |
+| Resolution           | Bundled in the full release archives (or the embedded full binary), then `PATH` via `FindTool`                                         |
+| Extensions           | `.js`, `.ts`, `.tsx`, `.jsx`, `.json`, `.html`, `.css`, `.scss`, `.yaml`, `.yml`, `.md`, `.markdown`                                   |
+| Operations           | Format, Check                                                                                                                          |
+| Language aliases     | `md`/`markdown`/`html` -> `prettier`                                                                                                   |
 | Native configuration | `.prettierrc` (and other Prettier-native configuration, e.g. `package.json`, `.prettierrc.json` / `.yml` / `.toml`, `.prettierignore`) |
 
 ## Behavior

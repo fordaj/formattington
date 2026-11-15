@@ -4,14 +4,14 @@ google-java-format formats Java source files. It covers `.java` files.
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `google-java-format` |
-| Resolution | Bundled (macOS arm64, Linux arm64/x86_64, Windows x86_64; no macOS x86_64 or Windows arm64 asset exists upstream — those stay PATH-only), then `PATH` |
-| Extensions | `.java` |
-| Operations | Format, Check |
-| Language aliases | `java` -> `google-java-format` |
-| Native configuration | none (no configuration file by design; `--style=google\|aosp` is forwarded) |
+|                      |                                                                                                                                                       |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `google-java-format`                                                                                                                                  |
+| Resolution           | Bundled (macOS arm64, Linux arm64/x86_64, Windows x86_64; no macOS x86_64 or Windows arm64 asset exists upstream — those stay PATH-only), then `PATH` |
+| Extensions           | `.java`                                                                                                                                               |
+| Operations           | Format, Check                                                                                                                                         |
+| Language aliases     | `java` -> `google-java-format`                                                                                                                        |
+| Native configuration | none (no configuration file by design; `--style=google\|aosp` is forwarded)                                                                           |
 
 ## Behavior
 

@@ -4,14 +4,14 @@ StyLua is the standard Lua formatter, covering `.lua` files. It is resolved from
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `stylua` |
-| Resolution | Bundled in the full release archives (no Windows arm64 asset upstream — that platform is PATH-only), then `PATH` via `FindTool` |
-| Extensions | `.lua` |
-| Operations | Format, Check |
-| Language aliases | `lua` -> `stylua` |
-| Native configuration | `stylua.toml` / `.stylua.toml` (or `.editorconfig` unless `--no-editorconfig` is passed) |
+|                      |                                                                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Executable           | `stylua`                                                                                                                        |
+| Resolution           | Bundled in the full release archives (no Windows arm64 asset upstream — that platform is PATH-only), then `PATH` via `FindTool` |
+| Extensions           | `.lua`                                                                                                                          |
+| Operations           | Format, Check                                                                                                                   |
+| Language aliases     | `lua` -> `stylua`                                                                                                               |
+| Native configuration | `stylua.toml` / `.stylua.toml` (or `.editorconfig` unless `--no-editorconfig` is passed)                                        |
 
 ## Behavior
 

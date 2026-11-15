@@ -27,7 +27,7 @@ func fingerprintOf(t *testing.T, payload []byte) string {
 }
 
 // buildPayload zips entries ("name" -> contents) into an in-memory
-// archive the way release.bash produces assets/formatters.zip.
+// archive the way release.sh produces assets/formatters.zip.
 func buildPayload(t *testing.T, entries map[string]string) []byte {
 	t.Helper()
 	var buffer bytes.Buffer

@@ -61,8 +61,8 @@ set -euo pipefail
 # entry point first: it pulls in the env cascade and defines log().
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 if [[ ! -f "$SCRIPT_DIR/scripts/entry.sh" ]]; then
-	printf 'release.sh: error: script entry point not found: %s/scripts/entry.sh\n' "$SCRIPT_DIR" >&2
-	exit 1
+  printf 'release.sh: error: script entry point not found: %s/scripts/entry.sh\n' "$SCRIPT_DIR" >&2
+  exit 1
 fi
 # shellcheck disable=SC1091
 . "$SCRIPT_DIR/scripts/entry.sh"
@@ -80,12 +80,12 @@ ALLOW_LATEST=0
 # example "windows-x86_64"); it is the name the program resolves at
 # runtime, so the two differ on purpose.
 PLATFORMS=(
-	"linux-x64 linux amd64 linux-x86_64 formattington"
-	"linux-arm64 linux arm64 linux-arm64 formattington"
-	"macos-x64 darwin amd64 macos-x86_64 formattington"
-	"macos-arm64 darwin arm64 macos-arm64 formattington"
-	"windows-x64 windows amd64 windows-x86_64 formattington.exe"
-	"windows-arm64 windows arm64 windows-arm64 formattington.exe"
+  "linux-x64 linux amd64 linux-x86_64 formattington"
+  "linux-arm64 linux arm64 linux-arm64 formattington"
+  "macos-x64 darwin amd64 macos-x86_64 formattington"
+  "macos-arm64 darwin arm64 macos-arm64 formattington"
+  "windows-x64 windows amd64 windows-x86_64 formattington.exe"
+  "windows-arm64 windows arm64 windows-arm64 formattington.exe"
 )
 
 # The version of the bundled formatters to fetch. "latest" resolves the
@@ -97,7 +97,7 @@ VERSION_PACKAGE="github.com/fordaj/formattington/internal/formattington"
 VERSION_VARIABLE="buildVersion"
 
 usage() {
-	cat <<'EOF'
+  cat <<'EOF'
 Usage: ./release.sh [--build-only | --dry-run]
 
 Compute the next VERSION/TAG with versioner itself (dogfooding, bundled
@@ -127,29 +127,29 @@ EOF
 }
 
 while [[ $# -gt 0 ]]; do
-	case "$1" in
-	--dry-run | -n)
-		DRY_RUN=1
-		shift
-		;;
-	--build-only)
-		BUILD_ONLY=1
-		shift
-		;;
-	--allow-latest)
-		ALLOW_LATEST=1
-		shift
-		;;
-	--help | -h)
-		usage
-		exit 0
-		;;
-	*)
-		log ERROR "unknown argument: $1"
-		usage >&2
-		exit 2
-		;;
-	esac
+  case "$1" in
+  --dry-run | -n)
+    DRY_RUN=1
+    shift
+    ;;
+  --build-only)
+    BUILD_ONLY=1
+    shift
+    ;;
+  --allow-latest)
+    ALLOW_LATEST=1
+    shift
+    ;;
+  --help | -h)
+    usage
+    exit 0
+    ;;
+  *)
+    log ERROR "unknown argument: $1"
+    usage >&2
+    exit 2
+    ;;
+  esac
 done
 
 # A real release may not be built from unpinned "latest" formatters: every
@@ -159,16 +159,16 @@ done
 # nothing is tagged or published); a real release requires the operator to
 # pass --allow-latest explicitly if they really want latest.
 if [[ "$BUILD_ONLY" -eq 0 && "$DRY_RUN" -eq 0 && "$FORMATTER_VERSION" == "latest" && "$ALLOW_LATEST" -eq 0 ]]; then
-	printf 'release.sh: FORMATTER_VERSION=latest is refused for releases; pass --allow-latest to override, or pin a version explicitly.\n' >&2
-	exit 2
+  printf 'release.sh: FORMATTER_VERSION=latest is refused for releases; pass --allow-latest to override, or pin a version explicitly.\n' >&2
+  exit 2
 fi
 
 die() {
-	log ERROR "$*" || true
-	exit 1
+  log ERROR "$*" || true
+  exit 1
 }
 need_cmd() {
-	command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"
+  command -v "$1" >/dev/null 2>&1 || die "required command not found: $1"
 }
 
 need_cmd git
@@ -179,14 +179,14 @@ need_cmd zip
 need_cmd tar
 
 if [[ "$DRY_RUN" -ne 1 && "$BUILD_ONLY" -ne 1 ]]; then
-	need_cmd gh
-	if ! gh auth status >/dev/null 2>&1; then
-		die "gh is not authenticated (run: gh auth login)"
-	fi
+  need_cmd gh
+  if ! gh auth status >/dev/null 2>&1; then
+    die "gh is not authenticated (run: gh auth login)"
+  fi
 fi
 
 if ! REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"; then
-	die "not inside a git repository"
+  die "not inside a git repository"
 fi
 cd "$REPO_ROOT"
 log INFO "repo: $REPO_ROOT"
@@ -195,40 +195,40 @@ BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 HEAD_SHORT="$(git rev-parse --short HEAD)"
 log INFO "branch: $BRANCH  HEAD: $HEAD_SHORT"
 if [[ "$DRY_RUN" -eq 1 ]]; then
-	log INFO "DRY RUN: no tag/push/release will happen"
+  log INFO "DRY RUN: no tag/push/release will happen"
 fi
 
 # --- Precondition: clean working tree ---------------------------------
 # Only a real release needs a pristine tree; --build-only and --dry-run
 # tolerate a dirty one.
 if [[ -n "$(git status --porcelain)" ]]; then
-	if [[ "$DRY_RUN" -eq 1 || "$BUILD_ONLY" -eq 1 ]]; then
-		log WARNING "working tree is not clean (allowed here)"
-	else
-		die "working tree is not clean (commit or stash first):"$'\n'"$(git status --short)"
-	fi
+  if [[ "$DRY_RUN" -eq 1 || "$BUILD_ONLY" -eq 1 ]]; then
+    log WARNING "working tree is not clean (allowed here)"
+  else
+    die "working tree is not clean (commit or stash first):"$'\n'"$(git status --short)"
+  fi
 fi
 
 # Best-effort fetch so remote tag-existence checks are current.
 if ! git fetch origin --tags 2>/dev/null; then
-	if [[ "$DRY_RUN" -eq 1 || "$BUILD_ONLY" -eq 1 ]]; then
-		log WARNING "git fetch origin --tags failed; remote tag check may be stale"
-	else
-		die "git fetch origin --tags failed"
-	fi
+  if [[ "$DRY_RUN" -eq 1 || "$BUILD_ONLY" -eq 1 ]]; then
+    log WARNING "git fetch origin --tags failed; remote tag check may be stale"
+  else
+    die "git fetch origin --tags failed"
+  fi
 fi
 
 # --- Dogfooding: versioner/logamuffin via scripts/entry.sh (sourced above)
 # shellcheck disable=SC2154
 if [[ -z "${VERSIONER_BIN:-}" ]]; then
-	die "no versioner binary found (run tools/versioner/update.bash, or set VERSIONER_BIN)"
+  die "no versioner binary found (run tools/versioner/update.bash, or set VERSIONER_BIN)"
 fi
 [[ -x "$VERSIONER_BIN" ]] || die "VERSIONER_BIN=$VERSIONER_BIN is not executable"
 log INFO "using versioner: $VERSIONER_BIN"
 if [[ -n "${LOGAMUFFIN_BIN:-}" && -x "${LOGAMUFFIN_BIN}" ]]; then
-	log INFO "using logamuffin: $LOGAMUFFIN_BIN"
+  log INFO "using logamuffin: $LOGAMUFFIN_BIN"
 else
-	log WARNING "logamuffin not found; falling back to printf logging (run tools/logamuffin/update.bash)"
+  log WARNING "logamuffin not found; falling back to printf logging (run tools/logamuffin/update.bash)"
 fi
 "$VERSIONER_BIN" --version | sed 's/^/release.sh:   /'
 
@@ -243,7 +243,7 @@ TAG="$(printf '%s\n' "$VERSION_OUT" | sed -n 's/^TAG=//p' | tail -1)"
 [[ -n "$VERSION" ]] || die "could not parse VERSION from versioner output"
 [[ -n "$TAG" ]] || die "could not parse TAG from versioner output"
 if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-	die "computed tag looks invalid: '$TAG' (expected vX.Y.Z.W.V)"
+  die "computed tag looks invalid: '$TAG' (expected vX.Y.Z.W.V)"
 fi
 log INFO "VERSION=$VERSION  TAG=$TAG"
 
@@ -252,41 +252,41 @@ log INFO "VERSION=$VERSION  TAG=$TAG"
 # two must match; a mismatch means the binary is stale or was built from
 # a different checkout.
 resolve_formattington() {
-	if [[ -n "${FORMATTINGTON_BIN:-}" ]]; then
-		if [[ -x "${FORMATTINGTON_BIN}" ]]; then
-			printf '%s' "$FORMATTINGTON_BIN"
-			return 0
-		fi
-		return 1
-	fi
-	local candidate
-	for candidate in "$REPO_ROOT/bin/formattington" "$REPO_ROOT/formattington"; do
-		if [[ -x "$candidate" ]]; then
-			printf '%s' "$candidate"
-			return 0
-		fi
-	done
-	if command -v formattington >/dev/null 2>&1; then
-		command -v formattington
-		return 0
-	fi
-	return 1
+  if [[ -n "${FORMATTINGTON_BIN:-}" ]]; then
+    if [[ -x "${FORMATTINGTON_BIN}" ]]; then
+      printf '%s' "$FORMATTINGTON_BIN"
+      return 0
+    fi
+    return 1
+  fi
+  local candidate
+  for candidate in "$REPO_ROOT/bin/formattington" "$REPO_ROOT/formattington"; do
+    if [[ -x "$candidate" ]]; then
+      printf '%s' "$candidate"
+      return 0
+    fi
+  done
+  if command -v formattington >/dev/null 2>&1; then
+    command -v formattington
+    return 0
+  fi
+  return 1
 }
 
 log INFO "verifying program version..."
 if ! FMT_BIN="$(resolve_formattington)"; then
-	log INFO "no formattington binary found; building it with go build..."
-	mkdir -p "$REPO_ROOT/bin"
-	(cd "$REPO_ROOT" && go build -o "$REPO_ROOT/bin/formattington" ./cmd/formattington) ||
-		die "could not build formattington (install Go 1.24+ or set FORMATTINGTON_BIN)"
-	FMT_BIN="$REPO_ROOT/bin/formattington"
+  log INFO "no formattington binary found; building it with go build..."
+  mkdir -p "$REPO_ROOT/bin"
+  (cd "$REPO_ROOT" && go build -o "$REPO_ROOT/bin/formattington" ./cmd/formattington) ||
+    die "could not build formattington (install Go 1.24+ or set FORMATTINGTON_BIN)"
+  FMT_BIN="$REPO_ROOT/bin/formattington"
 fi
 log INFO "using formattington: $FMT_BIN"
 
 PKG_VERSION="$("$FMT_BIN" --version)"
 log INFO "formattington --version reports: $PKG_VERSION"
 if [[ "$PKG_VERSION" != "$VERSION" ]]; then
-	die "program version $PKG_VERSION does not match versioner VERSION=$VERSION"
+  die "program version $PKG_VERSION does not match versioner VERSION=$VERSION"
 fi
 
 # --- Cross-compile the release binaries -------------------------------
@@ -309,52 +309,52 @@ RELEASE_ASSETS=()
 STAGE_DIR=""
 
 cleanup_stage() {
-	rm -rf -- "$ASSETS_DIR"
-	if [[ -n "${STAGE_DIR:-}" && -d "$STAGE_DIR" ]]; then
-		rm -rf -- "$STAGE_DIR"
-	fi
+  rm -rf -- "$ASSETS_DIR"
+  if [[ -n "${STAGE_DIR:-}" && -d "$STAGE_DIR" ]]; then
+    rm -rf -- "$STAGE_DIR"
+  fi
 }
 trap cleanup_stage EXIT
 
 build_binaries() {
-	local version="$1"
-	local ldflags="-s -w -X $VERSION_PACKAGE.$VERSION_VARIABLE=$version"
+  local version="$1"
+  local ldflags="-s -w -X $VERSION_PACKAGE.$VERSION_VARIABLE=$version"
 
-	log INFO "cross-compiling ${#PLATFORMS[@]} platforms into dist/..."
-	rm -rf "$DIST_DIR"
-	rm -rf "$ASSETS_DIR"
-	mkdir -p "$DIST_DIR/lite" "$DIST_DIR/full"
+  log INFO "cross-compiling ${#PLATFORMS[@]} platforms into dist/..."
+  rm -rf "$DIST_DIR"
+  rm -rf "$ASSETS_DIR"
+  mkdir -p "$DIST_DIR/lite" "$DIST_DIR/full"
 
-	local entry platform goos goarch bundle binary lite_out full_out
-	for entry in "${PLATFORMS[@]}"; do
-		read -r platform goos goarch bundle binary <<<"$entry"
+  local entry platform goos goarch bundle binary lite_out full_out
+  for entry in "${PLATFORMS[@]}"; do
+    read -r platform goos goarch bundle binary <<<"$entry"
 
-		# The lite build never touches the embed staging area.
-		lite_out="$DIST_DIR/lite/$platform/$binary"
-		mkdir -p "$(dirname "$lite_out")"
-		log INFO "  $platform ($goos/$goarch) lite -> dist/lite/$platform/$binary"
-		(
-			cd "$REPO_ROOT" &&
-				CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
-					go build -trimpath -ldflags "$ldflags" \
-					-o "$lite_out" ./cmd/formattington
-		) || die "cross-compile failed for $platform ($goos/$goarch) lite"
+    # The lite build never touches the embed staging area.
+    lite_out="$DIST_DIR/lite/$platform/$binary"
+    mkdir -p "$(dirname "$lite_out")"
+    log INFO "  $platform ($goos/$goarch) lite -> dist/lite/$platform/$binary"
+    (
+      cd "$REPO_ROOT" &&
+        CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+          go build -trimpath -ldflags "$ldflags" \
+          -o "$lite_out" ./cmd/formattington
+    ) || die "cross-compile failed for $platform ($goos/$goarch) lite"
 
-		# Stage this platform's formatter payload, then the full build.
-		stage_formatter_payload "$bundle"
+    # Stage this platform's formatter payload, then the full build.
+    stage_formatter_payload "$bundle"
 
-		full_out="$DIST_DIR/full/$platform/$binary"
-		mkdir -p "$(dirname "$full_out")"
-		log INFO "  $platform ($goos/$goarch) full -> dist/full/$platform/$binary"
-		(
-			cd "$REPO_ROOT" &&
-				CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
-					go build -trimpath -tags full -ldflags "$ldflags" \
-					-o "$full_out" ./cmd/formattington
-		) || die "cross-compile failed for $platform ($goos/$goarch) full"
+    full_out="$DIST_DIR/full/$platform/$binary"
+    mkdir -p "$(dirname "$full_out")"
+    log INFO "  $platform ($goos/$goarch) full -> dist/full/$platform/$binary"
+    (
+      cd "$REPO_ROOT" &&
+        CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+          go build -trimpath -tags full -ldflags "$ldflags" \
+          -o "$full_out" ./cmd/formattington
+    ) || die "cross-compile failed for $platform ($goos/$goarch) full"
 
-		rm -rf "$ASSETS_DIR"
-	done
+    rm -rf "$ASSETS_DIR"
+  done
 }
 
 # stage_formatter_payload <bundle platform>
@@ -364,31 +364,31 @@ build_binaries() {
 # platform, so the embed pattern always matches; an empty archive is
 # treated as "no embedded formatters" at runtime.
 stage_formatter_payload() {
-	local platform="$1"
-	local staging="$STAGE_DIR/payload-$platform"
-	local zip_file="$ASSETS_DIR/formatters.zip"
+  local platform="$1"
+  local staging="$STAGE_DIR/payload-$platform"
+  local zip_file="$ASSETS_DIR/formatters.zip"
 
-	rm -rf "$staging" "$ASSETS_DIR"
-	mkdir -p "$staging" "$ASSETS_DIR"
-	copy_formatters "$platform" "$staging"
+  rm -rf "$staging" "$ASSETS_DIR"
+  mkdir -p "$staging" "$ASSETS_DIR"
+  copy_formatters "$platform" "$staging"
 
-	local count
-	count="$(find "$staging" -type f | wc -l | tr -d ' ')"
-	if [[ "$count" -gt 0 ]]; then
-		# Archive the payload with clean relative names at the root:
-		# <tool>/v<version>/<platform>/<executable>.
-		(
-			cd "$staging" &&
-				find . -type f -print | sed 's|^\./||' | LC_ALL=C sort |
-				zip -q -X "$zip_file" -@
-		) || die "could not stage the embedded formatters for $platform"
-		log INFO "  embedded $count formatter executable(s) in the $platform full binary"
-	else
-		log WARNING "no bundled formatters for $platform; the full binary will match lite"
-		printf 'PK\005\006' >"$zip_file"
-		# An empty zip archive is exactly the 22-byte end-of-central-directory record.
-		head -c 18 /dev/zero >>"$zip_file"
-	fi
+  local count
+  count="$(find "$staging" -type f | wc -l | tr -d ' ')"
+  if [[ "$count" -gt 0 ]]; then
+    # Archive the payload with clean relative names at the root:
+    # <tool>/v<version>/<platform>/<executable>.
+    (
+      cd "$staging" &&
+        find . -type f -print | sed 's|^\./||' | LC_ALL=C sort |
+        zip -q -X "$zip_file" -@
+    ) || die "could not stage the embedded formatters for $platform"
+    log INFO "  embedded $count formatter executable(s) in the $platform full binary"
+  else
+    log WARNING "no bundled formatters for $platform; the full binary will match lite"
+    printf 'PK\005\006' >"$zip_file"
+    # An empty zip archive is exactly the 22-byte end-of-central-directory record.
+    head -c 18 /dev/zero >>"$zip_file"
+  fi
 }
 
 # fetch_formatters
@@ -402,93 +402,93 @@ stage_formatter_payload() {
 # A script stops at the first target it cannot provide, so the platforms
 # that are still missing afterwards are retried one by one.
 fetch_formatters() {
-	local tool_dir tool update_script platform
-	local platforms=()
-	local entry release_platform goos goarch bundle binary
+  local tool_dir tool update_script platform
+  local platforms=()
+  local entry release_platform goos goarch bundle binary
 
-	for entry in "${PLATFORMS[@]}"; do
-		# shellcheck disable=SC2034 # only the bundle platform is needed here
-		read -r release_platform goos goarch bundle binary <<<"$entry"
-		platforms+=("$bundle")
-	done
+  for entry in "${PLATFORMS[@]}"; do
+    # shellcheck disable=SC2034 # only the bundle platform is needed here
+    read -r release_platform goos goarch bundle binary <<<"$entry"
+    platforms+=("$bundle")
+  done
 
-	local zero_fetch=()
-	for tool_dir in "$REPO_ROOT"/formatters/*/; do
-		[[ -d "$tool_dir" ]] || continue
-		tool="$(basename "$tool_dir")"
-		update_script="$tool_dir/update.sh"
-		[[ -f "$update_script" ]] || continue
+  local zero_fetch=()
+  for tool_dir in "$REPO_ROOT"/formatters/*/; do
+    [[ -d "$tool_dir" ]] || continue
+    tool="$(basename "$tool_dir")"
+    update_script="$tool_dir/update.sh"
+    [[ -f "$update_script" ]] || continue
 
-		run_update "$tool" "$update_script" "${platforms[@]}" || true
+    run_update "$tool" "$update_script" "${platforms[@]}" || true
 
-		for platform in "${platforms[@]}"; do
-			if ! formatter_present "$tool" "$platform"; then
-				run_update "$tool" "$update_script" "$platform" || true
-			fi
-		done
+    for platform in "${platforms[@]}"; do
+      if ! formatter_present "$tool" "$platform"; then
+        run_update "$tool" "$update_script" "$platform" || true
+      fi
+    done
 
-		local fetched=0
-		local missing=""
-		for platform in "${platforms[@]}"; do
-			if formatter_present "$tool" "$platform"; then
-				fetched=$((fetched + 1))
-			else
-				missing="$missing $platform"
-			fi
-		done
-		if [[ -z "$missing" ]]; then
-			log INFO "  fetched $tool for ${#platforms[@]} platforms"
-		elif [[ "$fetched" -eq 0 ]]; then
-			zero_fetch+=("$tool")
-			log ERROR "  $tool could not be fetched for any platform (pins mismatch or network failure)"
-		else
-			log WARNING "$tool is not available for:$missing (it will be missing from those full bundles)"
-		fi
-	done
+    local fetched=0
+    local missing=""
+    for platform in "${platforms[@]}"; do
+      if formatter_present "$tool" "$platform"; then
+        fetched=$((fetched + 1))
+      else
+        missing="$missing $platform"
+      fi
+    done
+    if [[ -z "$missing" ]]; then
+      log INFO "  fetched $tool for ${#platforms[@]} platforms"
+    elif [[ "$fetched" -eq 0 ]]; then
+      zero_fetch+=("$tool")
+      log ERROR "  $tool could not be fetched for any platform (pins mismatch or network failure)"
+    else
+      log WARNING "$tool is not available for:$missing (it will be missing from those full bundles)"
+    fi
+  done
 
-	# A tool that failed everywhere means the release would ship without
-	# it on every platform — almost always a pins/version mismatch or a
-	# network failure, not an upstream packaging gap. Refuse to continue.
-	if [[ "${#zero_fetch[@]}" -ne 0 ]]; then
-		die "no bundles fetched for: ${zero_fetch[*]}; refusing to build a release without them"
-	fi
+  # A tool that failed everywhere means the release would ship without
+  # it on every platform — almost always a pins/version mismatch or a
+  # network failure, not an upstream packaging gap. Refuse to continue.
+  if [[ "${#zero_fetch[@]}" -ne 0 ]]; then
+    die "no bundles fetched for: ${zero_fetch[*]}; refusing to build a release without them"
+  fi
 
-	# Record the exact resolved versions in the release log.
-	log INFO "Bundled formatter versions:"
-	for dir in "$STAGE_DIR"/formatters/*/v*/; do
-		[[ -d "$dir" ]] || continue
-		tool="$(basename "$(dirname "$dir")")"
-		version="$(basename "$dir")"
-		log INFO "  $tool $version"
-	done
+  # Record the exact resolved versions in the release log.
+  log INFO "Bundled formatter versions:"
+  for dir in "$STAGE_DIR"/formatters/*/v*/; do
+    [[ -d "$dir" ]] || continue
+    tool="$(basename "$(dirname "$dir")")"
+    version="$(basename "$dir")"
+    log INFO "  $tool $version"
+  done
 }
 
 # run_update <tool> <update-script> <platform>...
 run_update() {
-	local tool="$1" update_script="$2"
-	shift 2
-	if OUTPUT_DIR="$STAGE_DIR/formatters/$tool" \
-		"$update_script" "$FORMATTER_VERSION" "$@" \
-		>"$STAGE_DIR/$tool.log" 2>&1; then
-		return 0
-	fi
-	log WARNING "$tool: formatters/$tool/update.sh $FORMATTER_VERSION $* failed; last log lines:"
-	tail -n 10 "$STAGE_DIR/$tool.log" 2>/dev/null | sed 's/^/release.sh:   /' || true
-	return 1
+  local tool="$1" update_script="$2"
+  shift 2
+  if OUTPUT_DIR="$STAGE_DIR/formatters/$tool" \
+    "$update_script" "$FORMATTER_VERSION" "$@" \
+    >"$STAGE_DIR/$tool.log" 2>&1; then
+    return 0
+  fi
+  log WARNING "$tool: formatters/$tool/update.sh $FORMATTER_VERSION $* failed; last log lines:"
+  tail -n 10 "$STAGE_DIR/$tool.log" 2>/dev/null | sed 's/^/release.sh:   /' || true
+  return 1
 }
 
 # formatter_present <tool> <platform>
 # Whether the tool was downloaded for a platform, that is whether
 # <stage>/formatters/<tool>/v<version>/<platform>/ exists.
 formatter_present() {
-	local tool="$1" platform="$2"
-	local dir
-	for dir in "$STAGE_DIR/formatters/$tool"/v*/"$platform"; do
-		if [[ -d "$dir" ]]; then
-			return 0
-		fi
-	done
-	return 1
+  local tool="$1" platform="$2"
+  local dir
+  for dir in "$STAGE_DIR/formatters/$tool"/v*/"$platform"; do
+    if [[ -d "$dir" ]]; then
+      return 0
+    fi
+  done
+  return 1
 }
 
 # copy_formatters <bundle-platform> <destination>
@@ -496,77 +496,77 @@ formatter_present() {
 # The tree layout (<tool>/v<version>/<platform>/<executable>) becomes the
 # archive members and, after extraction, the runtime layout.
 copy_formatters() {
-	local platform="$1"
-	local destination="$2"
-	local source="$STAGE_DIR/formatters"
-	local dir tool version
+  local platform="$1"
+  local destination="$2"
+  local source="$STAGE_DIR/formatters"
+  local dir tool version
 
-	[[ -d "$source" ]] || return 0
+  [[ -d "$source" ]] || return 0
 
-	for dir in "$source"/*/v*/"$platform"; do
-		[[ -d "$dir" ]] || continue
-		tool="$(basename "$(dirname "$(dirname "$dir")")")"
-		version="$(basename "$(dirname "$dir")")"
-		mkdir -p "$destination/$tool/$version/$platform"
-		cp -a "$dir/." "$destination/$tool/$version/$platform/"
-	done
+  for dir in "$source"/*/v*/"$platform"; do
+    [[ -d "$dir" ]] || continue
+    tool="$(basename "$(dirname "$(dirname "$dir")")")"
+    version="$(basename "$(dirname "$dir")")"
+    mkdir -p "$destination/$tool/$version/$platform"
+    cp -a "$dir/." "$destination/$tool/$version/$platform/"
+  done
 }
 
 # package_tree <directory> <archive>
 # Package a directory as a zip (Windows) or a gzipped tar (everything
 # else), keeping the directory itself as the archive's top-level entry.
 package_tree() {
-	local directory="$1"
-	local archive="$2"
-	local parent base
-	parent="$(dirname "$directory")"
-	base="$(basename "$directory")"
+  local directory="$1"
+  local archive="$2"
+  local parent base
+  parent="$(dirname "$directory")"
+  base="$(basename "$directory")"
 
-	if [[ "$archive" == *.zip ]]; then
-		(
-			cd "$parent" && zip -q -r "$archive" "$base"
-		) || die "could not package $archive"
-	else
-		tar -czf "$archive" -C "$parent" "$base" ||
-			die "could not package $archive"
-	fi
+  if [[ "$archive" == *.zip ]]; then
+    (
+      cd "$parent" && zip -q -r "$archive" "$base"
+    ) || die "could not package $archive"
+  else
+    tar -czf "$archive" -C "$parent" "$base" ||
+      die "could not package $archive"
+  fi
 }
 
 package_binaries() {
-	local entry platform goos goarch _ binary extension
-	local lite_tree full_tree archive
+  local entry platform goos goarch _ binary extension
+  local lite_tree full_tree archive
 
-	for entry in "${PLATFORMS[@]}"; do
-		read -r platform goos goarch _ binary <<<"$entry"
-		if [[ "$goos" == "windows" ]]; then
-			extension="zip"
-		else
-			extension="tar.gz"
-		fi
+  for entry in "${PLATFORMS[@]}"; do
+    read -r platform goos goarch _ binary <<<"$entry"
+    if [[ "$goos" == "windows" ]]; then
+      extension="zip"
+    else
+      extension="tar.gz"
+    fi
 
-		# Lite: the program alone, plus the redistribution notices.
-		lite_tree="$STAGE_DIR/pkg/formattington-$platform-lite"
-		mkdir -p "$lite_tree"
-		cp "$DIST_DIR/lite/$platform/$binary" "$lite_tree/$binary"
-		cp "$REPO_ROOT/NOTICE.md" "$lite_tree/NOTICE.md"
-		cp -a "$REPO_ROOT/LICENSES" "$lite_tree/LICENSES"
-		archive="$DIST_DIR/formattington-$platform-lite.$extension"
-		package_tree "$lite_tree" "$archive"
-		log INFO "  packaged $(basename "$archive")"
-		RELEASE_ASSETS+=("$archive")
+    # Lite: the program alone, plus the redistribution notices.
+    lite_tree="$STAGE_DIR/pkg/formattington-$platform-lite"
+    mkdir -p "$lite_tree"
+    cp "$DIST_DIR/lite/$platform/$binary" "$lite_tree/$binary"
+    cp "$REPO_ROOT/NOTICE.md" "$lite_tree/NOTICE.md"
+    cp -a "$REPO_ROOT/LICENSES" "$lite_tree/LICENSES"
+    archive="$DIST_DIR/formattington-$platform-lite.$extension"
+    package_tree "$lite_tree" "$archive"
+    log INFO "  packaged $(basename "$archive")"
+    RELEASE_ASSETS+=("$archive")
 
-		# Full: the self-contained program (the bundled formatters are
-		# embedded inside the binary), plus the redistribution notices.
-		full_tree="$STAGE_DIR/pkg/formattington-$platform-full"
-		mkdir -p "$full_tree"
-		cp "$DIST_DIR/full/$platform/$binary" "$full_tree/$binary"
-		cp "$REPO_ROOT/NOTICE.md" "$full_tree/NOTICE.md"
-		cp -a "$REPO_ROOT/LICENSES" "$full_tree/LICENSES"
-		archive="$DIST_DIR/formattington-$platform-full.$extension"
-		package_tree "$full_tree" "$archive"
-		log INFO "  packaged $(basename "$archive")"
-		RELEASE_ASSETS+=("$archive")
-	done
+    # Full: the self-contained program (the bundled formatters are
+    # embedded inside the binary), plus the redistribution notices.
+    full_tree="$STAGE_DIR/pkg/formattington-$platform-full"
+    mkdir -p "$full_tree"
+    cp "$DIST_DIR/full/$platform/$binary" "$full_tree/$binary"
+    cp "$REPO_ROOT/NOTICE.md" "$full_tree/NOTICE.md"
+    cp -a "$REPO_ROOT/LICENSES" "$full_tree/LICENSES"
+    archive="$DIST_DIR/formattington-$platform-full.$extension"
+    package_tree "$full_tree" "$archive"
+    log INFO "  packaged $(basename "$archive")"
+    RELEASE_ASSETS+=("$archive")
+  done
 }
 
 # version_probe <command...>
@@ -575,16 +575,16 @@ package_binaries() {
 # banner with the version and exits 0). Prints the tool's full output and
 # returns 0 when either probe exits 0, 1 otherwise.
 version_probe() {
-	local output
-	if output="$("$@" --version 2>&1)"; then
-		printf '%s' "$output"
-		return 0
-	fi
-	if output="$("$@" --help 2>&1)"; then
-		printf '%s' "$output"
-		return 0
-	fi
-	return 1
+  local output
+  if output="$("$@" --version 2>&1)"; then
+    printf '%s' "$output"
+    return 0
+  fi
+  if output="$("$@" --help 2>&1)"; then
+    printf '%s' "$output"
+    return 0
+  fi
+  return 1
 }
 
 # smoke_full_binary
@@ -596,103 +596,103 @@ version_probe() {
 # (markdownlint). Fails the build otherwise. Skipped on platforms the
 # matrix does not cover and when no formatter was fetched for the host.
 smoke_full_binary() {
-	local host_system host_machine host_bundle host_full entry release_platform bundle binary tool output
+  local host_system host_machine host_bundle host_full entry release_platform bundle binary tool output
 
-	host_system="$(uname -s)"
-	host_machine="$(uname -m)"
-	case "$host_system" in
-	Darwin) host_system="macos" ;;
-	Linux) host_system="linux" ;;
-	MINGW* | MSYS* | CYGWIN*) host_system="windows" ;;
-	*)
-		log WARNING "smoke test skipped (unsupported host: $host_system)"
-		return 0
-		;;
-	esac
-	case "$host_machine" in
-	x86_64 | amd64) host_machine="x86_64" ;;
-	arm64 | aarch64) host_machine="arm64" ;;
-	*)
-		log WARNING "smoke test skipped (unsupported host architecture: $host_machine)"
-		return 0
-		;;
-	esac
-	host_bundle="$host_system-$host_machine"
+  host_system="$(uname -s)"
+  host_machine="$(uname -m)"
+  case "$host_system" in
+  Darwin) host_system="macos" ;;
+  Linux) host_system="linux" ;;
+  MINGW* | MSYS* | CYGWIN*) host_system="windows" ;;
+  *)
+    log WARNING "smoke test skipped (unsupported host: $host_system)"
+    return 0
+    ;;
+  esac
+  case "$host_machine" in
+  x86_64 | amd64) host_machine="x86_64" ;;
+  arm64 | aarch64) host_machine="arm64" ;;
+  *)
+    log WARNING "smoke test skipped (unsupported host architecture: $host_machine)"
+    return 0
+    ;;
+  esac
+  host_bundle="$host_system-$host_machine"
 
-	host_full=""
-	for entry in "${PLATFORMS[@]}"; do
-		# shellcheck disable=SC2034 # only the release platform, bundle and binary are needed
-		read -r release_platform _ _ bundle binary <<<"$entry"
-		if [[ "$bundle" == "$host_bundle" ]]; then
-			host_full="$DIST_DIR/full/$release_platform/$binary"
-			break
-		fi
-	done
-	if [[ -z "$host_full" ]]; then
-		log WARNING "smoke test skipped (no matrix entry for $host_bundle)"
-		return 0
-	fi
+  host_full=""
+  for entry in "${PLATFORMS[@]}"; do
+    # shellcheck disable=SC2034 # only the release platform, bundle and binary are needed
+    read -r release_platform _ _ bundle binary <<<"$entry"
+    if [[ "$bundle" == "$host_bundle" ]]; then
+      host_full="$DIST_DIR/full/$release_platform/$binary"
+      break
+    fi
+  done
+  if [[ -z "$host_full" ]]; then
+    log WARNING "smoke test skipped (no matrix entry for $host_bundle)"
+    return 0
+  fi
 
-	local tools=()
-	for tool_dir in "$STAGE_DIR"/formatters/*/v*/"$host_bundle"; do
-		[[ -d "$tool_dir" ]] || continue
-		tools+=("$(basename "$(dirname "$(dirname "$tool_dir")")")")
-	done
-	if [[ "${#tools[@]}" -eq 0 ]]; then
-		log WARNING "smoke test skipped (no formatters were fetched for $host_bundle)"
-		return 0
-	fi
+  local tools=()
+  for tool_dir in "$STAGE_DIR"/formatters/*/v*/"$host_bundle"; do
+    [[ -d "$tool_dir" ]] || continue
+    tools+=("$(basename "$(dirname "$(dirname "$tool_dir")")")")
+  done
+  if [[ "${#tools[@]}" -eq 0 ]]; then
+    log WARNING "smoke test skipped (no formatters were fetched for $host_bundle)"
+    return 0
+  fi
 
-	# The formatters registered in the CLI. Every bundled tool is exercised
-	# through the CLI here; the direct check below covers all of them too.
-	local cli_tools=(prettier black shfmt google-java-format clang-format ktfmt stylua fourmolu cljfmt elm-format markdownlint taplo)
+  # The formatters registered in the CLI. Every bundled tool is exercised
+  # through the CLI here; the direct check below covers all of them too.
+  local cli_tools=(prettier black shfmt google-java-format clang-format ktfmt stylua fourmolu cljfmt elm-format markdownlint taplo)
 
-	local smoke_home
-	smoke_home="$(mktemp -d)"
-	trap 'rm -rf "$smoke_home"' RETURN
-	local failed=() exe exe_name direct_output
-	for tool in "${tools[@]}"; do
-		case " ${cli_tools[*]} " in
-		*" $tool "*)
-			# PATH intentionally excludes every location a formatter could
-			# hide in, so a passing run proves the embedded bundle resolved.
-			output="$(
-				version_probe \
-					env -u FORMATTINGTON_FORMATTERS_DIR \
-					HOME="$smoke_home" XDG_CACHE_HOME="$smoke_home/xdg" \
-					PATH=/usr/bin:/bin "$host_full" "$tool"
-			)" || failed+=("$tool")
-			log INFO "  $tool (via formattington): $(head -n 1 <<<"$output")"
-			;;
-		*)
-			log INFO "  $tool is not integrated into the CLI; checking the unpacked binary"
-			;;
-		esac
+  local smoke_home
+  smoke_home="$(mktemp -d)"
+  trap 'rm -rf "$smoke_home"' RETURN
+  local failed=() exe exe_name direct_output
+  for tool in "${tools[@]}"; do
+    case " ${cli_tools[*]} " in
+    *" $tool "*)
+      # PATH intentionally excludes every location a formatter could
+      # hide in, so a passing run proves the embedded bundle resolved.
+      output="$(
+        version_probe \
+          env -u FORMATTINGTON_FORMATTERS_DIR \
+          HOME="$smoke_home" XDG_CACHE_HOME="$smoke_home/xdg" \
+          PATH=/usr/bin:/bin "$host_full" "$tool"
+      )" || failed+=("$tool")
+      log INFO "  $tool (via formattington): $(head -n 1 <<<"$output")"
+      ;;
+    *)
+      log INFO "  $tool is not integrated into the CLI; checking the unpacked binary"
+      ;;
+    esac
 
-		# Direct check: the unpacked executable must run on this host,
-		# whether or not the CLI knows about it.
-		exe_name="$tool"
-		if [[ "$host_full" == *.exe ]]; then
-			exe_name="$tool.exe"
-		fi
-		exe="$(find "$smoke_home" -type f -path "*/$tool/v*/$host_bundle/$exe_name" -print -quit)"
-		if [[ -z "$exe" ]]; then
-			failed+=("$tool (unpacked binary not found)")
-			continue
-		fi
-		if direct_output="$(version_probe "$exe")"; then
-			log INFO "  $tool (direct): $(head -n 1 <<<"$direct_output")"
-		else
-			failed+=("$tool (unpacked binary exited non-zero)")
-		fi
-	done
-	trap - RETURN
-	rm -rf "$smoke_home"
+    # Direct check: the unpacked executable must run on this host,
+    # whether or not the CLI knows about it.
+    exe_name="$tool"
+    if [[ "$host_full" == *.exe ]]; then
+      exe_name="$tool.exe"
+    fi
+    exe="$(find "$smoke_home" -type f -path "*/$tool/v*/$host_bundle/$exe_name" -print -quit)"
+    if [[ -z "$exe" ]]; then
+      failed+=("$tool (unpacked binary not found)")
+      continue
+    fi
+    if direct_output="$(version_probe "$exe")"; then
+      log INFO "  $tool (direct): $(head -n 1 <<<"$direct_output")"
+    else
+      failed+=("$tool (unpacked binary exited non-zero)")
+    fi
+  done
+  trap - RETURN
+  rm -rf "$smoke_home"
 
-	if [[ "${#failed[@]}" -ne 0 ]]; then
-		die "smoke test failed for: ${failed[*]} (the embedded formatters do not run on this host)"
-	fi
-	log INFO "smoke test passed: the embedded formatters unpack and run on this host"
+  if [[ "${#failed[@]}" -ne 0 ]]; then
+    die "smoke test failed for: ${failed[*]} (the embedded formatters do not run on this host)"
+  fi
+  log INFO "smoke test passed: the embedded formatters unpack and run on this host"
 }
 
 STAGE_DIR="$(mktemp -d)"
@@ -711,8 +711,8 @@ log INFO "built ${#RELEASE_ASSETS[@]} release assets in dist/"
 smoke_full_binary
 
 if [[ "$BUILD_ONLY" -eq 1 ]]; then
-	log INFO "build only: stopping before tag/push/release"
-	exit 0
+  log INFO "build only: stopping before tag/push/release"
+  exit 0
 fi
 
 # --- Tag ----------------------------------------------------------------
@@ -721,59 +721,59 @@ fi
 TAG_EXISTS_LOCALLY=0
 TAG_EXISTS_REMOTELY=0
 if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null 2>&1; then
-	TAG_EXISTS_LOCALLY=1
+  TAG_EXISTS_LOCALLY=1
 fi
 if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
-	TAG_EXISTS_REMOTELY=1
+  TAG_EXISTS_REMOTELY=1
 fi
 
 if [[ "$DRY_RUN" -eq 1 ]]; then
-	log INFO "DRY RUN: would run:"
-	if [[ "$TAG_EXISTS_LOCALLY" -eq 1 ]]; then
-		log INFO "  git tag -a $TAG -m \"$TAG\"   (skipped: the tag already exists)"
-	else
-		log INFO "  git tag -a $TAG -m \"$TAG\""
-	fi
-	if [[ "$TAG_EXISTS_REMOTELY" -eq 1 ]]; then
-		log INFO "  git push origin $TAG   (skipped: the tag is already on origin)"
-	else
-		log INFO "  git push origin $TAG"
-	fi
-	log INFO "  gh release create $TAG --title \"$TAG\" --generate-notes ${RELEASE_ASSETS[*]}"
-	log INFO "  gh release upload $TAG ${RELEASE_ASSETS[*]} --clobber   (only if the release already exists)"
-	log INFO "dry run complete: VERSION=$VERSION TAG=$TAG"
-	exit 0
+  log INFO "DRY RUN: would run:"
+  if [[ "$TAG_EXISTS_LOCALLY" -eq 1 ]]; then
+    log INFO "  git tag -a $TAG -m \"$TAG\"   (skipped: the tag already exists)"
+  else
+    log INFO "  git tag -a $TAG -m \"$TAG\""
+  fi
+  if [[ "$TAG_EXISTS_REMOTELY" -eq 1 ]]; then
+    log INFO "  git push origin $TAG   (skipped: the tag is already on origin)"
+  else
+    log INFO "  git push origin $TAG"
+  fi
+  log INFO "  gh release create $TAG --title \"$TAG\" --generate-notes ${RELEASE_ASSETS[*]}"
+  log INFO "  gh release upload $TAG ${RELEASE_ASSETS[*]} --clobber   (only if the release already exists)"
+  log INFO "dry run complete: VERSION=$VERSION TAG=$TAG"
+  exit 0
 fi
 
 if [[ "$TAG_EXISTS_LOCALLY" -eq 0 ]]; then
-	log INFO "creating annotated tag $TAG..."
-	git tag -a "$TAG" -m "$TAG"
+  log INFO "creating annotated tag $TAG..."
+  git tag -a "$TAG" -m "$TAG"
 else
-	log WARNING "tag $TAG already exists locally; reusing it"
+  log WARNING "tag $TAG already exists locally; reusing it"
 fi
 
 if [[ "$TAG_EXISTS_REMOTELY" -eq 0 ]]; then
-	log INFO "pushing tag $TAG..."
-	git push origin "$TAG"
+  log INFO "pushing tag $TAG..."
+  git push origin "$TAG"
 else
-	log WARNING "tag $TAG is already on origin; not pushing it again"
+  log WARNING "tag $TAG is already on origin; not pushing it again"
 fi
 
 # --- GitHub release (binaries attached) --------------------------------
 if gh release view "$TAG" >/dev/null 2>&1; then
-	log INFO "GitHub release $TAG already exists; attaching ${#RELEASE_ASSETS[@]} assets..."
-	gh release upload "$TAG" "${RELEASE_ASSETS[@]}" --clobber
-	log INFO "attached ${#RELEASE_ASSETS[@]} assets to release $TAG"
+  log INFO "GitHub release $TAG already exists; attaching ${#RELEASE_ASSETS[@]} assets..."
+  gh release upload "$TAG" "${RELEASE_ASSETS[@]}" --clobber
+  log INFO "attached ${#RELEASE_ASSETS[@]} assets to release $TAG"
 else
-	log INFO "creating GitHub release $TAG with ${#RELEASE_ASSETS[@]} assets..."
-	gh release create "$TAG" \
-		--title "$TAG" \
-		--generate-notes \
-		"${RELEASE_ASSETS[@]}"
+  log INFO "creating GitHub release $TAG with ${#RELEASE_ASSETS[@]} assets..."
+  gh release create "$TAG" \
+    --title "$TAG" \
+    --generate-notes \
+    "${RELEASE_ASSETS[@]}"
 fi
 
 if REPO_SLUG="$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)" && [[ -n "$REPO_SLUG" ]]; then
-	log INFO "release: https://github.com/$REPO_SLUG/releases/tag/$TAG"
+  log INFO "release: https://github.com/$REPO_SLUG/releases/tag/$TAG"
 else
-	log INFO "release $TAG created (see GitHub Releases)"
+  log INFO "release $TAG created (see GitHub Releases)"
 fi

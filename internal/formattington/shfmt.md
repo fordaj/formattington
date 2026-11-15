@@ -4,14 +4,14 @@ shfmt formats shell scripts (`.sh`, `.bash`), from the [mvdan/sh](https://github
 
 ## At a glance
 
-| | |
-| --- | --- |
-| Executable | `shfmt` |
-| Resolution | Bundled in the full release archives (no Windows arm64 asset upstream), then `PATH` via `FindTool` |
-| Extensions | `.sh`, `.bash` |
-| Operations | Format, Check |
-| Language aliases | `bash` -> `shfmt` |
-| Native configuration | none (flags only) |
+|                      |                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------- |
+| Executable           | `shfmt`                                                                                            |
+| Resolution           | Bundled in the full release archives (no Windows arm64 asset upstream), then `PATH` via `FindTool` |
+| Extensions           | `.sh`, `.bash`                                                                                     |
+| Operations           | Format, Check                                                                                      |
+| Language aliases     | `bash` -> `shfmt`                                                                                  |
+| Native configuration | none (flags only)                                                                                  |
 
 ## Behavior
 
