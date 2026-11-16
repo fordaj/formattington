@@ -5,6 +5,57 @@ ENTRY_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$ENTRY_DIR/env.sh"
 
+# level_value <word-or-number> — map a log level to its numeric value.
+# Unknown words map to INFO (20).
+level_value() {
+  local level="$1"
+  if [[ "$level" =~ ^-?[0-9]+$ ]]; then
+    printf '%s' "$level"
+    return
+  fi
+  local upper
+  upper="$(printf '%s' "$level" | tr '[:lower:]' '[:upper:]')"
+  case "$upper" in
+  TRACE) printf '%s' 5 ;;
+  DEBUG) printf '%s' 10 ;;
+  INFO) printf '%s' 20 ;;
+  WARNING | WARN) printf '%s' 30 ;;
+  ERROR) printf '%s' 40 ;;
+  CRITICAL | FATAL) printf '%s' 50 ;;
+  ALWAYS) printf '%s' -1 ;;
+  *) printf '%s' 20 ;;
+  esac
+}
+
+# log_fallback <SRC> <LEVEL> <MESSAGE...> — printf implementation of the
+# log contract used when no logamuffin binary is available (bootstrap /
+# fresh clone). LEVEL may be a word (INFO) or a number (50). Messages at
+# or above the LOG_LEVEL/LOGAMUFFIN_LEVEL threshold are printed; ERROR
+# and above go to stderr. Returns 2 for a missing LEVEL.
+log_fallback() {
+  local src="$1"
+  shift
+  if [[ $# -eq 0 ]]; then
+    printf '%s\n' "log: usage: log LEVEL MESSAGE..." >&2
+    return 2
+  fi
+  local level_arg="$1"
+  shift
+  local msg="$*"
+
+  local level threshold
+  level="$(level_value "$level_arg")"
+  threshold="$(level_value "${LOG_LEVEL:-${LOGAMUFFIN_LEVEL:-INFO}}")"
+  if [[ "$level" -ne -1 && "$level" -lt "$threshold" ]]; then
+    return 0
+  fi
+  if [[ "$level" -ge 40 ]]; then
+    printf '%s: [%s] %s\n' "$src" "$level_arg" "$msg" >&2
+  else
+    printf '%s: [%s] %s\n' "$src" "$level_arg" "$msg"
+  fi
+}
+
 # log LEVEL [MESSAGE ...]
 #   LEVEL may be a word (INFO) or a number (50). When a logamuffin
 #   binary is available all arguments are forwarded to it with
@@ -38,58 +89,8 @@ log() {
   fi
 
   if [[ ! -x "$bin" ]]; then
-    # No logamuffin binary: printf fallback (bootstrap / fresh clone).
-    if [[ $# -eq 0 ]]; then
-      printf '%s\n' "log: usage: log LEVEL MESSAGE..." >&2
-      return 2
-    fi
-    local level_arg="${1:-}"
-    shift
-    local msg="$*"
-    local level_upper level_value _thr_raw _thr_upper
-    if [[ "$level_arg" =~ ^-?[0-9]+$ ]]; then
-      level_value="$level_arg"
-    else
-      level_upper="$(printf '%s' "$level_arg" | tr '[:lower:]' '[:upper:]')"
-      case "$level_upper" in
-      TRACE) level_value=5 ;;
-      DEBUG) level_value=10 ;;
-      INFO) level_value=20 ;;
-      WARNING | WARN) level_value=30 ;;
-      ERROR) level_value=40 ;;
-      CRITICAL | FATAL) level_value=50 ;;
-      ALWAYS) level_value=-1 ;;
-      *) level_value=20 ;;
-      esac
-    fi
-    _thr_raw="${LOG_LEVEL:-${LOGAMUFFIN_LEVEL:-INFO}}"
-    if [[ -z "$_thr_raw" ]]; then
-      _thr_raw="INFO"
-    fi
-    if [[ "$_thr_raw" =~ ^-?[0-9]+$ ]]; then
-      local threshold_value="$_thr_raw"
-    else
-      _thr_upper="$(printf '%s' "$_thr_raw" | tr '[:lower:]' '[:upper:]')"
-      case "$_thr_upper" in
-      TRACE) threshold_value=5 ;;
-      DEBUG) threshold_value=10 ;;
-      INFO) threshold_value=20 ;;
-      WARNING | WARN) threshold_value=30 ;;
-      ERROR) threshold_value=40 ;;
-      CRITICAL | FATAL) threshold_value=50 ;;
-      ALWAYS) threshold_value=-1 ;;
-      *) threshold_value=20 ;;
-      esac
-    fi
-    if [[ "$level_value" -ne -1 && "$level_value" -lt "$threshold_value" ]]; then
-      return 0
-    fi
-    if [[ "$level_value" -ge 40 ]]; then
-      printf '%s: [%s] %s\n' "$src" "$level_arg" "$msg" >&2
-    else
-      printf '%s: [%s] %s\n' "$src" "$level_arg" "$msg"
-    fi
-    return 0
+    log_fallback "$src" "$@"
+    return $?
   fi
 
   LOG_SOURCE="$src" "$bin" "$@"

@@ -146,9 +146,23 @@ func installEmbeddedFormatters(payload []byte, cacheDir string) (string, error) 
 		return "", err
 	}
 
-	// The payload's directory is immutable: it never exists until this
-	// rename makes it visible, so no process ever observes a partially
-	// populated tree.
+	// The payload's directory is immutable: it never exists until the
+	// rename in commitPayload makes it visible, so no process ever
+	// observes a partially populated tree.
+	committedDir, err := commitPayload(partial, dir, cacheDir, fingerprint, files)
+	if err != nil {
+		return "", err
+	}
+	committed = true
+	return committedDir, nil
+}
+
+// commitPayload atomically renames partial to dir and garbage-collects
+// superseded trees. A concurrent process may have extracted the same
+// payload first; whichever complete tree won the rename is kept, so the
+// function is safe to race. A non-nil error means the rename failed and
+// no complete tree was present.
+func commitPayload(partial, dir, cacheDir, fingerprint string, files []*zip.File) (string, error) {
 	if err := os.RemoveAll(dir); err != nil {
 		return "", fmt.Errorf("replacing the extracted formatters in %s: %w", dir, err)
 	}
@@ -157,13 +171,11 @@ func installEmbeddedFormatters(payload []byte, cacheDir string) (string, error) 
 		// whichever complete tree won the rename.
 		_ = os.RemoveAll(partial)
 		if extractedFormattersMatch(dir, fingerprint, files) {
-			committed = true
 			collectGarbage(cacheDir, filepath.Base(dir))
 			return dir, nil
 		}
 		return "", err
 	}
-	committed = true
 	collectGarbage(cacheDir, filepath.Base(dir))
 	return dir, nil
 }

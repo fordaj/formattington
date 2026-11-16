@@ -172,48 +172,11 @@ func Main(argv []string) int {
 	var names []string
 
 	if formatterName == "all" {
-		// "formattington all --series" is the documented spelling:
-		// --series may appear after "all" (and, for consistency with
-		// --check/--dry-run, also before "all" via the global parser
-		// above). "--config PATH" is likewise honored after "all". Any
-		// other trailing argument is still an error.
-		seriesAfterAll, afterConfig, hasAfterConfig, err := parseAllTrailing(formatterArgs)
-		if err != nil {
-			usageError(err)
-			return ExitUsage
-		}
-		if seriesAfterAll {
-			opts.series = true
-		}
-		if opts.hasConfig && hasAfterConfig {
-			usageError(errors.New("--config may only be given once"))
-			return ExitUsage
-		}
-		if !opts.hasConfig {
-			opts.config = afterConfig
-			opts.hasConfig = hasAfterConfig
+		code, handled := runAllCommand(&opts, formatterArgs)
+		if handled {
+			return code
 		}
 		formatterArgs = nil
-
-		commands, found, source, raw, err := loadConfig(opts.config, opts.hasConfig)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "formattington: %s\n", err)
-			return ExitUsage
-		}
-		if found {
-			// An auto-discovered ./.formattington.json runs repo-declared
-			// argv on a bare 'formattington all' in an untrusted clone, so
-			// name the file in effect (not for --config or the environment
-			// variable, which are explicit).
-			if source == "auto-discovered .formattington.json" {
-				fmt.Fprintf(os.Stderr, "formattington: using auto-discovered configuration %s\n", raw)
-			}
-			return runTargets(targetsFromCommands(commands), Options{
-				Check:   opts.check,
-				DryRun:  opts.dryRun,
-				Verbose: opts.verbose,
-			}, opts.series)
-		}
 		for _, tool := range registry {
 			names = append(names, tool.Name)
 		}
@@ -237,21 +200,9 @@ func Main(argv []string) int {
 		}
 		return runInit(opts.verbose)
 	} else {
-		// Config only changes what "all" means: an explicit --config
-		// before a single formatter is a usage error, while the env
-		// variable and ./.formattington.json are ignored here.
-		if opts.hasConfig {
-			usageError(errors.New("--config is only supported with 'all'"))
-			return ExitUsage
-		}
-		target := formatterName
-		if alias, ok := languageAliases[formatterName]; ok {
-			target = alias
-		}
-		if !isRegisteredTool(target) {
-			// A documented alias whose backend has not landed yet must
-			// fail loudly, never silently succeed.
-			usageError(fmt.Errorf("'%s' is not yet supported", formatterName))
+		target, err := resolveSingleTool(formatterName, opts)
+		if err != nil {
+			usageError(err)
 			return ExitUsage
 		}
 		names = []string{target}
@@ -264,6 +215,71 @@ func Main(argv []string) int {
 		Verbose: opts.verbose,
 	}
 	return runTargets(targetsFromNames(names, formatterArgs), runOpts, opts.series)
+}
+
+// runAllCommand implements the "all" command. It reports handled=false
+// when no configuration file applies, in which case the caller runs the
+// full registry; otherwise it has already run (or rejected) the command and
+// handled=true with the exit code to return.
+func runAllCommand(opts *globalOptions, formatterArgs []string) (int, bool) {
+	// "formattington all --series" is the documented spelling: --series may
+	// appear after "all" (and, for consistency with --check/--dry-run, also
+	// before "all" via the global parser). "--config PATH" is likewise
+	// honored after "all". Any other trailing argument is an error.
+	seriesAfterAll, afterConfig, hasAfterConfig, err := parseAllTrailing(formatterArgs)
+	if err != nil {
+		usageError(err)
+		return ExitUsage, true
+	}
+	if seriesAfterAll {
+		opts.series = true
+	}
+	if opts.hasConfig && hasAfterConfig {
+		usageError(errors.New("--config may only be given once"))
+		return ExitUsage, true
+	}
+	if !opts.hasConfig {
+		opts.config = afterConfig
+		opts.hasConfig = hasAfterConfig
+	}
+
+	commands, found, source, raw, err := loadConfig(opts.config, opts.hasConfig)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "formattington: %s\n", err)
+		return ExitUsage, true
+	}
+	if !found {
+		return 0, false
+	}
+	// An auto-discovered ./.formattington.json runs repo-declared argv on a
+	// bare 'formattington all' in an untrusted clone, so name the file in
+	// effect (not for --config or the environment variable, which are
+	// explicit).
+	if source == "auto-discovered .formattington.json" {
+		fmt.Fprintf(os.Stderr, "formattington: using auto-discovered configuration %s\n", raw)
+	}
+	return runTargets(targetsFromCommands(commands), Options{
+		Check:   opts.check,
+		DryRun:  opts.dryRun,
+		Verbose: opts.verbose,
+	}, opts.series), true
+}
+
+// resolveSingleTool resolves a tool name or language alias to a registered
+// tool. Config only changes what "all" means: an explicit --config before a
+// single formatter is a usage error, while the env variable and
+// ./.formattington.json are ignored here.
+func resolveSingleTool(formatterName string, opts globalOptions) (string, error) {
+	if opts.hasConfig {
+		return "", errors.New("--config is only supported with 'all'")
+	}
+	target := resolveTarget(formatterName)
+	if !isRegisteredTool(target) {
+		// A documented alias whose backend has not landed yet must fail
+		// loudly, never silently succeed.
+		return "", fmt.Errorf("'%s' is not yet supported", formatterName)
+	}
+	return target, nil
 }
 
 // findFormatterIndex returns the index of the first formatter, alias, "all",

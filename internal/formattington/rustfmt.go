@@ -38,6 +38,12 @@ func runRustfmt(opts Options) (int, error) {
 	userHasEdition := hasFlag(forwarded, "--edition")
 	files, flags := splitArgsAndFiles(forwarded, rustfmtValuedFlags)
 
+	if len(files) == 0 {
+		// Nothing discovered and no args: the suite-wide contract is
+		// that the tool is still invoked.
+		return runTool(executable, withArgs(editionArgs("", opts), flags), false)
+	}
+
 	// Partition files by detected edition (empty = tool default).
 	groups := map[string][]string{}
 	for _, file := range files {
@@ -57,35 +63,10 @@ func runRustfmt(opts Options) (int, error) {
 	sort.Strings(editions)
 
 	exitCode := ExitOK
-	if len(groups) == 0 {
-		// No files (nothing discovered and no user args): the
-		// suite-wide contract is that the tool is still invoked.
-		args := []string{}
-		switch {
-		case opts.Check:
-			args = append(args, "--check")
-		case opts.DryRun:
-			args = append(args, "--emit", "diff")
-		}
-		code, runErr := runTool(executable, withArgs(args, flags), false)
-		if runErr != nil {
-			return ExitNotFound, runErr
-		}
-		return code, nil
-	}
 	for _, edition := range editions {
-		group := groups[edition]
-		args := []string{}
-		if edition != "" {
-			args = append(args, "--edition", edition)
-		}
-		switch {
-		case opts.Check:
-			args = append(args, "--check")
-		case opts.DryRun:
-			args = append(args, "--emit", "diff")
-		}
-		code, runErr := runTool(executable, withArgs(args, append(flags, group...)), false)
+		args := editionArgs(edition, opts)
+		batch := append(append([]string{}, flags...), groups[edition]...)
+		code, runErr := runTool(executable, withArgs(args, batch), false)
 		if runErr != nil {
 			return ExitNotFound, runErr
 		}
@@ -94,6 +75,22 @@ func runRustfmt(opts Options) (int, error) {
 		}
 	}
 	return exitCode, nil
+}
+
+// editionArgs returns the per-batch flag list for an edition ("" = the
+// tool's own default): the mode flags last, edition in front.
+func editionArgs(edition string, opts Options) []string {
+	args := []string{}
+	if edition != "" {
+		args = append(args, "--edition", edition)
+	}
+	if opts.Check {
+		args = append(args, "--check")
+	}
+	if opts.DryRun {
+		args = append(args, "--emit", "diff")
+	}
+	return args
 }
 
 // rustfmtValuedFlags are rustfmt flags that consume the following
@@ -151,6 +148,12 @@ func detectEdition(file string) string {
 	}
 }
 
+// Compiled once: parsing a manifest happens per file per edition detection.
+var (
+	cargoSectionHeader = regexp.MustCompile(`(?m)^\s*\[([^\]]+)\]`)
+	cargoEdition       = regexp.MustCompile(`(?m)^\s*edition\s*=\s*"(20[0-9]+)"`)
+)
+
 // readCargoEditions returns the [package] edition and
 // [workspace.package] edition from a Cargo.toml, if any.
 func readCargoEditions(path string) (string, string) {
@@ -160,9 +163,7 @@ func readCargoEditions(path string) (string, string) {
 	}
 	text := string(data)
 	// Walk section headers, tracking the current section.
-	header := regexp.MustCompile(`(?m)^\s*\[([^\]]+)\]`)
-	sections := header.FindAllStringSubmatchIndex(text, -1)
-	editionRe := regexp.MustCompile(`(?m)^\s*edition\s*=\s*"(20[0-9]+)"`)
+	sections := cargoSectionHeader.FindAllStringSubmatchIndex(text, -1)
 	packageEdition, workspaceEdition := "", ""
 	for i, match := range sections {
 		name := strings.ToLower(strings.TrimSpace(text[match[2]:match[3]]))
@@ -170,7 +171,7 @@ func readCargoEditions(path string) (string, string) {
 		if i+1 < len(sections) {
 			content = text[match[1]:sections[i+1][0]]
 		}
-		if ed := editionRe.FindStringSubmatch(content); ed != nil {
+		if ed := cargoEdition.FindStringSubmatch(content); ed != nil {
 			switch name {
 			case "package":
 				packageEdition = ed[1]

@@ -18,7 +18,7 @@ Every repository script sources `scripts/entry.sh` instead of the individual cas
 
 `log LEVEL MESSAGE...` forwards to the pinned `tools/logamuffin/update.sh.md` binary referenced by `LOGAMUFFIN_BIN`. The caller context is passed through in `LOG_SOURCE` (`file[:function]:line`), and logamuffin's own exit code (`0`, or `2` for usage/config errors) is preserved even under `set -e`.
 
-When the binary is missing (a fresh clone before tools are populated), `log()` falls back to a `printf` implementation with the same call shape, word-to-severity mapping (TRACE…ALWAYS → numeric thresholds), `LOG_LEVEL`/`LOGAMUFFIN_LEVEL` filtering, and stream routing (ERROR and above to stderr). The fallback exists so the scripts work on a brand-new checkout without network access.
+When the binary is missing (a fresh clone before tools are populated), `log()` falls back to `log_fallback`, a `printf` implementation with the same call shape, `LOG_LEVEL`/`LOGAMUFFIN_LEVEL` filtering, and stream routing (ERROR and above to stderr). Both paths share `level_value` for the word-to-number mapping (TRACE…ALWAYS; unknown words map to INFO 20). The fallback exists so the scripts work on a brand-new checkout without network access.
 
 ## Usage
 

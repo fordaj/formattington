@@ -72,6 +72,30 @@ func readConfigData(path, raw, source string) (any, error) {
 // It returns the validated commands (possibly empty) or an error with the
 // same wording as the previous implementation.
 func validateConfig(data any, path string) ([][]string, error) {
+	object, err := configTopLevelObject(data, path)
+	if err != nil {
+		return nil, err
+	}
+	if err := rejectUnknownConfigKeys(object, path); err != nil {
+		return nil, err
+	}
+	entries, err := configCommandList(object, path)
+	if err != nil {
+		return nil, err
+	}
+	commands := make([][]string, 0, len(entries))
+	for index, entry := range entries {
+		argv, err := validateCommandEntry(entry, index, path)
+		if err != nil {
+			return nil, err
+		}
+		commands = append(commands, argv)
+	}
+	return commands, nil
+}
+
+// configTopLevelObject checks that the document is an object.
+func configTopLevelObject(data any, path string) (map[string]any, error) {
 	object, ok := data.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf(
@@ -79,7 +103,12 @@ func validateConfig(data any, path string) ([][]string, error) {
 			path,
 		)
 	}
+	return object, nil
+}
 
+// rejectUnknownConfigKeys rejects any top-level key other than 'commands',
+// naming all offenders in sorted order.
+func rejectUnknownConfigKeys(object map[string]any, path string) error {
 	var unknown []string
 	for key := range object {
 		if key != "commands" {
@@ -88,75 +117,93 @@ func validateConfig(data any, path string) ([][]string, error) {
 	}
 	sort.Strings(unknown)
 	if len(unknown) > 0 {
-		return nil, fmt.Errorf(
+		return fmt.Errorf(
 			"Invalid config file '%s': unknown key(s) %s; only 'commands' is supported",
 			path, pyReprList(unknown),
 		)
 	}
+	return nil
+}
 
+// configCommandList checks that the 'commands' key holds a list.
+func configCommandList(object map[string]any, path string) ([]any, error) {
 	rawCommands, ok := object["commands"]
 	if !ok {
 		return nil, fmt.Errorf(
 			"Invalid config file '%s': missing required 'commands' array", path,
 		)
 	}
-
 	entries, ok := rawCommands.([]any)
 	if !ok {
 		return nil, fmt.Errorf("Invalid config file '%s': 'commands' must be a list", path)
 	}
+	return entries, nil
+}
 
-	commands := make([][]string, 0, len(entries))
-	for index, entry := range entries {
-		prefix := fmt.Sprintf("Invalid config file '%s': commands[%d]", path, index)
+// validateCommandEntry validates one entry of the 'commands' array and
+// returns its argv.
+func validateCommandEntry(entry any, index int, path string) ([]string, error) {
+	prefix := fmt.Sprintf("Invalid config file '%s': commands[%d]", path, index)
 
-		switch typed := entry.(type) {
-		case string:
+	switch typed := entry.(type) {
+	case string:
+		return nil, fmt.Errorf(
+			"%s must be a list of strings, not a shell string: %s",
+			prefix, pyRepr(entry),
+		)
+	case map[string]any:
+		return nil, fmt.Errorf(
+			"%s must be a list of strings, not an object: %s",
+			prefix, pyRepr(entry),
+		)
+	case []any:
+		return validateCommandArgv(typed, prefix, entry)
+	default:
+		return nil, fmt.Errorf(
+			"%s must be a list of strings, got %s: %s",
+			prefix, jsonTypeName(entry), pyRepr(entry),
+		)
+	}
+}
+
+// validateCommandArgv validates the elements of one command's argv array
+// and the tool name it selects.
+func validateCommandArgv(typed []any, prefix string, entry any) ([]string, error) {
+	if len(typed) == 0 {
+		return nil, fmt.Errorf("%s must not be empty", prefix)
+	}
+	argv := make([]string, 0, len(typed))
+	for _, item := range typed {
+		value, ok := item.(string)
+		if !ok {
 			return nil, fmt.Errorf(
-				"%s must be a list of strings, not a shell string: %s",
-				prefix, pyRepr(entry),
-			)
-		case map[string]any:
-			return nil, fmt.Errorf(
-				"%s must be a list of strings, not an object: %s",
-				prefix, pyRepr(entry),
-			)
-		case []any:
-			if len(typed) == 0 {
-				return nil, fmt.Errorf("%s must not be empty", prefix)
-			}
-			argv := make([]string, 0, len(typed))
-			for _, item := range typed {
-				value, ok := item.(string)
-				if !ok {
-					return nil, fmt.Errorf(
-						"%s must contain only strings: %s", prefix, pyRepr(entry),
-					)
-				}
-				argv = append(argv, value)
-			}
-			tool := argv[0]
-			switch {
-			case isRegisteredTool(tool):
-			case isRegisteredAlias(tool):
-				if !isRegisteredTool(languageAliases[tool]) {
-					return nil, fmt.Errorf("%s: '%s' is not yet supported", prefix, tool)
-				}
-			default:
-				return nil, fmt.Errorf(
-					"%s: unknown formatter or alias '%s'", prefix, tool,
-				)
-			}
-			commands = append(commands, argv)
-		default:
-			return nil, fmt.Errorf(
-				"%s must be a list of strings, got %s: %s",
-				prefix, jsonTypeName(entry), pyRepr(entry),
+				"%s must contain only strings: %s", prefix, pyRepr(entry),
 			)
 		}
+		argv = append(argv, value)
 	}
+	if err := validateCommandTool(argv[0], prefix); err != nil {
+		return nil, err
+	}
+	return argv, nil
+}
 
-	return commands, nil
+// validateCommandTool checks that the first element names a registered
+// tool or a supported alias.
+func validateCommandTool(tool, prefix string) error {
+	switch {
+	case isRegisteredTool(tool):
+		return nil
+	case isRegisteredAlias(tool):
+		if !isRegisteredTool(languageAliases[tool]) {
+			return fmt.Errorf("%s: '%s' is not yet supported", prefix, tool)
+		}
+		return nil
+	default:
+		return fmt.Errorf(
+			"%s: unknown formatter or alias '%s'", prefix, tool,
+		)
+	}
 }
 
 // loadConfig resolves, reads, and validates the Formattington config file.

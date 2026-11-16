@@ -85,14 +85,7 @@ func runDotnetFormat(opts Options) (int, error) {
 		if opts.Check || opts.DryRun {
 			args = append(args, "--verify-no-changes")
 		}
-		code, runErr := runTool(executable, args, false)
-		if runErr != nil {
-			return ExitNotFound, runErr
-		}
-		if (opts.Check || opts.DryRun) && code == dotnetVerifyExitCode {
-			return ExitFormatRequired, nil
-		}
-		return code, nil
+		return runDotnetFormatVerify(executable, args, opts.Check || opts.DryRun)
 	}
 
 	args := []string{"format", "whitespace"}
@@ -110,16 +103,21 @@ func runDotnetFormat(opts Options) (int, error) {
 	}
 	args = append(args, flags...)
 
-	switch {
-	case opts.Check || opts.DryRun:
+	if opts.Check || opts.DryRun {
 		args = append(args, "--verify-no-changes")
 	}
+	return runDotnetFormatVerify(executable, args, opts.Check || opts.DryRun)
+}
 
+// runDotnetFormatVerify runs "dotnet format" for check/dry-run mode and
+// remaps exit 2 (--verify-no-changes found files to format) to
+// ExitFormatRequired.
+func runDotnetFormatVerify(executable string, args []string, check bool) (int, error) {
 	code, runErr := runTool(executable, args, false)
 	if runErr != nil {
 		return ExitNotFound, runErr
 	}
-	if (opts.Check || opts.DryRun) && code == dotnetVerifyExitCode {
+	if check && code == dotnetVerifyExitCode {
 		return ExitFormatRequired, nil
 	}
 	return code, nil
