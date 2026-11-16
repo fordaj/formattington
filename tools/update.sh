@@ -445,7 +445,16 @@ copy_extras() {
         for extra in NOTICE.md LICENSES; do
             if [[ -e "$extract_dir/$extra" ]]; then
                 cp -pr "$extract_dir/$extra" "$target_dir/"
+                continue
             fi
+            # Some archives nest everything under a single top-level
+            # directory; look one level down, like the binary search.
+            for candidate in "$extract_dir"/*/"$extra"; do
+                if [[ -e "$candidate" ]]; then
+                    cp -pr "$candidate" "$target_dir/"
+                    break
+                fi
+            done
         done
         ;;
     license)

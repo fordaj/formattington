@@ -59,7 +59,9 @@ and pinned tag (e.g. `BARNACLE_REPO`/`BARNACLE_TAG`,
 5. Extract to a staging directory, keeping only the binary (plus the
    tool's extra files), swap it into `tools/<tool>/v<tag>/`, and only then
    delete superseded `v*/` folders — a failed refresh leaves the previous
-   bundle intact.
+   bundle intact. The binary and the extra files are searched at the
+   archive root and one level down, so archives that nest everything
+   under a single top-level directory work unchanged.
 6. Best-effort host verification: run the host's freshly installed binary
    with `--version` and warn when the output does not mention the tag.
 
