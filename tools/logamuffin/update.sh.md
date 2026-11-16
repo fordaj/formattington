@@ -3,7 +3,7 @@
 ```mermaid
 flowchart LR
     Gh["fordaj/logamuffin<br/>GitHub release"] --> Upd["update.sh<br/>gh · checksums · stage · swap"]
-    Upd --> Dir["tools/logamuffin/v0.1.3.0.35/<br/>per-platform binary"]
+    Upd --> Dir["tools/logamuffin/v254.1.3.0.48/<br/>per-platform binary"]
     Dir --> Log["log() in scripts/entry.sh<br/>timestamped leveled records"]
     click Log href "../../scripts/entry.sh.md"
 ```
@@ -14,7 +14,7 @@ The scripts themselves document the contract (`log INFO "..."`), the `LOG_LEVEL`
 
 ## Bundled platforms
 
-`v0.1.3.0.35/macos-arm64`, `macos-x86_64`, `linux-arm64`, `linux-x86_64`, `windows-arm64`, `windows-x86_64` (the linker picks the host's platform via `LOGAMUFFIN_BIN`).
+`v254.1.3.0.48/macos-arm64`, `macos-x86_64`, `linux-arm64`, `linux-x86_64`, `windows-arm64`, `windows-x86_64` (the linker picks the host's platform via `LOGAMUFFIN_BIN`).
 
 ## `update.sh`
 
