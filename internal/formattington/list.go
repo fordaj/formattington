@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -142,22 +141,12 @@ func probeCandidate(candidate listCandidate, resolved string) string {
 // resolve for the host platform (the newest bundled version that carries a
 // host-platform executable), or "" when no such bundle exists.
 func bundledVersionFor(name string) string {
-	platform, err := PlatformDir()
+	executable := hostExecutableName(name)
+	_, version, err := findBundledForHost(filepath.Join(FormattersDir(), name), executable, "")
 	if err != nil {
 		return ""
 	}
-	executable := name
-	if isWindows() {
-		executable += ".exe"
-	}
-	root := FormattersDir()
-	for _, version := range bundledVersions(filepath.Join(root, name)) {
-		candidate := filepath.Join(root, name, "v"+version, platform, executable)
-		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
-			return version
-		}
-	}
-	return ""
+	return version
 }
 
 // pathVersionFor resolves the tool on PATH the same way its integration

@@ -14,15 +14,9 @@ var erlfmtExtensions = []string{".erl", ".hrl"}
 // is no diff mode, so --dry-run maps to the same check invocation. Args
 // are forwarded verbatim. erlfmt takes no configuration file by design.
 func runErlfmt(opts Options) (int, error) {
-	executable, err := FindTool("erlfmt", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("erlfmt", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

@@ -14,7 +14,7 @@ Unlike `versioner`, `logamuffin`, `runner-spawner`, and `barnacle`, this bundle 
 
 Refreshes from `fordaj/formattington` releases: assets named `formattington-<platform>-lite.tar.gz`/`.zip` are mapped onto the bundle layout (e.g. `darwin-amd64` → `macos-x86_64`), verified against the release's checksums when present, staged into a temporary directory, and swapped in atomically; superseded version folders are deleted only after the new one is staged. Only the binary is kept, plus `NOTICE.md` and `LICENSES/`. `--dry-run` lists the planned changes without touching anything; `--tag` pins a specific release. Environment overrides: `FORMATTINGTON_REPO`, `FORMATTINGTON_TAG`.
 
-See [../README.md](../README.md) for the shared bundle contract.
+See [../update.sh.md](../update.sh.md) for the shared refresh implementation and [../README.md](../README.md) for the bundle contract.
 
 ## Related pages
 

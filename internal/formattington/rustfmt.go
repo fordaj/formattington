@@ -30,15 +30,9 @@ var rustfmtExtensions = []string{".rs"}
 // Args are forwarded verbatim; a caller-provided --edition wins over the
 // detected one.
 func runRustfmt(opts Options) (int, error) {
-	executable, err := FindTool("rustfmt", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("rustfmt", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	userHasEdition := hasFlag(forwarded, "--edition")

@@ -16,7 +16,7 @@ flowchart LR
 
 `printHelp(out io.Writer)` (line ~143) writes the full help: the invocation patterns (`all`, specific tool, language alias, `list`, `init`), global options, per-tool notes for every registered tool, and the alias list.
 
-The alias listing is not alphabetical — `sortedAliasNames` (line ~225) orders aliases by the [survey rank of their backend tool](../../AGENTS.md); aliases sharing a rank are alphabetical and unranked tools (TOML) sort last. `aliasRank` (line ~241) looks up `toolSurveyRank` for the backend and falls back to `unrankedToolRank`. The epilog (`helpEpilog`) carries the same per-tool guidance users need without reading the source, in the same presentation order as the registry.
+The alias listing is not alphabetical — `sortedAliasNames` orders aliases by the registry position of their backend tool (the registry is in [survey order](../../AGENTS.md)); aliases sharing a backend are alphabetical, and tools with no survey row (markdownlint, taplo) sort last. `aliasRank` looks the backend up in the registry-derived index. The epilog (`helpEpilog`) carries the same per-tool guidance users need without reading the source, in the same presentation order as the registry.
 
 `usageLine` is the compact synopsis reused by usage-error paths.
 

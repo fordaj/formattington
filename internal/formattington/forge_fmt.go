@@ -19,15 +19,9 @@ var forgeFmtExtensions = []string{".sol"}
 // uses each file's nearest foundry.toml. Arguments are forwarded
 // verbatim.
 func runForgeFmt(opts Options) (int, error) {
-	executable, err := FindTool("forge", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, withArgs([]string{"fmt"}, forwarded), false)
+	executable, forwarded, done, code, err := beginIntegration("forge", opts, []string{"fmt"})
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

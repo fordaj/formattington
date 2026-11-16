@@ -33,15 +33,9 @@ var mojoValuedFlags = map[string]bool{
 // copies in check mode just as they would be in place with default mode.
 // There is no configuration file, and none is invented.
 func runMojoFormat(opts Options) (int, error) {
-	executable, err := FindTool("mojo", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, withArgs([]string{"format"}, forwarded), false)
+	executable, forwarded, done, code, err := beginIntegration("mojo", opts, []string{"format"})
+	if err != nil || done {
+		return code, err
 	}
 
 	files, flags := splitArgsAndFiles(forwarded, mojoValuedFlags)

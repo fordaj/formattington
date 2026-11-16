@@ -27,15 +27,9 @@ var odinfmtExtensions = []string{".odin"}
 // Arguments are forwarded verbatim; configuration is "odinfmt.json"
 // discovered by walking up from each file ("--config" overrides).
 func runOdinfmt(opts Options) (int, error) {
-	executable, err := FindTool("odinfmt", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("odinfmt", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	files, flags := splitArgsAndFiles(forwarded, nil)

@@ -20,15 +20,9 @@ var dartFormatExtensions = []string{".dart"}
 // ≥ 3.7) and are discovered by the tool itself, as is the
 // "// dart format width=NNN" per-file marker.
 func runDartFormat(opts Options) (int, error) {
-	executable, err := FindTool("dart", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, withArgs([]string{"format"}, forwarded), false)
+	executable, forwarded, done, code, err := beginIntegration("dart", opts, []string{"format"})
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

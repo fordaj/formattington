@@ -13,15 +13,9 @@ var gleamFormatExtensions = []string{".gleam"}
 // to the same --check invocation. No configuration by design (fixed
 // style), and none is invented. Arguments are forwarded verbatim.
 func runGleamFormat(opts Options) (int, error) {
-	executable, err := FindTool("gleam", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, withArgs([]string{"format"}, forwarded), false)
+	executable, forwarded, done, code, err := beginIntegration("gleam", opts, []string{"format"})
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

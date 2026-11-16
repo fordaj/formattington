@@ -26,15 +26,9 @@ var jlfmtExtensions = []string{".jl"}
 // Arguments are forwarded verbatim; ".JuliaFormatter.toml" is discovered
 // by walking up from each file (synergy with Taplo for TOML users).
 func runJlfmt(opts Options) (int, error) {
-	executable, err := FindTool("jlfmt", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("jlfmt", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

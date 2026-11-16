@@ -20,15 +20,9 @@ var sqlfluffExtensions = []string{".sql"}
 // maps to the same read-only lint invocation as --check. Arguments are
 // forwarded verbatim; "--config", "--dialect" and friends all work natively.
 func runSqlfluff(opts Options) (int, error) {
-	executable, err := FindTool("sqlfluff", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("sqlfluff", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

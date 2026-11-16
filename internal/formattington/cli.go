@@ -208,15 +208,11 @@ func Main(argv []string) int {
 			if source == "auto-discovered .formattington.json" {
 				fmt.Fprintf(os.Stderr, "formattington: using auto-discovered configuration %s\n", raw)
 			}
-			runOpts := Options{
+			return runTargets(targetsFromCommands(commands), Options{
 				Check:   opts.check,
 				DryRun:  opts.dryRun,
 				Verbose: opts.verbose,
-			}
-			if opts.series {
-				return runConfigSeries(commands, runOpts)
-			}
-			return runConfigParallel(commands, runOpts)
+			}, opts.series)
 		}
 		for _, tool := range registry {
 			names = append(names, tool.Name)
@@ -225,24 +221,8 @@ func Main(argv []string) int {
 		// "list" is informational: it takes no arguments and no mode
 		// flags, and --config is only meaningful with 'all'. Anything
 		// trailing (including flags) counts as extra arguments.
-		if len(formatterArgs) > 0 {
-			usageError(errors.New("extra arguments are not supported with 'list'"))
-			return ExitUsage
-		}
-		if opts.hasConfig {
-			usageError(errors.New("--config is only supported with 'all'"))
-			return ExitUsage
-		}
-		if opts.check {
-			usageError(errors.New("--check is not supported with 'list'"))
-			return ExitUsage
-		}
-		if opts.dryRun {
-			usageError(errors.New("--dry-run is not supported with 'list'"))
-			return ExitUsage
-		}
-		if opts.series {
-			usageError(errors.New("--series is not supported with 'list'"))
+		if err := unsupportedMix("list", opts, len(formatterArgs) > 0); err != nil {
+			usageError(err)
 			return ExitUsage
 		}
 		printList(os.Stdout)
@@ -251,24 +231,8 @@ func Main(argv []string) int {
 		// "init" examines the current directory and writes
 		// .formattington.json. It takes no arguments and no mode
 		// flags; --config only changes what 'all' means.
-		if len(formatterArgs) > 0 {
-			usageError(errors.New("extra arguments are not supported with 'init'"))
-			return ExitUsage
-		}
-		if opts.hasConfig {
-			usageError(errors.New("--config is only supported with 'all'"))
-			return ExitUsage
-		}
-		if opts.check {
-			usageError(errors.New("--check is not supported with 'init'"))
-			return ExitUsage
-		}
-		if opts.dryRun {
-			usageError(errors.New("--dry-run is not supported with 'init'"))
-			return ExitUsage
-		}
-		if opts.series {
-			usageError(errors.New("--series is not supported with 'init'"))
+		if err := unsupportedMix("init", opts, len(formatterArgs) > 0); err != nil {
+			usageError(err)
 			return ExitUsage
 		}
 		return runInit(opts.verbose)
@@ -293,31 +257,13 @@ func Main(argv []string) int {
 		names = []string{target}
 	}
 
-	if formatterName != "all" || len(names) == 1 {
-		// Single-formatter runs have no concurrency to order; run
-		// directly (equivalently: --series is a no-op here).
-		result := runFormatter(names[0], Options{
-			Check:   opts.check,
-			DryRun:  opts.dryRun,
-			Args:    formatterArgs,
-			Verbose: opts.verbose,
-		})
-		if result.err != nil {
-			fmt.Fprintf(os.Stderr, "formattington: %s\n", result.err)
-		}
-		return result.code
-	}
-
 	runOpts := Options{
 		Check:   opts.check,
 		DryRun:  opts.dryRun,
 		Args:    formatterArgs,
 		Verbose: opts.verbose,
 	}
-	if opts.series {
-		return runSeries(names, runOpts)
-	}
-	return runParallel(names, runOpts)
+	return runTargets(targetsFromNames(names, formatterArgs), runOpts, opts.series)
 }
 
 // findFormatterIndex returns the index of the first formatter, alias, "all",
@@ -445,7 +391,7 @@ type formatterResult struct {
 // recursively and appended to the invocation, in batches of at most
 // maxFilesPerInvocation files.
 func runFormatter(name string, opts Options) formatterResult {
-	tool := lookupTool(name)
+	tool, _ := lookupTool(name) // an unregistered name yields a zero Tool; no extensions match
 	extensions := tool.Extensions
 
 	userArgs := append([]string{}, opts.Args...)
@@ -518,85 +464,70 @@ func aggregateCodes(codes []int) int {
 	return exitCode
 }
 
-// runSeries runs formatters one at a time in registration order.
-func runSeries(names []string, opts Options) int {
-	codes := make([]int, 0, len(names))
+// runTarget is one resolved formatter invocation: the tool to run and the
+// arguments to forward to it.
+type runTarget struct {
+	name string
+	args []string
+}
+
+// resolveTarget maps a language alias to its backend tool; a registered
+// tool name is returned unchanged.
+func resolveTarget(name string) string {
+	if alias, ok := languageAliases[name]; ok {
+		return alias
+	}
+	return name
+}
+
+// targetsFromNames builds one target per name, all forwarding the same
+// arguments. Names are expected to be resolved tool names.
+func targetsFromNames(names []string, args []string) []runTarget {
+	targets := make([]runTarget, 0, len(names))
 	for _, name := range names {
-		result := runFormatter(name, opts)
-		if result.err != nil {
-			fmt.Fprintf(os.Stderr, "formattington: %s\n", result.err)
-		}
-		codes = append(codes, result.code)
+		targets = append(targets, runTarget{name: name, args: args})
 	}
-	return aggregateCodes(codes)
+	return targets
 }
 
-// runParallel runs formatters concurrently.
+// targetsFromCommands builds one target per config command (element 0 is a
+// tool name or language alias; the rest is forwarded verbatim).
+func targetsFromCommands(commands [][]string) []runTarget {
+	targets := make([]runTarget, 0, len(commands))
+	for _, command := range commands {
+		targets = append(targets, runTarget{name: resolveTarget(command[0]), args: command[1:]})
+	}
+	return targets
+}
+
+// runTargets runs targets and returns the aggregated exit code. Series
+// execution preserves order exactly; concurrent execution aggregates in
+// target order (not completion order) and prints missing-tool messages in
+// target order after all formatters have run, so the exit code is
+// deterministic. Formatters that write to stdout/stderr may interleave in
+// the concurrent mode -- use --series for ordered output.
 //
-// Results are aggregated in registration order (not completion order) so
-// the exit code is deterministic; missing-tool messages are printed in
-// registration order after all formatters have run. Formatters that write
-// to stdout/stderr may interleave in this mode -- use --series for ordered
-// output.
-func runParallel(names []string, opts Options) int {
-	type outcome struct {
-		code int
-		err  error
+// An empty slice runs nothing and exits 0.
+func runTargets(targets []runTarget, opts Options, series bool) int {
+	if series {
+		return runTargetsSeries(targets, opts)
 	}
-	results := make([]outcome, len(names))
+	return runTargetsParallel(targets, opts)
+}
 
-	var wg sync.WaitGroup
-	for index, name := range names {
-		wg.Add(1)
-		go func(index int, name string) {
-			defer wg.Done()
-			result := runFormatter(name, opts)
-			results[index] = outcome{code: result.code, err: result.err}
-		}(index, name)
-	}
-	wg.Wait()
-
-	codes := make([]int, len(names))
-	for index := range names {
-		if results[index].err != nil {
-			fmt.Fprintf(os.Stderr, "formattington: %s\n", results[index].err)
-		}
-		codes[index] = results[index].code
+// runTargetsSeries runs targets one at a time, in order.
+func runTargetsSeries(targets []runTarget, opts Options) int {
+	codes := make([]int, 0, len(targets))
+	for _, target := range targets {
+		codes = append(codes, runOneTarget(target, opts))
 	}
 	return aggregateCodes(codes)
 }
 
-// runConfigSeries runs config commands sequentially in file order.
-func runConfigSeries(commands [][]string, opts Options) int {
-	codes := make([]int, 0, len(commands))
-	for _, entry := range commands {
-		target := entry[0]
-		if alias, ok := languageAliases[target]; ok {
-			target = alias
-		}
-		result := runFormatter(target, Options{
-			Check:   opts.Check,
-			DryRun:  opts.DryRun,
-			Args:    entry[1:],
-			Verbose: opts.Verbose,
-		})
-		if result.err != nil {
-			fmt.Fprintf(os.Stderr, "formattington: %s\n", result.err)
-		}
-		codes = append(codes, result.code)
-	}
-	return aggregateCodes(codes)
-}
-
-// runConfigParallel runs config commands concurrently (the default for
-// "all").
-//
-// Results and missing-tool messages are aggregated in file order regardless
-// of completion order. Duplicate tool names are supported because results
-// are keyed by command index rather than tool name. An empty "commands"
-// runs nothing and exits 0.
-func runConfigParallel(commands [][]string, opts Options) int {
-	if len(commands) == 0 {
+// runTargetsParallel runs targets concurrently and aggregates in target
+// order.
+func runTargetsParallel(targets []runTarget, opts Options) int {
+	if len(targets) == 0 {
 		return ExitOK
 	}
 
@@ -604,62 +535,94 @@ func runConfigParallel(commands [][]string, opts Options) int {
 		code int
 		err  error
 	}
-	results := make([]outcome, len(commands))
+	results := make([]outcome, len(targets))
 
 	var wg sync.WaitGroup
-	for index, entry := range commands {
+	for index, target := range targets {
 		wg.Add(1)
-		go func(index int, entry []string) {
+		go func(index int, target runTarget) {
 			defer wg.Done()
-			target := entry[0]
-			if alias, ok := languageAliases[target]; ok {
-				target = alias
-			}
-			result := runFormatter(target, Options{
-				Check:   opts.Check,
-				DryRun:  opts.DryRun,
-				Args:    entry[1:],
-				Verbose: opts.Verbose,
-			})
+			result := runFormatter(target.name, targetOptions(target, opts))
 			results[index] = outcome{code: result.code, err: result.err}
-		}(index, entry)
+		}(index, target)
 	}
 	wg.Wait()
 
-	codes := make([]int, len(commands))
-	for index := range commands {
-		if results[index].err != nil {
-			fmt.Fprintf(os.Stderr, "formattington: %s\n", results[index].err)
-		}
+	codes := make([]int, len(targets))
+	for index := range targets {
+		printFormatterError(results[index].err)
 		codes[index] = results[index].code
 	}
 	return aggregateCodes(codes)
 }
 
+// runOneTarget runs one target, reporting a missing tool on stderr, and
+// returns its exit code.
+func runOneTarget(target runTarget, opts Options) int {
+	result := runFormatter(target.name, targetOptions(target, opts))
+	printFormatterError(result.err)
+	return result.code
+}
+
+// targetOptions carries opts through to one target, substituting the
+// target's forwarded arguments.
+func targetOptions(target runTarget, opts Options) Options {
+	return Options{
+		Check:   opts.Check,
+		DryRun:  opts.DryRun,
+		Args:    target.args,
+		Verbose: opts.Verbose,
+	}
+}
+
+// printFormatterError reports err on stderr when it is non-nil.
+func printFormatterError(err error) {
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "formattington: %s\n", err)
+	}
+}
+
 // lookupTool returns the registry entry for name.
-func lookupTool(name string) Tool {
+func lookupTool(name string) (Tool, bool) {
 	for _, tool := range registry {
 		if tool.Name == name {
-			return tool
+			return tool, true
 		}
 	}
-	return Tool{}
+	return Tool{}, false
 }
 
 // isRegisteredTool reports whether name is a registered formatter.
 func isRegisteredTool(name string) bool {
-	for _, tool := range registry {
-		if tool.Name == name {
-			return true
-		}
-	}
-	return false
+	_, ok := lookupTool(name)
+	return ok
 }
 
 // isRegisteredAlias reports whether name is a registered language alias.
 func isRegisteredAlias(name string) bool {
 	_, ok := languageAliases[name]
 	return ok
+}
+
+// unsupportedMix reports why a bare informational command ('list' or
+// 'init') cannot be combined with the global options or trailing
+// arguments: these commands take no arguments and no mode flags, and
+// --config is only meaningful with 'all'. It returns nil when the
+// combination is allowed.
+func unsupportedMix(command string, opts globalOptions, hasExtraArgs bool) error {
+	switch {
+	case hasExtraArgs:
+		return fmt.Errorf("extra arguments are not supported with '%s'", command)
+	case opts.hasConfig:
+		return errors.New("--config is only supported with 'all'")
+	case opts.check:
+		return fmt.Errorf("--check is not supported with '%s'", command)
+	case opts.dryRun:
+		return fmt.Errorf("--dry-run is not supported with '%s'", command)
+	case opts.series:
+		return fmt.Errorf("--series is not supported with '%s'", command)
+	}
+	return nil
 }
 
 // usageError prints a usage error in argparse style.

@@ -533,9 +533,25 @@ package_tree() {
   fi
 }
 
+# package_one <variant> <platform> <binary> <extension>
+# Build one archive (lite|full) from the cross-compiled binary plus the
+# redistribution notices, and queue it for the release.
+package_one() {
+  local variant="$1" platform="$2" binary="$3" extension="$4"
+  local tree="$STAGE_DIR/pkg/formattington-$platform-$variant"
+  local archive="$DIST_DIR/formattington-$platform-$variant.$extension"
+
+  mkdir -p "$tree"
+  cp "$DIST_DIR/$variant/$platform/$binary" "$tree/$binary"
+  cp "$REPO_ROOT/NOTICE.md" "$tree/NOTICE.md"
+  cp -a "$REPO_ROOT/LICENSES" "$tree/LICENSES"
+  package_tree "$tree" "$archive"
+  log INFO "  packaged $(basename "$archive")"
+  RELEASE_ASSETS+=("$archive")
+}
+
 package_binaries() {
   local entry platform goos goarch _ binary extension
-  local lite_tree full_tree archive
 
   for entry in "${PLATFORMS[@]}"; do
     read -r platform goos goarch _ binary <<<"$entry"
@@ -546,27 +562,11 @@ package_binaries() {
     fi
 
     # Lite: the program alone, plus the redistribution notices.
-    lite_tree="$STAGE_DIR/pkg/formattington-$platform-lite"
-    mkdir -p "$lite_tree"
-    cp "$DIST_DIR/lite/$platform/$binary" "$lite_tree/$binary"
-    cp "$REPO_ROOT/NOTICE.md" "$lite_tree/NOTICE.md"
-    cp -a "$REPO_ROOT/LICENSES" "$lite_tree/LICENSES"
-    archive="$DIST_DIR/formattington-$platform-lite.$extension"
-    package_tree "$lite_tree" "$archive"
-    log INFO "  packaged $(basename "$archive")"
-    RELEASE_ASSETS+=("$archive")
+    package_one lite "$platform" "$binary" "$extension"
 
     # Full: the self-contained program (the bundled formatters are
     # embedded inside the binary), plus the redistribution notices.
-    full_tree="$STAGE_DIR/pkg/formattington-$platform-full"
-    mkdir -p "$full_tree"
-    cp "$DIST_DIR/full/$platform/$binary" "$full_tree/$binary"
-    cp "$REPO_ROOT/NOTICE.md" "$full_tree/NOTICE.md"
-    cp -a "$REPO_ROOT/LICENSES" "$full_tree/LICENSES"
-    archive="$DIST_DIR/formattington-$platform-full.$extension"
-    package_tree "$full_tree" "$archive"
-    log INFO "  packaged $(basename "$archive")"
-    RELEASE_ASSETS+=("$archive")
+    package_one full "$platform" "$binary" "$extension"
   done
 }
 

@@ -18,7 +18,7 @@ The scripts themselves document the contract (`log INFO "..."`), the `LOG_LEVEL`
 
 ## `update.sh`
 
-Refreshes from `fordaj/logamuffin` releases: assets named `Logamuffin_<tag>_<os>-<arch>.tar.gz`/`.zip` (legacy `.7z` accepted) mapped onto the bundle layout, verified against the release's `checksums.txt` when present. Only the binary is kept. See [../README.md](../README.md) for the shared bundle contract (`--dry-run`, `--tag`, staged atomic swap).
+Refreshes from `fordaj/logamuffin` releases: assets named `Logamuffin_<tag>_<os>-<arch>.tar.gz`/`.zip` (legacy `.7z` accepted) mapped onto the bundle layout, verified against the release's `checksums.txt` when present. Only the binary is kept. See [../update.sh.md](../update.sh.md) for the shared refresh implementation (`--dry-run`, `--tag`, staged atomic swap) and [../README.md](../README.md) for the bundle contract.
 
 ## Related pages
 

@@ -19,15 +19,9 @@ var phpCsFixerExtensions = []string{".php"}
 // ".php-cs-fixer.dist.php") is discovered by the tool itself in the current
 // directory, and can be overridden with "--config=path".
 func runPhpCsFixer(opts Options) (int, error) {
-	executable, err := FindTool("php-cs-fixer", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("php-cs-fixer", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	if opts.Check || opts.DryRun {

@@ -22,15 +22,9 @@ var gnatformatExtensions = []string{".ads", ".adb"}
 // the same --check invocation. Args verbatim; "--unparsing-configuration"
 // selects a JSON configuration file.
 func runGnatformat(opts Options) (int, error) {
-	executable, err := FindTool("gnatformat", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("gnatformat", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	// Exactly one .gpr in cwd ⇒ the tool auto-loads it. None ⇒ standalone.

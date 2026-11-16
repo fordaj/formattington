@@ -21,15 +21,9 @@ var fantomasExtensions = []string{".fs", ".fsi", ".fsx"}
 // are picked up automatically), with ".fantomasignore" for exclusions —
 // both are discovered by the tool itself.
 func runFantomas(opts Options) (int, error) {
-	executable, err := FindTool("fantomas", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("fantomas", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

@@ -12,10 +12,9 @@ var markdownlintExtensions = []string{".md", ".markdown"}
 // or a glob pattern all work natively); with no file arguments, matching
 // Markdown files are discovered recursively by the caller.
 func runMarkdownlint(opts Options) (int, error) {
-	executable, err := FindTool("markdownlint", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
+	executable, arguments, done, code, err := beginIntegration("markdownlint", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
-	arguments := append([]string{}, opts.Args...)
 	return runTool(executable, arguments, false)
 }

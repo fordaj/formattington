@@ -38,7 +38,7 @@ The registry order is mirrored by [init.json](init.go.md), the hardcoded order l
 
 `runFormatter` discovers files itself when the user supplied no explicit file arguments: matching extensions for that formatter are appended to the invocation in batches. Explicit file arguments are passed verbatim (`hasUserFileArgs`, line ~488). `IsInformational` check/version passthroughs (`--help`, `--version`) are never given discovered files.
 
-Results for `all` on default invocations run concurrently (`runParallel`, registration order for aggregation, interleaved output possible); `--series` runs sequentially in registration order (`runSeries`). Configuration-file commands run through `runConfigParallel`/`runConfigSeries` (line ~591).
+Execution flows through one path: `targetsFromNames`/`targetsFromCommands` build `runTarget`s (a resolved tool name plus forwarded arguments; element 0 of a config command is resolved through `languageAliases` by `resolveTarget`), and `runTargets` dispatches them either to `runTargetsSeries` (`--series`) or `runTargetsParallel` (the default; aggregation in target order, interleaved output possible). Flag restrictions for `list`/`init` funnel through `unsupportedMix` (extra arguments, `--check`, `--dry-run`, `--series`, `--config`).
 
 ## Options carried to integrations
 

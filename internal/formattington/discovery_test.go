@@ -144,7 +144,10 @@ func TestExtensionOwnership(t *testing.T) {
 		"clang-format": {".c", ".cpp", ".hpp"},
 	}
 	for name, wanted := range cases {
-		tool := lookupTool(name)
+		tool, ok := lookupTool(name)
+		if !ok {
+			t.Fatalf("tool %q is not registered", name)
+		}
 		for _, ext := range wanted {
 			if !contains(tool.Extensions, ext) {
 				t.Errorf("%q does not handle %q", name, ext)

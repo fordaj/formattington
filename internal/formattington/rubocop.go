@@ -19,10 +19,9 @@ var rubocopExtensions = []string{".rb", ".rake", ".gemspec", ".ru"}
 // rejected); projects pin their own version via a Gemfile. ".rubocop.yml"
 // is hierarchical ("inherit_from" supported), discovered natively.
 func runRubocop(opts Options) (int, error) {
-	executable, err := FindTool("rubocop", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
+	executable, args, done, code, err := beginIntegration("rubocop", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
-	args := append([]string{}, opts.Args...)
 	return runTool(executable, args, false)
 }

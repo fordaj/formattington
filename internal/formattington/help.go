@@ -170,65 +170,22 @@ func printHelp(out io.Writer) {
 	fmt.Fprintf(out, "%s\n", helpEpilog)
 }
 
-// toolSurveyRank maps a tool name to the Stack Overflow Developer Survey
-// 2026 rank ("Programming, scripting, and markup languages") of the
-// best-ranked language it covers, per AGENTS.md "Presentation order". Tools
-// with no survey row are absent and sort last.
-var toolSurveyRank = map[string]int{
-	"prettier":           1,
-	"sqlfluff":           2,
-	"black":              4,
-	"shfmt":              5,
-	"google-java-format": 7,
-	"dotnet-format":      8,
-	"powershell":         9,
-	"clang-format":       10,
-	"rustfmt":            12,
-	"php-cs-fixer":       13,
-	"gofmt":              14,
-	"ktfmt":              15,
-	"stylua":             16,
-	"swift-format":       18,
-	"rubocop":            19,
-	"dart-format":        21,
-	"styler":             22,
-	"nixfmt":             23,
-	"gdformat":           24,
-	"npm-groovy-lint":    27,
-	"perltidy":           28,
-	"zig-fmt":            30,
-	"mix-format":         33,
-	"fourmolu":           35,
-	"scalafmt":           36,
-	"fprettify":          38,
-	"erlfmt":             39,
-	"jlfmt":              40,
-	"cljfmt":             41,
-	"gleam-format":       42,
-	"gnatformat":         43,
-	"fantomas":           44,
-	"ocamlformat":        45,
-	"forge-fmt":          48,
-	"mojo-format":        49,
-	"odinfmt":            50,
-	"elm-format":         51,
-}
-
-// unrankedToolRank sorts tools with no survey row (markdownlint, taplo)
-// after every ranked tool.
-const unrankedToolRank = 1000
-
 // sortedAliasNames returns the language alias names ordered by their
-// backend tool's survey rank (AGENTS.md "Presentation order"); aliases
-// sharing a rank are alphabetical, and unranked aliases (toml) sort last,
-// alphabetical among themselves.
+// backend tool's position in the registry (AGENTS.md "Presentation
+// order"); aliases sharing a backend are alphabetical. The registry is
+// in survey order, so this matches the survey ranking, and tools with no
+// survey row (markdownlint, taplo) sort last.
 func sortedAliasNames() []string {
+	registryIndex := make(map[string]int, len(registry))
+	for index, tool := range registry {
+		registryIndex[tool.Name] = index
+	}
 	names := make([]string, 0, len(languageAliases))
 	for alias := range languageAliases {
 		names = append(names, alias)
 	}
 	sort.Slice(names, func(i, j int) bool {
-		ri, rj := aliasRank(names[i]), aliasRank(names[j])
+		ri, rj := aliasRank(registryIndex, names[i]), aliasRank(registryIndex, names[j])
 		if ri != rj {
 			return ri < rj
 		}
@@ -237,10 +194,11 @@ func sortedAliasNames() []string {
 	return names
 }
 
-// aliasRank returns the survey rank of the language alias's backend tool.
-func aliasRank(alias string) int {
-	if r, ok := toolSurveyRank[languageAliases[alias]]; ok {
-		return r
+// aliasRank returns the registry position of the alias's backend tool; an
+// alias whose backend is not registered sorts after every registered tool.
+func aliasRank(registryIndex map[string]int, alias string) int {
+	if index, ok := registryIndex[languageAliases[alias]]; ok {
+		return index
 	}
-	return unrankedToolRank
+	return len(registryIndex)
 }

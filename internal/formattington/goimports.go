@@ -10,15 +10,9 @@ var goimportsExtensions = []string{".go"}
 // grouped into sections. Individual import options (for example "-local")
 // are forwarded verbatim and are not overridden.
 func runGoimports(opts Options) (int, error) {
-	executable, err := FindTool("goimports", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("goimports", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {
