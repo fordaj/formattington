@@ -22,7 +22,7 @@ flowchart TD
 `runInit` (line ~50) orchestrates; `scanCurrentDirectory` (line ~113) chooses the strategy:
 
 - Inside a Git repository, `scanRepo` (line ~136) prefers `git ls-files` (including submodules) plus untracked, non-ignored files (`scanGitList`, `scanUntracked`, `scanSubmoduleUntracked`), falling back to a manifest-free filesystem walk (`walkFiles`, line ~248) when Git is unavailable (`gitAvailable`, line ~324). Tracked files deleted from the working tree are not counted; a nested repository encountered during the scan is examined from its own tracked perspective.
-- Everywhere else, `walkFiles` examines every regular file. Hidden directories and the usual generated/vendored/package-manager directory names are always skipped, and files are only counted by extension.
+- Everywhere else, `walkFiles` examines every regular file (`scanWalkEntry` decides per entry; ignored directories and nested Git repositories are pruned there). Hidden directories and the usual generated/vendored/package-manager directory names are always skipped, and files are only counted by extension.
 
 ## The embedded catalogue
 

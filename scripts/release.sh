@@ -648,44 +648,12 @@ smoke_full_binary() {
   # through the CLI here; the direct check below covers all of them too.
   local cli_tools=(prettier black shfmt google-java-format clang-format ktfmt stylua fourmolu cljfmt elm-format markdownlint taplo)
 
-  local smoke_home
+  local smoke_home failed=() tool
   smoke_home="$(mktemp -d)"
   trap 'rm -rf "$smoke_home"' RETURN
-  local failed=() exe exe_name direct_output
   for tool in "${tools[@]}"; do
-    case " ${cli_tools[*]} " in
-    *" $tool "*)
-      # PATH intentionally excludes every location a formatter could
-      # hide in, so a passing run proves the embedded bundle resolved.
-      output="$(
-        version_probe \
-          env -u FORMATTINGTON_FORMATTERS_DIR \
-          HOME="$smoke_home" XDG_CACHE_HOME="$smoke_home/xdg" \
-          PATH=/usr/bin:/bin "$host_full" "$tool"
-      )" || failed+=("$tool")
-      log INFO "  $tool (via formattington): $(head -n 1 <<<"$output")"
-      ;;
-    *)
-      log INFO "  $tool is not integrated into the CLI; checking the unpacked binary"
-      ;;
-    esac
-
-    # Direct check: the unpacked executable must run on this host,
-    # whether or not the CLI knows about it.
-    exe_name="$tool"
-    if [[ "$host_full" == *.exe ]]; then
-      exe_name="$tool.exe"
-    fi
-    exe="$(find "$smoke_home" -type f -path "*/$tool/v*/$host_bundle/$exe_name" -print -quit)"
-    if [[ -z "$exe" ]]; then
-      failed+=("$tool (unpacked binary not found)")
-      continue
-    fi
-    if direct_output="$(version_probe "$exe")"; then
-      log INFO "  $tool (direct): $(head -n 1 <<<"$direct_output")"
-    else
-      failed+=("$tool (unpacked binary exited non-zero)")
-    fi
+    smoke_cli_tool "$tool" "$smoke_home" "$host_full" "${cli_tools[*]}" || failed+=("$tool")
+    smoke_direct_tool "$tool" "$smoke_home" "$host_full" "$host_bundle" || failed+=("$tool")
   done
   trap - RETURN
   rm -rf "$smoke_home"
@@ -694,6 +662,58 @@ smoke_full_binary() {
     die "smoke test failed for: ${failed[*]} (the embedded formatters do not run on this host)"
   fi
   log INFO "smoke test passed: the embedded formatters unpack and run on this host"
+}
+
+# smoke_cli_tool <tool> <smoke_home> <host_full> <cli-tools-space-separated>
+# Exercise one tool through the freshly built full binary with a PATH
+# that hides every formatter location, so a pass proves the embedded
+# bundle resolved. Tools not registered in the CLI are skipped with a
+# note. Returns non-zero on failure.
+smoke_cli_tool() {
+  local tool="$1" smoke_home="$2" host_full="$3" cli_tools="$4"
+  case " $cli_tools " in
+  *" $tool "*) ;;
+  *)
+    log INFO "  $tool is not integrated into the CLI; checking the unpacked binary"
+    return 0
+    ;;
+  esac
+  local output
+  if ! output="$(
+    version_probe \
+      env -u FORMATTINGTON_FORMATTERS_DIR \
+      HOME="$smoke_home" XDG_CACHE_HOME="$smoke_home/xdg" \
+      PATH=/usr/bin:/bin "$host_full" "$tool"
+  )"; then
+    return 1
+  fi
+  log INFO "  $tool (via formattington): $(head -n 1 <<<"$output")"
+  return 0
+}
+
+# smoke_direct_tool <tool> <smoke_home> <host_full> <host_bundle>
+# Directly invoke the unpacked executable under the smoke HOME. Returns
+# non-zero when the binary is missing from the extraction or exits
+# non-zero.
+smoke_direct_tool() {
+  local tool="$1" smoke_home="$2" host_full="$3" host_bundle="$4"
+  local exe_name="$tool"
+  if [[ "$host_full" == *.exe ]]; then
+    exe_name="$tool.exe"
+  fi
+  local exe
+  exe="$(find "$smoke_home" -type f -path "*/$tool/v*/$host_bundle/$exe_name" -print -quit)"
+  if [[ -z "$exe" ]]; then
+    log INFO "  $tool (unpacked binary not found)"
+    return 1
+  fi
+  local direct_output
+  if ! direct_output="$(version_probe "$exe")"; then
+    log INFO "  $tool (unpacked binary exited non-zero)"
+    return 1
+  fi
+  log INFO "  $tool (direct): $(head -n 1 <<<"$direct_output")"
+  return 0
 }
 
 STAGE_DIR="$(mktemp -d)"

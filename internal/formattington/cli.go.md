@@ -32,7 +32,7 @@ The registry order is mirrored by [init.json](init.go.md), the hardcoded order l
 `Main(argv)` (line ~137):
 
 1. Parses global options with `parseGlobalArgs` — `--verbose`, `--check`, `--dry-run`, `--config`, `--series`. Selecting a tool must come from the first bare token that is not consumed as an option value (`findFormatterIndex`, line ~326).
-2. Dispatches to `list`/`init`, to `all` (registry loop, concurrent with `--series` for sequential), to a registered tool by name, or to a language alias.
+2. Dispatches to `list`/`init`, to `all` (`runAllCommand` — config file when one applies, then `runTargets`; registry loop otherwise), to a registered tool by name, or to a language alias (`resolveSingleTool`).
 3. Runs each tool through `runFormatter` (line ~447): resolves embedding/discovery (`DiscoverFiles`), batches by `maxFilesPerInvocation`, calls the integration with `Options`.
 4. Aggregates results with `aggregateCodes` (line ~511) — the last non-zero code wins; `0` only if all succeed. Missing tools become exit `127` but never prevent other formatters from running.
 

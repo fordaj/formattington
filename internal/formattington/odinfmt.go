@@ -2,6 +2,7 @@ package formattington
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -44,6 +45,42 @@ func runOdinfmt(opts Options) (int, error) {
 	return runTool(executable, args, false)
 }
 
+// odinfmtFile formats one file and compares the tool's stdout with
+// before. It reports diff when they differ, or code != ExitOK when the
+// tool itself failed (its stderr is printed and its code returned for
+// verbatim passthrough). A non-nil error means the tool could not be
+// started.
+func odinfmtFile(executable string, flags []string, file string, before []byte) (diff bool, code int, err error) {
+	args := append(append([]string{}, flags...), file)
+	cmd := exec.Command(executable, args...)
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	runErr := cmd.Run()
+	if runErr != nil {
+		code, ok := toolExitCode(runErr)
+		if !ok {
+			return false, ExitNotFound, fmt.Errorf("could not run %s: %w", executable, runErr)
+		}
+		if code != ExitOK {
+			fmt.Fprint(os.Stderr, stderr.String())
+			return false, code, nil
+		}
+	}
+	return !bytes.Equal(stdout.Bytes(), before), ExitOK, nil
+}
+
+// toolExitCode reports the exit code of a finished process; ok is false
+// when err means the process never ran (failed to start).
+func toolExitCode(err error) (int, bool) {
+	var exitErr *exec.ExitError
+	if !errors.As(err, &exitErr) {
+		return 0, false
+	}
+	return exitErr.ExitCode(), true
+}
+
 // odinfmtSynthesizedCheck implements check mode without touching the
 // user's tree: "odinfmt <file>" is run per file and stdout is
 // byte-compared with the original. Differing files are reported on
@@ -62,23 +99,14 @@ func odinfmtSynthesizedCheck(executable string, files, flags []string) (int, err
 			fmt.Fprintf(os.Stderr, "formattington: cannot read %s: %v\n", file, readErr)
 			continue
 		}
-		args := append(append([]string{}, flags...), file)
-		cmd := exec.Command(executable, args...)
-		var stdout, stderr bytes.Buffer
-		cmd.Stdout = &stdout
-		cmd.Stderr = &stderr
-		if runErr := cmd.Run(); runErr != nil {
-			if isExitError(runErr) {
-				code := cmd.ProcessState.ExitCode()
-				if code != ExitOK {
-					fmt.Fprint(os.Stderr, stderr.String())
-					return code, nil // tool errors pass through verbatim
-				}
-			} else {
-				return ExitNotFound, fmt.Errorf("could not run %s: %w", executable, runErr)
-			}
+		diff, code, runErr := odinfmtFile(executable, flags, file, before)
+		if runErr != nil {
+			return ExitNotFound, runErr
 		}
-		if !bytes.Equal(stdout.Bytes(), before) {
+		if code != ExitOK {
+			return code, nil
+		}
+		if diff {
 			needed = append(needed, file)
 		}
 	}

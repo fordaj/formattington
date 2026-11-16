@@ -32,6 +32,15 @@ type initScan struct {
 	suffixes map[string]int
 }
 
+// record counts one file with the given suffix.
+func (s *initScan) record(suffix string) {
+	s.files++
+	if s.suffixes == nil {
+		s.suffixes = make(map[string]int)
+	}
+	s.suffixes[suffix]++
+}
+
 // merge folds other into s.
 func (s *initScan) merge(other initScan) {
 	s.files += other.files
@@ -164,8 +173,7 @@ func scanGitList(root string, recurse bool) (initScan, error) {
 	scanned.suffixes = make(map[string]int, len(entries))
 	for _, rel := range entries {
 		if suffix, ok := countableGitSuffix(root, rel); ok {
-			scanned.files++
-			scanned.suffixes[suffix]++
+			scanned.record(suffix)
 		}
 	}
 	return scanned, nil
@@ -178,7 +186,7 @@ func scanGitList(root string, recurse bool) (initScan, error) {
 // is walked), so no untracked source tree is silently skipped.
 func scanUntracked(root string) initScan {
 	var scanned initScan
-	scanned.suffixes = map[string]int{}
+	scanned.suffixes = make(map[string]int)
 	entries, err := gitNulList(root, "ls-files", "-z", "--others", "--directory", "--exclude-standard")
 	if err != nil {
 		return scanned
@@ -194,8 +202,7 @@ func scanUntracked(root string) initScan {
 			continue
 		}
 		if suffix, ok := countableGitSuffix(root, entry); ok {
-			scanned.files++
-			scanned.suffixes[suffix]++
+			scanned.record(suffix)
 		}
 	}
 	return scanned
@@ -207,7 +214,7 @@ func scanUntracked(root string) initScan {
 // see them).
 func scanSubmoduleUntracked(root string) initScan {
 	var scanned initScan
-	scanned.suffixes = map[string]int{}
+	scanned.suffixes = make(map[string]int)
 	for _, rel := range gitSubmodulePaths(root) {
 		sub := filepath.Join(root, filepath.FromSlash(rel))
 		if info, err := os.Stat(sub); err != nil || !info.IsDir() {
@@ -252,29 +259,41 @@ func walkFiles(root string) initScan {
 		if walkErr != nil {
 			return nil
 		}
-		if entry.IsDir() {
-			if path == root {
-				return nil
-			}
-			if isIgnoredDirName(entry.Name()) {
-				return filepath.SkipDir
-			}
-			if dirHasGit(path) && gitAvailable() {
-				scanned.merge(scanRepo(path))
-				return filepath.SkipDir
-			}
-			return nil
-		}
-		if !entry.Type().IsRegular() {
-			return nil
-		}
-		if suffix, ok := countableGitSuffix(root, mustRelative(root, path)); ok {
-			scanned.files++
-			scanned.suffixes[suffix]++
+		if skip := scanWalkEntry(root, path, entry, &scanned); skip {
+			return filepath.SkipDir
 		}
 		return nil
 	})
 	return scanned
+}
+
+// scanWalkEntry examines one entry of the non-git walk and merges its
+// findings into scanned. It reports whether the walk should skip the
+// entry's subtree (an ignored directory or a directory examined from its
+// tracked Git perspective instead).
+func scanWalkEntry(root, path string, entry fs.DirEntry, scanned *initScan) bool {
+	if entry.IsDir() {
+		if path == root {
+			return false
+		}
+		if isIgnoredDirName(entry.Name()) {
+			return true
+		}
+		if dirHasGit(path) && gitAvailable() {
+			scanned.merge(scanRepo(path))
+			return true
+		}
+		return false
+	}
+	if !entry.Type().IsRegular() {
+		return false
+	}
+	suffix, ok := countableGitSuffix(root, mustRelative(root, path))
+	if !ok {
+		return false
+	}
+	scanned.record(suffix)
+	return false
 }
 
 // countableGitSuffix reports whether the Git- or walk-reported path rel
