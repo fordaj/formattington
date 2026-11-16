@@ -23,8 +23,8 @@ tools/<name>/
 
 - Binaries are pinned by version directory; the pinned version is named by `*_VERSION_DIR` in [`scripts/.common.env`](../scripts/env.sh.md).
 - `<platform>` is the hyphenated `<os>-<arch>` name (`linux-x86_64`, `macos-arm64`, `windows-x86_64`, …), matching `PlatformDir()`.
-- `update.sh` downloads the latest (or `--tag`ged) upstream release via `gh`, verifies checksums, stages into a temporary directory, swaps in atomically, and deletes superseded version folders only after the new one is staged — a failed refresh leaves the previous bundle intact. Each script has `--dry-run`, `--help`, and resolves its own directory, so it can run from anywhere.
-- Only the binary is kept, except [barnacle](barnacle/update.sh.md), which also retains the upstream MIT `LICENSE` as `<tag>/<platform>/LICENSE`.
+- Each bundle's `update.sh` is a thin wrapper around [`tools/update.sh`](update.sh.md), the shared refresh implementation (downloads the latest or `--tag`ged upstream release via `gh`, verifies checksums, stages into a temporary directory, swaps in atomically, and deletes superseded version folders only after the new one is staged — a failed refresh leaves the previous bundle intact). Each wrapper has `--dry-run`, `--help`, and resolves its own directory, so it can run from anywhere.
+- Only the binary is kept, except [barnacle](barnacle/update.sh.md), which also retains the upstream MIT `LICENSE` as `<tag>/<platform>/LICENSE`, and [formattington-lite](formattington-lite/update.sh.md), which keeps `NOTICE.md` and `LICENSES/`.
 
 ## The bundles
 
@@ -45,10 +45,11 @@ tools/barnacle/update.sh            # download the latest release, verify, swap
 tools/barnacle/update.sh --dry-run  # show what would change
 ```
 
-(Same flags for `versioner`, `logamuffin`, `runner-spawner`.) Refreshes are checksum-verified; All four verifiers accept `checksums.txt` or `SHA256SUMS.txt` (missing file: a warning, except runner-spawner, which refuses to install unverified binaries). Legacy `.7z` assets are still readable (a p7zip install is only needed until new releases ship platform-native archives).
+(Same flags for `versioner`, `logamuffin`, `runner-spawner`, `formattington-lite`; see [update.sh.md](update.sh.md) for the shared flags and per-tool parameters.) Refreshes are checksum-verified; all five verifiers accept `checksums.txt` or `SHA256SUMS.txt` (missing file: a warning, except runner-spawner, which refuses to install unverified binaries). Legacy `.7z` assets are still readable (a p7zip install is only needed until new releases ship platform-native archives).
 
 ## Related pages
 
+- [update.sh.md](update.sh.md) — the shared refresh implementation behind every wrapper here
 - [scripts/env.sh.md](../scripts/env.sh.md) — how the cascade selects these binaries
 - [scripts/docs.sh.md](../scripts/docs.sh.md) — barnacle in action
 - [../scripts/release.sh.md](../scripts/release.sh.md) — the release pipeline

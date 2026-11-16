@@ -16,15 +16,9 @@ var cljfmtExtensions = []string{".clj", ".cljs", ".cljc", ".edn"}
 // discovered by the tool itself (".cljfmt.edn"/"cljfmt.edn" in cwd and
 // parents).
 func runCljfmt(opts Options) (int, error) {
-	executable, err := FindTool("cljfmt", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("cljfmt", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

@@ -24,15 +24,9 @@ var scalafmtExtensions = []string{".scala", ".sbt", ".sc"}
 // untouched bits pass through verbatim. Args are forwarded verbatim
 // ("--config" is honored); a config is never synthesized.
 func runScalafmt(opts Options) (int, error) {
-	executable, err := FindTool("scalafmt", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("scalafmt", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

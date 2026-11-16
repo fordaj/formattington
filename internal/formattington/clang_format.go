@@ -15,15 +15,9 @@ var clangFormatExtensions = []string{
 
 // runClangFormat formats C/C++ files using clang-format.
 func runClangFormat(opts Options) (int, error) {
-	executable, err := FindTool("clang-format", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	arguments := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding formatting flags.
-	if IsInformational(arguments) {
-		return runTool(executable, arguments, false)
+	executable, arguments, done, code, err := beginIntegration("clang-format", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

@@ -14,15 +14,9 @@ var elmFormatExtensions = []string{".elm"}
 // invocation. Arguments are forwarded verbatim; "--elm-version" is an
 // example.
 func runElmFormat(opts Options) (int, error) {
-	executable, err := FindTool("elm-format", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("elm-format", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

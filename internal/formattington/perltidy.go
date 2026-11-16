@@ -18,15 +18,9 @@ var perltidyExtensions = []string{".pl", ".pm", ".t"}
 // verbatim ("--profile=path", "--noprofile", "-i=4", ...); configuration
 // (".perltidyrc") is discovered by the tool itself.
 func runPerltidy(opts Options) (int, error) {
-	executable, err := FindTool("perltidy", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("perltidy", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

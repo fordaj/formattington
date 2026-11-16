@@ -103,21 +103,11 @@ func versionFromPkgInfo() string {
 // platform, or "" when there is none.
 func bundledVersioner(root string) string {
 	toolDir := filepath.Join(root, "tools", "versioner")
-	platform, err := PlatformDir()
+	bundled, _, err := findBundledForHost(toolDir, hostExecutableName("versioner"), "")
 	if err != nil {
 		return ""
 	}
-	executable := "versioner"
-	if isWindows() {
-		executable = "versioner.exe"
-	}
-	for _, version := range bundledVersions(toolDir) {
-		candidate := filepath.Join(toolDir, "v"+version, platform, executable)
-		if info, statErr := os.Stat(candidate); statErr == nil && !info.IsDir() {
-			return candidate
-		}
-	}
-	return ""
+	return bundled
 }
 
 // versionFromVersioner runs the versioner binary and returns the version it

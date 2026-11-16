@@ -9,15 +9,9 @@ var gofmtExtensions = []string{".go"}
 // the output is captured and reported as ExitFormatRequired when it is
 // non-empty (like shfmt "-l").
 func runGofmt(opts Options) (int, error) {
-	executable, err := FindTool("gofmt", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("gofmt", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

@@ -20,15 +20,9 @@ var fprettifyExtensions = []string{".f90", ".f95", ".f03", ".f08", ".f18"}
 // capturing anything. Arguments are forwarded verbatim ("-c/--config-file"
 // selects a configuration file; ".fprettify.rc" discovery is tool-native).
 func runFprettify(opts Options) (int, error) {
-	executable, err := FindTool("fprettify", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("fprettify", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

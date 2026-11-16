@@ -19,15 +19,9 @@ var zigFmtExtensions = []string{".zig"}
 // --check invocation. Zero configuration by design — no config file
 // exists and none is invented. Arguments are forwarded verbatim.
 func runZigFmt(opts Options) (int, error) {
-	executable, err := FindTool("zig", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, withArgs([]string{"fmt"}, forwarded), false)
+	executable, forwarded, done, code, err := beginIntegration("zig", opts, []string{"fmt"})
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

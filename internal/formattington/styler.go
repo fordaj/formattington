@@ -28,15 +28,9 @@ var stylerExtensions = []string{".R", ".r"}
 // strconv.Quote, which matches R's double-quoted string escapes for the
 // paths Formattington handles.
 func runStyler(opts Options) (int, error) {
-	executable, err := FindTool("Rscript", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("Rscript", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	files := []string{}

@@ -7,19 +7,19 @@ var shfmtExtensions = []string{".sh", ".bash"}
 //
 // Formattington owns the mode; shfmt owns all other flags.
 func runShfmt(opts Options) (int, error) {
-	executable, err := FindTool("shfmt", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
+	executable, forwarded, done, code, err := beginIntegration("shfmt", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {
 	case opts.Check:
 		// "-l" lists the files that need formatting; the exit code is
 		// derived from the captured output.
-		return runTool(executable, withArgs([]string{"-l"}, opts.Args), true)
+		return runTool(executable, withArgs([]string{"-l"}, forwarded), true)
 	case opts.DryRun:
-		return runTool(executable, withArgs([]string{"-d"}, opts.Args), false)
+		return runTool(executable, withArgs([]string{"-d"}, forwarded), false)
 	default:
-		return runTool(executable, withArgs([]string{"-w"}, opts.Args), false)
+		return runTool(executable, withArgs([]string{"-w"}, forwarded), false)
 	}
 }

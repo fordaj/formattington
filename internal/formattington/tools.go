@@ -101,6 +101,15 @@ func isWindows() bool {
 	return runtime.GOOS == "windows"
 }
 
+// hostExecutableName returns the executable file name for name on the
+// host platform (".exe" on Windows, unchanged elsewhere).
+func hostExecutableName(name string) string {
+	if isWindows() {
+		return name + ".exe"
+	}
+	return name
+}
+
 // formattersDirEnv overrides the bundled formatter directory.
 const formattersDirEnv = "FORMATTINGTON_FORMATTERS_DIR"
 
@@ -240,27 +249,36 @@ func bundledVersions(toolDir string) []string {
 // matching bundle exists. A non-nil error means the platform itself is
 // unsupported.
 func findBundledExecutable(name, version, executable string) (string, error) {
-	toolDir := filepath.Join(FormattersDir(), name)
+	bundled, _, err := findBundledForHost(
+		filepath.Join(FormattersDir(), name), executable, version)
+	return bundled, err
+}
 
+// findBundledForHost returns the path of the newest bundled executable for
+// the host platform and its version (without the "v" prefix), or ("", "",
+// nil) when no bundle carries one. pinnedVersion, when non-empty, restricts
+// the search to that single version. A non-nil error means the platform
+// itself is unsupported.
+func findBundledForHost(toolDir, executable, pinnedVersion string) (string, string, error) {
 	var versions []string
-	if version != "" {
-		versions = []string{strings.TrimPrefix(version, "v")}
+	if pinnedVersion != "" {
+		versions = []string{strings.TrimPrefix(pinnedVersion, "v")}
 	} else {
 		versions = bundledVersions(toolDir)
 	}
 
 	platform, err := PlatformDir()
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	for _, candidate := range versions {
 		bundled := filepath.Join(toolDir, "v"+candidate, platform, executable)
 		if info, statErr := os.Stat(bundled); statErr == nil && !info.IsDir() {
-			return bundled, nil
+			return bundled, candidate, nil
 		}
 	}
-	return "", nil
+	return "", "", nil
 }
 
 // findOnPath returns the PATH-resolved tool (including the ".exe" fallback
@@ -285,10 +303,7 @@ func findOnPath(name string) string {
 // FORMATTINGTON_VERBOSE, the resolved executable is printed to stderr.
 func FindTool(name, version string, verbose bool) (string, error) {
 	showVerbose := verbose || verboseEnv()
-	executable := name
-	if isWindows() {
-		executable = name + ".exe"
-	}
+	executable := hostExecutableName(name)
 
 	bundled, err := findBundledExecutable(name, version, executable)
 	if err != nil {

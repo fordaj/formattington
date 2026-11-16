@@ -24,15 +24,9 @@ const fourmoluExitCheck = 100
 // up from each file, plus "--no-cabal" to ignore .cabal files'
 // default-extensions.
 func runFourmolu(opts Options) (int, error) {
-	executable, err := FindTool("fourmolu", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("fourmolu", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

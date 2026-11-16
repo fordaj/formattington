@@ -11,15 +11,9 @@ var taploExtensions = []string{".toml"}
 // captured output on every platform, unless the caller forwards their own
 // "--colors" value.
 func runTaplo(opts Options) (int, error) {
-	executable, err := FindTool("taplo", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("taplo", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	arguments := []string{"fmt"}

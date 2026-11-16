@@ -10,7 +10,7 @@ flowchart LR
     click Contract href "cli.go.md"
 ```
 
-`formatter.go` holds the two types every integration shares. It contains no logic of its own beyond the `Formatter` signature and the `withArgs` helper.
+`formatter.go` holds the two types every integration shares plus the shared integration opening.
 
 ## `Options`
 
@@ -30,6 +30,8 @@ type Formatter func(Options) (int, error)
 The returned integer is the process exit code the CLI reports. A non-nil error means the executable could not be resolved or started — the CLI turns that into exit `127`. Integrations that want "files need formatting" reported as exit `1` use the shared `ExitFormatRequired` value (defined in the CLI; see [cli.go.md](cli.go.md)); anything else passes through unchanged so meaningful upstream diagnostics survive.
 
 `withArgs(prefix, args)` prefixes a tool's mandatory flags (for example gofmt's mode flag) in front of forwarded user arguments, always on a copy.
+
+`beginIntegration(toolName, opts, prefix)` is the shared opening of every integration: it resolves the executable (`FindTool`), and — when the forwarded arguments are an informational help/version passthrough (`IsInformational`, with `prefix` applied, for example `dart format --help`) — runs the tool immediately and reports `done`. Callers return `(code, err)` as-is, which yields exit `127` for a missing tool and the tool's own exit code for the passthrough; otherwise they receive the executable and a fresh copy of the arguments (without `prefix`) and layer their mode flags on. A non-nil error means the executable could not be resolved.
 
 ## Related pages
 

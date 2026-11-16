@@ -34,7 +34,7 @@ tools/barnacle/
 
 Adapted to barnacle's release format (unlike the `.7z` bundles elsewhere in `tools/`): assets are `barnacle-<platform>.tar.gz` (macOS/Linux) and `barnacle-<platform>.zip` (Windows), each carrying a top-level `barnacle-<platform>/` directory with the binary, `LICENSE`, and `README.md`.
 
-The script:
+The refresh logic lives in [../update.sh.md](../update.sh.md) (the `tools/update.sh` shared implementation); this bundle's `update.sh` is a thin wrapper around it. The pipeline:
 
 1. Resolves the tag (latest release, or `--tag vX.Y.Z...`), validating the tag shape.
 2. Downloads via `gh`, then verifies every archive against the upstream `checksums.txt` (`shasum -a 256 -c` or `sha256sum -c`). A mismatch is fatal.

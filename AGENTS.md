@@ -353,7 +353,7 @@ Layout — documentation lives next to the code it describes:
 
 - One sibling `.md` per Go integration and core file in `internal/formattington/` (for example `black.go` → `black.go.md`, `cli.go` → [cli.go.md](internal/formattington/cli.go.md)), plus `README.md` as the package hub and `architecture.mmd` for the standalone diagram.
 - One sibling `.md` per bash script (`scripts/entry.sh` → `entry.sh.md`, `scripts/env.sh` → `env.sh.md`, `scripts/version.sh` → `version.sh.md`, `scripts/docs.sh` → `docs.sh.md`, `scripts/release.sh` → `release.sh.md`, `scripts/demo.sh` → `demo.sh.md`), plus `scripts/README.md` as the hub.
-- One sibling `.md` per bundle in `tools/` (`tools/<name>/update.sh.md`), plus `tools/README.md` as the hub. `tools/` is excluded from the generated site via `.barnacle.json`, so these pages exist for the repository, not the site.
+- One sibling `.md` per bundle in `tools/` (`tools/<name>/update.sh.md`), plus `tools/update.sh.md` for the shared refresh implementation the wrappers call, plus `tools/README.md` as the hub. `tools/` is excluded from the generated site via `.barnacle.json`, so these pages exist for the repository, not the site.
 
 Rules for keeping these files current:
 

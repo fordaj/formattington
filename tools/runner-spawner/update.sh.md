@@ -30,7 +30,7 @@ The pinned binary selection goes through the [env cascade](../../scripts/env.sh.
 
 ## `update.sh`
 
-Refreshes from `fordaj/runner-spawner` releases: assets named `RunnerSpawner_<tag>_<os>-<arch>.tar.gz`/`.zip` (legacy `.7z` accepted) mapped onto the bundle layout. Verification is mandatory: a release with no `checksums.txt` aborts the refresh. Only the binary is kept. See [../README.md](../README.md) for the shared bundle contract (`--dry-run`, `--tag`, staged atomic swap).
+Refreshes from `fordaj/runner-spawner` releases: assets named `RunnerSpawner_<tag>_<os>-<arch>.tar.gz`/`.zip` (legacy `.7z` accepted) mapped onto the bundle layout. Verification is mandatory: a release with no `checksums.txt` aborts the refresh. Only the binary is kept. See [../update.sh.md](../update.sh.md) for the shared refresh implementation (`--dry-run`, `--tag`, staged atomic swap) and [../README.md](../README.md) for the bundle contract.
 
 ## Related pages
 

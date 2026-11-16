@@ -22,44 +22,41 @@ func runFake(t *testing.T, names []string, fn func() (int, error)) (int, []strin
 	return code, recordedArgv(t, argvFile)
 }
 
+// checkArgv runs fn with fake executables installed and asserts the
+// arguments the fakes recorded.
+func checkArgv(t *testing.T, tool string, fn func() (int, error), want []string) {
+	t.Helper()
+	_, recorded := runFake(t, []string{tool}, fn)
+	if !reflect.DeepEqual(recorded, want) {
+		t.Errorf("argv = %v, want %v", recorded, want)
+	}
+}
+
 func TestShfmtArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default writes", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"shfmt"}, func() (int, error) {
+		checkArgv(t, "shfmt", func() (int, error) {
 			return runShfmt(Options{})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-w"}) {
-			t.Errorf("argv = %v, want [-w]", recorded)
-		}
+		}, []string{"-w"})
 	})
 
 	t.Run("check lists", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"shfmt"}, func() (int, error) {
+		checkArgv(t, "shfmt", func() (int, error) {
 			return runShfmt(Options{Check: true})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-l"}) {
-			t.Errorf("argv = %v, want [-l]", recorded)
-		}
+		}, []string{"-l"})
 	})
 
 	t.Run("dry run diffs", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"shfmt"}, func() (int, error) {
+		checkArgv(t, "shfmt", func() (int, error) {
 			return runShfmt(Options{DryRun: true})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-d"}) {
-			t.Errorf("argv = %v, want [-d]", recorded)
-		}
+		}, []string{"-d"})
 	})
 
 	t.Run("forwards extra args after the mode flag", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"shfmt"}, func() (int, error) {
+		checkArgv(t, "shfmt", func() (int, error) {
 			return runShfmt(Options{Args: []string{"--keep-padding", "file with spaces.sh"}})
-		})
-		want := []string{"-w", "--keep-padding", "file with spaces.sh"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-w", "--keep-padding", "file with spaces.sh"})
 	})
 }
 
@@ -67,60 +64,39 @@ func TestClangFormatArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default inserts in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"clang-format"}, func() (int, error) {
+		checkArgv(t, "clang-format", func() (int, error) {
 			return runClangFormat(Options{})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-i"}) {
-			t.Errorf("argv = %v, want [-i]", recorded)
-		}
+		}, []string{"-i"})
 	})
 
 	t.Run("does not duplicate in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"clang-format"}, func() (int, error) {
+		checkArgv(t, "clang-format", func() (int, error) {
 			return runClangFormat(Options{Args: []string{"--in-place", "file.cpp"}})
-		})
-		want := []string{"--in-place", "file.cpp"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--in-place", "file.cpp"})
 	})
 
 	t.Run("check uses dry run and werror", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"clang-format"}, func() (int, error) {
+		checkArgv(t, "clang-format", func() (int, error) {
 			return runClangFormat(Options{Check: true})
-		})
-		want := []string{"--dry-run", "--Werror"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--dry-run", "--Werror"})
 	})
 
 	t.Run("dry run uses dry run", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"clang-format"}, func() (int, error) {
+		checkArgv(t, "clang-format", func() (int, error) {
 			return runClangFormat(Options{DryRun: true})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--dry-run"}) {
-			t.Errorf("argv = %v, want [--dry-run]", recorded)
-		}
+		}, []string{"--dry-run"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"clang-format"}, func() (int, error) {
+		checkArgv(t, "clang-format", func() (int, error) {
 			return runClangFormat(Options{Args: []string{"-h"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-h"}) {
-			t.Errorf("argv = %v, want [-h]", recorded)
-		}
+		}, []string{"-h"})
 	})
 
 	t.Run("forwards args and preserves spaces", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"clang-format"}, func() (int, error) {
+		checkArgv(t, "clang-format", func() (int, error) {
 			return runClangFormat(Options{Args: []string{"--style=file", "my file.cpp", "another file.cpp"}})
-		})
-		want := []string{"-i", "--style=file", "my file.cpp", "another file.cpp"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-i", "--style=file", "my file.cpp", "another file.cpp"})
 	})
 }
 
@@ -146,13 +122,9 @@ func TestMarkdownlintArgv(t *testing.T) {
 	}
 
 	t.Run("forwards --fix and files verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"markdownlint"}, func() (int, error) {
+		checkArgv(t, "markdownlint", func() (int, error) {
 			return runMarkdownlint(Options{Check: true, Args: []string{"--fix", "--config", "custom.json", "README.md"}})
-		})
-		want := []string{"--fix", "--config", "custom.json", "README.md"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--fix", "--config", "custom.json", "README.md"})
 	})
 
 	t.Run("missing tool reports exit 127", func(t *testing.T) {
@@ -181,21 +153,15 @@ func TestBlackArgv(t *testing.T) {
 	})
 
 	t.Run("check uses the check flag", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"black"}, func() (int, error) {
+		checkArgv(t, "black", func() (int, error) {
 			return runBlack(Options{Check: true})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--check"}) {
-			t.Errorf("argv = %v, want [--check]", recorded)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("dry run uses the diff flag", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"black"}, func() (int, error) {
+		checkArgv(t, "black", func() (int, error) {
 			return runBlack(Options{DryRun: true})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--diff"}) {
-			t.Errorf("argv = %v, want [--diff]", recorded)
-		}
+		}, []string{"--diff"})
 	})
 
 	t.Run("does not add a line length", func(t *testing.T) {
@@ -208,13 +174,9 @@ func TestBlackArgv(t *testing.T) {
 	})
 
 	t.Run("forwards a line length", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"black"}, func() (int, error) {
+		checkArgv(t, "black", func() (int, error) {
 			return runBlack(Options{Args: []string{"--line-length", "88", "file.py"}})
-		})
-		want := []string{"--line-length", "88", "file.py"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--line-length", "88", "file.py"})
 	})
 }
 
@@ -222,58 +184,39 @@ func TestPrettierArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default writes", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"prettier"}, func() (int, error) {
+		checkArgv(t, "prettier", func() (int, error) {
 			return runPrettier(Options{})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--write"}) {
-			t.Errorf("argv = %v, want [--write]", recorded)
-		}
+		}, []string{"--write"})
 	})
 
 	t.Run("check uses the check flag", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"prettier"}, func() (int, error) {
+		checkArgv(t, "prettier", func() (int, error) {
 			return runPrettier(Options{Check: true})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--check"}) {
-			t.Errorf("argv = %v, want [--check]", recorded)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("dry run lists different files", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"prettier"}, func() (int, error) {
+		checkArgv(t, "prettier", func() (int, error) {
 			return runPrettier(Options{DryRun: true})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--list-different"}) {
-			t.Errorf("argv = %v, want [--list-different]", recorded)
-		}
+		}, []string{"--list-different"})
 	})
 
 	t.Run("does not duplicate write", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"prettier"}, func() (int, error) {
+		checkArgv(t, "prettier", func() (int, error) {
 			return runPrettier(Options{Args: []string{"--write", "file.js"}})
-		})
-		want := []string{"--write", "file.js"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--write", "file.js"})
 	})
 
 	t.Run("forwarded check omits write", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"prettier"}, func() (int, error) {
+		checkArgv(t, "prettier", func() (int, error) {
 			return runPrettier(Options{Args: []string{"--check"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--check"}) {
-			t.Errorf("argv = %v, want [--check]", recorded)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("forwarded list different omits write", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"prettier"}, func() (int, error) {
+		checkArgv(t, "prettier", func() (int, error) {
 			return runPrettier(Options{Args: []string{"--list-different"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--list-different"}) {
-			t.Errorf("argv = %v, want [--list-different]", recorded)
-		}
+		}, []string{"--list-different"})
 	})
 
 	t.Run("does not add a config flag", func(t *testing.T) {
@@ -290,43 +233,27 @@ func TestTaploArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"taplo"}, func() (int, error) {
+		checkArgv(t, "taplo", func() (int, error) {
 			return runTaplo(Options{})
-		})
-		want := []string{"fmt", "--colors", "never"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--colors", "never"})
 	})
 
 	t.Run("check uses fmt check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"taplo"}, func() (int, error) {
+		checkArgv(t, "taplo", func() (int, error) {
 			return runTaplo(Options{Check: true})
-		})
-		want := []string{"fmt", "--colors", "never", "--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--colors", "never", "--check"})
 	})
 
 	t.Run("dry run uses fmt diff", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"taplo"}, func() (int, error) {
+		checkArgv(t, "taplo", func() (int, error) {
 			return runTaplo(Options{DryRun: true})
-		})
-		want := []string{"fmt", "--colors", "never", "--diff"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--colors", "never", "--diff"})
 	})
 
 	t.Run("user colors are respected", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"taplo"}, func() (int, error) {
+		checkArgv(t, "taplo", func() (int, error) {
 			return runTaplo(Options{Args: []string{"--colors", "always", "file.toml"}})
-		})
-		want := []string{"fmt", "--colors", "always", "file.toml"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--colors", "always", "file.toml"})
 	})
 
 	t.Run("does not add a config flag", func(t *testing.T) {
@@ -343,40 +270,27 @@ func TestGofmtArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default writes", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gofmt"}, func() (int, error) {
+		checkArgv(t, "gofmt", func() (int, error) {
 			return runGofmt(Options{})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-w"}) {
-			t.Errorf("argv = %v, want [-w]", recorded)
-		}
+		}, []string{"-w"})
 	})
 
 	t.Run("check lists", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gofmt"}, func() (int, error) {
+		checkArgv(t, "gofmt", func() (int, error) {
 			return runGofmt(Options{Check: true})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-l"}) {
-			t.Errorf("argv = %v, want [-l]", recorded)
-		}
+		}, []string{"-l"})
 	})
 
 	t.Run("dry run diffs", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gofmt"}, func() (int, error) {
+		checkArgv(t, "gofmt", func() (int, error) {
 			return runGofmt(Options{DryRun: true})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-d"}) {
-			t.Errorf("argv = %v, want [-d]", recorded)
-		}
+		}, []string{"-d"})
 	})
 
 	t.Run("forwards args after the mode flag", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gofmt"}, func() (int, error) {
+		checkArgv(t, "gofmt", func() (int, error) {
 			return runGofmt(Options{Check: true, Args: []string{"my file.go", "another file.go"}})
-		})
-		want := []string{"-l", "my file.go", "another file.go"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-l", "my file.go", "another file.go"})
 	})
 }
 
@@ -384,31 +298,21 @@ func TestGoimportsArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default writes", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"goimports"}, func() (int, error) {
+		checkArgv(t, "goimports", func() (int, error) {
 			return runGoimports(Options{})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-w"}) {
-			t.Errorf("argv = %v, want [-w]", recorded)
-		}
+		}, []string{"-w"})
 	})
 
 	t.Run("check lists", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"goimports"}, func() (int, error) {
+		checkArgv(t, "goimports", func() (int, error) {
 			return runGoimports(Options{Check: true})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-l"}) {
-			t.Errorf("argv = %v, want [-l]", recorded)
-		}
+		}, []string{"-l"})
 	})
 
 	t.Run("forwards the local flag", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"goimports"}, func() (int, error) {
+		checkArgv(t, "goimports", func() (int, error) {
 			return runGoimports(Options{Args: []string{"-local", "example.com/foo", "file.go"}})
-		})
-		want := []string{"-w", "-local", "example.com/foo", "file.go"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-w", "-local", "example.com/foo", "file.go"})
 	})
 }
 
@@ -524,6 +428,7 @@ func TestInformationalPassthrough(t *testing.T) {
 		{"taplo", "taplo", runTaplo},
 		{"gofmt", "gofmt", runGofmt},
 		{"goimports", "goimports", runGoimports},
+		{"shfmt", "shfmt", runShfmt},
 	}
 
 	for _, testCase := range cases {
@@ -577,42 +482,27 @@ func TestStyluaArgv(t *testing.T) {
 	})
 
 	t.Run("check uses check flag", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"stylua"}, func() (int, error) {
+		checkArgv(t, "stylua", func() (int, error) {
 			return runStylua(Options{Check: true})
-		})
-		want := []string{"--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("dry run prints unified diffs via check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"stylua"}, func() (int, error) {
+		checkArgv(t, "stylua", func() (int, error) {
 			return runStylua(Options{DryRun: true})
-		})
-		want := []string{"--check", "--output-format=unified"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check", "--output-format=unified"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"stylua"}, func() (int, error) {
+		checkArgv(t, "stylua", func() (int, error) {
 			return runStylua(Options{Args: []string{"--help"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--help"}) {
-			t.Errorf("argv = %v, want [--help]", recorded)
-		}
+		}, []string{"--help"})
 	})
 
 	t.Run("forwards args verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"stylua"}, func() (int, error) {
+		checkArgv(t, "stylua", func() (int, error) {
 			return runStylua(Options{Args: []string{"--column-width", "100", "my file.lua"}})
-		})
-		want := []string{"--column-width", "100", "my file.lua"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--column-width", "100", "my file.lua"})
 	})
 }
 
@@ -629,42 +519,27 @@ func TestNixfmtArgv(t *testing.T) {
 	})
 
 	t.Run("check uses check flag", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"nixfmt"}, func() (int, error) {
+		checkArgv(t, "nixfmt", func() (int, error) {
 			return runNixfmt(Options{Check: true})
-		})
-		want := []string{"--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"nixfmt"}, func() (int, error) {
+		checkArgv(t, "nixfmt", func() (int, error) {
 			return runNixfmt(Options{DryRun: true})
-		})
-		want := []string{"--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"nixfmt"}, func() (int, error) {
+		checkArgv(t, "nixfmt", func() (int, error) {
 			return runNixfmt(Options{Args: []string{"--help"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--help"}) {
-			t.Errorf("argv = %v, want [--help]", recorded)
-		}
+		}, []string{"--help"})
 	})
 
 	t.Run("forwards args verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"nixfmt"}, func() (int, error) {
+		checkArgv(t, "nixfmt", func() (int, error) {
 			return runNixfmt(Options{Args: []string{"--width", "100", "my file.nix"}})
-		})
-		want := []string{"--width", "100", "my file.nix"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--width", "100", "my file.nix"})
 	})
 }
 
@@ -672,52 +547,33 @@ func TestPhpCsFixerArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default fixes in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"php-cs-fixer"}, func() (int, error) {
+		checkArgv(t, "php-cs-fixer", func() (int, error) {
 			return runPhpCsFixer(Options{})
-		})
-		want := []string{"fix"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fix"})
 	})
 
 	t.Run("check uses check subcommand", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"php-cs-fixer"}, func() (int, error) {
+		checkArgv(t, "php-cs-fixer", func() (int, error) {
 			return runPhpCsFixer(Options{Check: true})
-		})
-		want := []string{"check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"check"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"php-cs-fixer"}, func() (int, error) {
+		checkArgv(t, "php-cs-fixer", func() (int, error) {
 			return runPhpCsFixer(Options{DryRun: true})
-		})
-		want := []string{"check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"check"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"php-cs-fixer"}, func() (int, error) {
+		checkArgv(t, "php-cs-fixer", func() (int, error) {
 			return runPhpCsFixer(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 
 	t.Run("diff passthrough is verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"php-cs-fixer"}, func() (int, error) {
+		checkArgv(t, "php-cs-fixer", func() (int, error) {
 			return runPhpCsFixer(Options{Args: []string{"fix", "--dry-run", "--diff", "file.php"}})
-		})
-		want := []string{"fix", "fix", "--dry-run", "--diff", "file.php"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fix", "fix", "--dry-run", "--diff", "file.php"})
 	})
 }
 
@@ -791,52 +647,33 @@ func TestPerltidyArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place and suppresses backups", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"perltidy"}, func() (int, error) {
+		checkArgv(t, "perltidy", func() (int, error) {
 			return runPerltidy(Options{})
-		})
-		want := []string{"-b", "-bext=/"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-b", "-bext=/"})
 	})
 
 	t.Run("check uses assert-tidy", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"perltidy"}, func() (int, error) {
+		checkArgv(t, "perltidy", func() (int, error) {
 			return runPerltidy(Options{Check: true})
-		})
-		want := []string{"--assert-tidy"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--assert-tidy"})
 	})
 
 	t.Run("dry run prints a diff", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"perltidy"}, func() (int, error) {
+		checkArgv(t, "perltidy", func() (int, error) {
 			return runPerltidy(Options{DryRun: true})
-		})
-		want := []string{"-d"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-d"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"perltidy"}, func() (int, error) {
+		checkArgv(t, "perltidy", func() (int, error) {
 			return runPerltidy(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 
 	t.Run("forwards args verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"perltidy"}, func() (int, error) {
+		checkArgv(t, "perltidy", func() (int, error) {
 			return runPerltidy(Options{Args: []string{"-i=4", "--profile=custom.rc", "my file.pl"}})
-		})
-		want := []string{"-b", "-bext=/", "-i=4", "--profile=custom.rc", "my file.pl"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-b", "-bext=/", "-i=4", "--profile=custom.rc", "my file.pl"})
 	})
 }
 
@@ -873,42 +710,27 @@ func TestFprettifyArgv(t *testing.T) {
 	})
 
 	t.Run("check synthesizes via diff", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fprettify"}, func() (int, error) {
+		checkArgv(t, "fprettify", func() (int, error) {
 			return runFprettify(Options{Check: true})
-		})
-		want := []string{"--diff"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--diff"})
 	})
 
 	t.Run("dry run prints a diff", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fprettify"}, func() (int, error) {
+		checkArgv(t, "fprettify", func() (int, error) {
 			return runFprettify(Options{DryRun: true})
-		})
-		want := []string{"--diff"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--diff"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fprettify"}, func() (int, error) {
+		checkArgv(t, "fprettify", func() (int, error) {
 			return runFprettify(Options{Args: []string{"--help"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--help"}) {
-			t.Errorf("argv = %v, want [--help]", recorded)
-		}
+		}, []string{"--help"})
 	})
 
 	t.Run("forwards args verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fprettify"}, func() (int, error) {
+		checkArgv(t, "fprettify", func() (int, error) {
 			return runFprettify(Options{Args: []string{"-c", "custom.rc", "my file.f90"}})
-		})
-		want := []string{"-c", "custom.rc", "my file.f90"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-c", "custom.rc", "my file.f90"})
 	})
 }
 
@@ -936,52 +758,33 @@ func TestErlfmtArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"erlfmt"}, func() (int, error) {
+		checkArgv(t, "erlfmt", func() (int, error) {
 			return runErlfmt(Options{})
-		})
-		want := []string{"-w"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-w"})
 	})
 
 	t.Run("check uses -c", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"erlfmt"}, func() (int, error) {
+		checkArgv(t, "erlfmt", func() (int, error) {
 			return runErlfmt(Options{Check: true})
-		})
-		want := []string{"-c"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-c"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"erlfmt"}, func() (int, error) {
+		checkArgv(t, "erlfmt", func() (int, error) {
 			return runErlfmt(Options{DryRun: true})
-		})
-		want := []string{"-c"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-c"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"erlfmt"}, func() (int, error) {
+		checkArgv(t, "erlfmt", func() (int, error) {
 			return runErlfmt(Options{Args: []string{"--help"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--help"}) {
-			t.Errorf("argv = %v, want [--help]", recorded)
-		}
+		}, []string{"--help"})
 	})
 
 	t.Run("forwards args verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"erlfmt"}, func() (int, error) {
+		checkArgv(t, "erlfmt", func() (int, error) {
 			return runErlfmt(Options{Args: []string{"my file.erl"}})
-		})
-		want := []string{"-w", "my file.erl"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-w", "my file.erl"})
 	})
 }
 
@@ -989,62 +792,39 @@ func TestSqlfluffArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default fixes in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+		checkArgv(t, "sqlfluff", func() (int, error) {
 			return runSqlfluff(Options{})
-		})
-		want := []string{"fix", "--disable-progress-bar"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fix", "--disable-progress-bar"})
 	})
 
 	t.Run("check lints without modifying", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+		checkArgv(t, "sqlfluff", func() (int, error) {
 			return runSqlfluff(Options{Check: true})
-		})
-		want := []string{"lint", "--disable-progress-bar"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"lint", "--disable-progress-bar"})
 	})
 
 	t.Run("dry run validates without modifying", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+		checkArgv(t, "sqlfluff", func() (int, error) {
 			return runSqlfluff(Options{DryRun: true})
-		})
-		want := []string{"lint", "--disable-progress-bar"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"lint", "--disable-progress-bar"})
 	})
 
 	t.Run("dialect is never hardcoded and passes through", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+		checkArgv(t, "sqlfluff", func() (int, error) {
 			return runSqlfluff(Options{Check: true, Args: []string{"--dialect", "postgres", "my file.sql"}})
-		})
-		want := []string{"lint", "--disable-progress-bar", "--dialect", "postgres", "my file.sql"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"lint", "--disable-progress-bar", "--dialect", "postgres", "my file.sql"})
 	})
 
 	t.Run("config is forwarded verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+		checkArgv(t, "sqlfluff", func() (int, error) {
 			return runSqlfluff(Options{Args: []string{"--config", "ci.sqlfluff", "x.sql"}})
-		})
-		want := []string{"fix", "--disable-progress-bar", "--config", "ci.sqlfluff", "x.sql"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fix", "--disable-progress-bar", "--config", "ci.sqlfluff", "x.sql"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"sqlfluff"}, func() (int, error) {
+		checkArgv(t, "sqlfluff", func() (int, error) {
 			return runSqlfluff(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 }
 
@@ -1087,32 +867,21 @@ func TestGdformatArgv(t *testing.T) {
 	})
 
 	t.Run("check uses -c", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gdformat"}, func() (int, error) {
+		checkArgv(t, "gdformat", func() (int, error) {
 			return runGdformat(Options{Check: true})
-		})
-		want := []string{"-c"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-c"})
 	})
 
 	t.Run("dry run uses -d and implies check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gdformat"}, func() (int, error) {
+		checkArgv(t, "gdformat", func() (int, error) {
 			return runGdformat(Options{DryRun: true})
-		})
-		want := []string{"-d"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-d"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gdformat"}, func() (int, error) {
+		checkArgv(t, "gdformat", func() (int, error) {
 			return runGdformat(Options{Args: []string{"--help"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--help"}) {
-			t.Errorf("argv = %v, want [--help]", recorded)
-		}
+		}, []string{"--help"})
 	})
 
 	t.Run("forwards args verbatim and never injects --fast", func(t *testing.T) {
@@ -1134,13 +903,9 @@ func TestGdformatArgv(t *testing.T) {
 		if err != nil {
 			t.Fatalf("read fixture: %v", err)
 		}
-		_, recorded := runFake(t, []string{"gdformat"}, func() (int, error) {
+		checkArgv(t, "gdformat", func() (int, error) {
 			return runGdformat(Options{Check: true, Args: []string{fixture}})
-		})
-		want := []string{"-c", fixture}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-c", fixture})
 		after, err := os.ReadFile(fixture)
 		if err != nil {
 			t.Fatalf("read fixture: %v", err)
@@ -1155,33 +920,21 @@ func TestGoogleJavaFormatArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default replaces in place with cleanup disabled", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"google-java-format"}, func() (int, error) {
+		checkArgv(t, "google-java-format", func() (int, error) {
 			return runGoogleJavaFormat(Options{})
-		})
-		want := []string{"--replace", "--cleanup=false"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--replace", "--cleanup=false"})
 	})
 
 	t.Run("check uses dry-run with exit-if-changed", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"google-java-format"}, func() (int, error) {
+		checkArgv(t, "google-java-format", func() (int, error) {
 			return runGoogleJavaFormat(Options{Check: true})
-		})
-		want := []string{"--dry-run", "--set-exit-if-changed", "--cleanup=false"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--dry-run", "--set-exit-if-changed", "--cleanup=false"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"google-java-format"}, func() (int, error) {
+		checkArgv(t, "google-java-format", func() (int, error) {
 			return runGoogleJavaFormat(Options{DryRun: true})
-		})
-		want := []string{"--dry-run", "--set-exit-if-changed", "--cleanup=false"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--dry-run", "--set-exit-if-changed", "--cleanup=false"})
 	})
 
 	t.Run("user cleanup value wins over the default", func(t *testing.T) {
@@ -1209,12 +962,9 @@ func TestGoogleJavaFormatArgv(t *testing.T) {
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"google-java-format"}, func() (int, error) {
+		checkArgv(t, "google-java-format", func() (int, error) {
 			return runGoogleJavaFormat(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 }
 
@@ -1231,42 +981,27 @@ func TestKtfmtArgv(t *testing.T) {
 	})
 
 	t.Run("check uses dry-run with exit-if-changed", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"ktfmt"}, func() (int, error) {
+		checkArgv(t, "ktfmt", func() (int, error) {
 			return runKtfmt(Options{Check: true})
-		})
-		want := []string{"--dry-run", "--set-exit-if-changed"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--dry-run", "--set-exit-if-changed"})
 	})
 
 	t.Run("dry run lists changed files without failing", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"ktfmt"}, func() (int, error) {
+		checkArgv(t, "ktfmt", func() (int, error) {
 			return runKtfmt(Options{DryRun: true})
-		})
-		want := []string{"--dry-run"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--dry-run"})
 	})
 
 	t.Run("style flags pass through verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"ktfmt"}, func() (int, error) {
+		checkArgv(t, "ktfmt", func() (int, error) {
 			return runKtfmt(Options{Args: []string{"--google-style", "my file.kt"}})
-		})
-		want := []string{"--google-style", "my file.kt"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--google-style", "my file.kt"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"ktfmt"}, func() (int, error) {
+		checkArgv(t, "ktfmt", func() (int, error) {
 			return runKtfmt(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 }
 
@@ -1283,42 +1018,27 @@ func TestScalafmtArgv(t *testing.T) {
 	})
 
 	t.Run("check uses test mode", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"scalafmt"}, func() (int, error) {
+		checkArgv(t, "scalafmt", func() (int, error) {
 			return runScalafmt(Options{Check: true})
-		})
-		want := []string{"--test"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--test"})
 	})
 
 	t.Run("dry run is scalafmt's diff mode", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"scalafmt"}, func() (int, error) {
+		checkArgv(t, "scalafmt", func() (int, error) {
 			return runScalafmt(Options{DryRun: true})
-		})
-		want := []string{"--test"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--test"})
 	})
 
 	t.Run("config is forwarded verbatim and never synthesized", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"scalafmt"}, func() (int, error) {
+		checkArgv(t, "scalafmt", func() (int, error) {
 			return runScalafmt(Options{Args: []string{"--config", "ci.scalafmt.conf", "my file.scala"}})
-		})
-		want := []string{"--config", "ci.scalafmt.conf", "my file.scala"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--config", "ci.scalafmt.conf", "my file.scala"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"scalafmt"}, func() (int, error) {
+		checkArgv(t, "scalafmt", func() (int, error) {
 			return runScalafmt(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 }
 
@@ -1350,52 +1070,33 @@ func TestNpmGroovyLintArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"npm-groovy-lint"}, func() (int, error) {
+		checkArgv(t, "npm-groovy-lint", func() (int, error) {
 			return runNpmGroovyLint(Options{})
-		})
-		want := []string{"--format"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--format"})
 	})
 
 	t.Run("check uses failon error without writes", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"npm-groovy-lint"}, func() (int, error) {
+		checkArgv(t, "npm-groovy-lint", func() (int, error) {
 			return runNpmGroovyLint(Options{Check: true})
-		})
-		want := []string{"--failon", "error"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--failon", "error"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"npm-groovy-lint"}, func() (int, error) {
+		checkArgv(t, "npm-groovy-lint", func() (int, error) {
 			return runNpmGroovyLint(Options{DryRun: true})
-		})
-		want := []string{"--failon", "error"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--failon", "error"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"npm-groovy-lint"}, func() (int, error) {
+		checkArgv(t, "npm-groovy-lint", func() (int, error) {
 			return runNpmGroovyLint(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 
 	t.Run("explicit noserver and config args pass through", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"npm-groovy-lint"}, func() (int, error) {
+		checkArgv(t, "npm-groovy-lint", func() (int, error) {
 			return runNpmGroovyLint(Options{Args: []string{"--noserver", "-c", "custom.groovylintrc.json", "my file.groovy"}})
-		})
-		want := []string{"--format", "--noserver", "-c", "custom.groovylintrc.json", "my file.groovy"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--format", "--noserver", "-c", "custom.groovylintrc.json", "my file.groovy"})
 	})
 }
 
@@ -1437,52 +1138,33 @@ func TestCljfmtArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default fixes in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"cljfmt"}, func() (int, error) {
+		checkArgv(t, "cljfmt", func() (int, error) {
 			return runCljfmt(Options{})
-		})
-		want := []string{"fix"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fix"})
 	})
 
 	t.Run("check uses check subcommand", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"cljfmt"}, func() (int, error) {
+		checkArgv(t, "cljfmt", func() (int, error) {
 			return runCljfmt(Options{Check: true})
-		})
-		want := []string{"check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"check"})
 	})
 
 	t.Run("dry run maps to check (it IS the diff mode)", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"cljfmt"}, func() (int, error) {
+		checkArgv(t, "cljfmt", func() (int, error) {
 			return runCljfmt(Options{DryRun: true})
-		})
-		want := []string{"check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"check"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"cljfmt"}, func() (int, error) {
+		checkArgv(t, "cljfmt", func() (int, error) {
 			return runCljfmt(Options{Args: []string{"--help"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--help"}) {
-			t.Errorf("argv = %v, want [--help]", recorded)
-		}
+		}, []string{"--help"})
 	})
 
 	t.Run("config is forwarded verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"cljfmt"}, func() (int, error) {
+		checkArgv(t, "cljfmt", func() (int, error) {
 			return runCljfmt(Options{Args: []string{"--config", "custom.edn", "my file.clj"}})
-		})
-		want := []string{"fix", "--config", "custom.edn", "my file.clj"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fix", "--config", "custom.edn", "my file.clj"})
 	})
 }
 
@@ -1527,42 +1209,27 @@ func TestFantomasArgv(t *testing.T) {
 	})
 
 	t.Run("check uses check flag", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fantomas"}, func() (int, error) {
+		checkArgv(t, "fantomas", func() (int, error) {
 			return runFantomas(Options{Check: true})
-		})
-		want := []string{"--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fantomas"}, func() (int, error) {
+		checkArgv(t, "fantomas", func() (int, error) {
 			return runFantomas(Options{DryRun: true})
-		})
-		want := []string{"--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fantomas"}, func() (int, error) {
+		checkArgv(t, "fantomas", func() (int, error) {
 			return runFantomas(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 
 	t.Run("forwards args verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fantomas"}, func() (int, error) {
+		checkArgv(t, "fantomas", func() (int, error) {
 			return runFantomas(Options{Args: []string{"--reorder-open-lists", "my file.fs"}})
-		})
-		want := []string{"--reorder-open-lists", "my file.fs"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--reorder-open-lists", "my file.fs"})
 	})
 }
 
@@ -1617,32 +1284,21 @@ func TestRubocopArgv(t *testing.T) {
 	})
 
 	t.Run("fix-layout passthrough is verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"rubocop"}, func() (int, error) {
+		checkArgv(t, "rubocop", func() (int, error) {
 			return runRubocop(Options{Args: []string{"-x", "my file.rb"}})
-		})
-		want := []string{"-x", "my file.rb"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-x", "my file.rb"})
 	})
 
 	t.Run("all-corrections passthrough is verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"rubocop"}, func() (int, error) {
+		checkArgv(t, "rubocop", func() (int, error) {
 			return runRubocop(Options{Args: []string{"-a", "--only", "Layout", "x.rb"}})
-		})
-		want := []string{"-a", "--only", "Layout", "x.rb"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-a", "--only", "Layout", "x.rb"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"rubocop"}, func() (int, error) {
+		checkArgv(t, "rubocop", func() (int, error) {
 			return runRubocop(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 }
 
@@ -1820,23 +1476,15 @@ func TestJlfmtArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"jlfmt"}, func() (int, error) {
+		checkArgv(t, "jlfmt", func() (int, error) {
 			return runJlfmt(Options{})
-		})
-		want := []string{"--inplace"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--inplace"})
 	})
 
 	t.Run("check uses check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"jlfmt"}, func() (int, error) {
+		checkArgv(t, "jlfmt", func() (int, error) {
 			return runJlfmt(Options{Check: true})
-		})
-		want := []string{"--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("dry run uses diff when git is present", func(t *testing.T) {
@@ -1851,32 +1499,21 @@ func TestJlfmtArgv(t *testing.T) {
 
 	t.Run("dry run degrades to check when git is missing", func(t *testing.T) {
 		// The fake PATH holds only the jlfmt fake; git is unresolvable.
-		_, recorded := runFake(t, []string{"jlfmt"}, func() (int, error) {
+		checkArgv(t, "jlfmt", func() (int, error) {
 			return runJlfmt(Options{DryRun: true})
-		})
-		want := []string{"--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v (git absent must degrade to --check)", recorded, want)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"jlfmt"}, func() (int, error) {
+		checkArgv(t, "jlfmt", func() (int, error) {
 			return runJlfmt(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 
 	t.Run("config args are forwarded verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"jlfmt"}, func() (int, error) {
+		checkArgv(t, "jlfmt", func() (int, error) {
 			return runJlfmt(Options{Args: []string{"--config", "ci.toml", "my file.jl"}})
-		})
-		want := []string{"--inplace", "--config", "ci.toml", "my file.jl"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--inplace", "--config", "ci.toml", "my file.jl"})
 	})
 }
 
@@ -1910,52 +1547,33 @@ func TestElmFormatArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place with yes flag", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"elm-format"}, func() (int, error) {
+		checkArgv(t, "elm-format", func() (int, error) {
 			return runElmFormat(Options{})
-		})
-		want := []string{"--yes"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--yes"})
 	})
 
 	t.Run("check uses validate", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"elm-format"}, func() (int, error) {
+		checkArgv(t, "elm-format", func() (int, error) {
 			return runElmFormat(Options{Check: true})
-		})
-		want := []string{"--validate"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--validate"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"elm-format"}, func() (int, error) {
+		checkArgv(t, "elm-format", func() (int, error) {
 			return runElmFormat(Options{DryRun: true})
-		})
-		want := []string{"--validate"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--validate"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"elm-format"}, func() (int, error) {
+		checkArgv(t, "elm-format", func() (int, error) {
 			return runElmFormat(Options{Args: []string{"-h"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"-h"}) {
-			t.Errorf("argv = %v, want [-h]", recorded)
-		}
+		}, []string{"-h"})
 	})
 
 	t.Run("forwards args verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"elm-format"}, func() (int, error) {
+		checkArgv(t, "elm-format", func() (int, error) {
 			return runElmFormat(Options{Args: []string{"--elm-version", "0.19", "my file.elm"}})
-		})
-		want := []string{"--yes", "--elm-version", "0.19", "my file.elm"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--yes", "--elm-version", "0.19", "my file.elm"})
 	})
 }
 
@@ -1963,52 +1581,33 @@ func TestFourmoluArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default uses mode inplace", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fourmolu"}, func() (int, error) {
+		checkArgv(t, "fourmolu", func() (int, error) {
 			return runFourmolu(Options{})
-		})
-		want := []string{"--mode", "inplace"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--mode", "inplace"})
 	})
 
 	t.Run("check uses mode check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fourmolu"}, func() (int, error) {
+		checkArgv(t, "fourmolu", func() (int, error) {
 			return runFourmolu(Options{Check: true})
-		})
-		want := []string{"--mode", "check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--mode", "check"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fourmolu"}, func() (int, error) {
+		checkArgv(t, "fourmolu", func() (int, error) {
 			return runFourmolu(Options{DryRun: true})
-		})
-		want := []string{"--mode", "check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--mode", "check"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fourmolu"}, func() (int, error) {
+		checkArgv(t, "fourmolu", func() (int, error) {
 			return runFourmolu(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 
 	t.Run("forwards args verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"fourmolu"}, func() (int, error) {
+		checkArgv(t, "fourmolu", func() (int, error) {
 			return runFourmolu(Options{Args: []string{"--indentation", "2", "my file.hs"}})
-		})
-		want := []string{"--mode", "inplace", "--indentation", "2", "my file.hs"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--mode", "inplace", "--indentation", "2", "my file.hs"})
 	})
 }
 
@@ -2043,52 +1642,33 @@ func TestOcamlformatArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"ocamlformat"}, func() (int, error) {
+		checkArgv(t, "ocamlformat", func() (int, error) {
 			return runOcamlformat(Options{})
-		})
-		want := []string{"--inplace"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--inplace"})
 	})
 
 	t.Run("check uses check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"ocamlformat"}, func() (int, error) {
+		checkArgv(t, "ocamlformat", func() (int, error) {
 			return runOcamlformat(Options{Check: true})
-		})
-		want := []string{"--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"ocamlformat"}, func() (int, error) {
+		checkArgv(t, "ocamlformat", func() (int, error) {
 			return runOcamlformat(Options{DryRun: true})
-		})
-		want := []string{"--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"ocamlformat"}, func() (int, error) {
+		checkArgv(t, "ocamlformat", func() (int, error) {
 			return runOcamlformat(Options{Args: []string{"--version"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--version"}) {
-			t.Errorf("argv = %v, want [--version]", recorded)
-		}
+		}, []string{"--version"})
 	})
 
 	t.Run("profile is forwarded verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"ocamlformat"}, func() (int, error) {
+		checkArgv(t, "ocamlformat", func() (int, error) {
 			return runOcamlformat(Options{Args: []string{"--profile", "janestreet", "my file.ml"}})
-		})
-		want := []string{"--inplace", "--profile", "janestreet", "my file.ml"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--inplace", "--profile", "janestreet", "my file.ml"})
 	})
 
 	t.Run("fixture check does not modify", func(t *testing.T) {
@@ -2194,13 +1774,9 @@ func TestRustfmtArgv(t *testing.T) {
 		writeFile(t, filepath.Join(crate, "Cargo.toml"), "[package]\nname = \"sample\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
 		writeFile(t, filepath.Join(crate, "lib.rs"), "pub fn x() {}\n")
 
-		_, recorded := runFake(t, []string{"rustfmt"}, func() (int, error) {
+		checkArgv(t, "rustfmt", func() (int, error) {
 			return runRustfmt(Options{Check: true, Args: []string{filepath.Join(crate, "lib.rs")}})
-		})
-		want := []string{"--edition", "2021", "--check", filepath.Join(crate, "lib.rs")}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--edition", "2021", "--check", filepath.Join(crate, "lib.rs")})
 	})
 
 	t.Run("user edition flag wins over detection", func(t *testing.T) {
@@ -2208,39 +1784,27 @@ func TestRustfmtArgv(t *testing.T) {
 		writeFile(t, filepath.Join(crate, "Cargo.toml"), "[package]\nname = \"sample\"\nversion = \"0.1.0\"\nedition = \"2021\"\n")
 		writeFile(t, filepath.Join(crate, "lib.rs"), "pub fn x() {}\n")
 
-		_, recorded := runFake(t, []string{"rustfmt"}, func() (int, error) {
+		checkArgv(t, "rustfmt", func() (int, error) {
 			return runRustfmt(Options{Check: true, Args: []string{"--edition", "2018", filepath.Join(crate, "lib.rs")}})
-		})
-		want := []string{"--check", "--edition", "2018", filepath.Join(crate, "lib.rs")}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check", "--edition", "2018", filepath.Join(crate, "lib.rs")})
 	})
 
 	t.Run("no cargo defaults to no edition flag", func(t *testing.T) {
 		dir := t.TempDir()
 		writeFile(t, filepath.Join(dir, "main.rs"), "fn main() {}\n")
 
-		_, recorded := runFake(t, []string{"rustfmt"}, func() (int, error) {
+		checkArgv(t, "rustfmt", func() (int, error) {
 			return runRustfmt(Options{Check: true, Args: []string{filepath.Join(dir, "main.rs")}})
-		})
-		want := []string{"--check", filepath.Join(dir, "main.rs")}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--check", filepath.Join(dir, "main.rs")})
 	})
 
 	t.Run("dry run uses emit diff", func(t *testing.T) {
 		dir := t.TempDir()
 		writeFile(t, filepath.Join(dir, "main.rs"), "fn main() {}\n")
 
-		_, recorded := runFake(t, []string{"rustfmt"}, func() (int, error) {
+		checkArgv(t, "rustfmt", func() (int, error) {
 			return runRustfmt(Options{DryRun: true, Args: []string{filepath.Join(dir, "main.rs")}})
-		})
-		want := []string{"--emit", "diff", filepath.Join(dir, "main.rs")}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--emit", "diff", filepath.Join(dir, "main.rs")})
 	})
 
 	t.Run("valued flag is not mistaken for a file", func(t *testing.T) {
@@ -2262,33 +1826,21 @@ func TestSwiftFormatArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default uses standalone -i when present", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"swift-format"}, func() (int, error) {
+		checkArgv(t, "swift-format", func() (int, error) {
 			return runSwiftFormat(Options{})
-		})
-		want := []string{"-i", "--ignore-unparsable-files"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-i", "--ignore-unparsable-files"})
 	})
 
 	t.Run("check uses strict lint", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"swift-format"}, func() (int, error) {
+		checkArgv(t, "swift-format", func() (int, error) {
 			return runSwiftFormat(Options{Check: true})
-		})
-		want := []string{"lint", "--strict", "--ignore-unparsable-files"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"lint", "--strict", "--ignore-unparsable-files"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"swift-format"}, func() (int, error) {
+		checkArgv(t, "swift-format", func() (int, error) {
 			return runSwiftFormat(Options{DryRun: true})
-		})
-		want := []string{"lint", "--strict", "--ignore-unparsable-files"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"lint", "--strict", "--ignore-unparsable-files"})
 	})
 
 	t.Run("falls back to swift format subcommand when standalone missing", func(t *testing.T) {
@@ -2332,53 +1884,33 @@ func TestDartFormatArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dart"}, func() (int, error) {
+		checkArgv(t, "dart", func() (int, error) {
 			return runDartFormat(Options{})
-		})
-		want := []string{"format"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format"})
 	})
 
 	t.Run("check uses set-exit-if-changed with -o none", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dart"}, func() (int, error) {
+		checkArgv(t, "dart", func() (int, error) {
 			return runDartFormat(Options{Check: true})
-		})
-		want := []string{"format", "--set-exit-if-changed", "-o", "none"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--set-exit-if-changed", "-o", "none"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dart"}, func() (int, error) {
+		checkArgv(t, "dart", func() (int, error) {
 			return runDartFormat(Options{DryRun: true})
-		})
-		want := []string{"format", "--set-exit-if-changed", "-o", "none"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--set-exit-if-changed", "-o", "none"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dart"}, func() (int, error) {
+		checkArgv(t, "dart", func() (int, error) {
 			return runDartFormat(Options{Args: []string{"--verbose"}})
-		})
-		want := []string{"format", "--verbose"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--verbose"})
 	})
 
 	t.Run("forwards args verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dart"}, func() (int, error) {
+		checkArgv(t, "dart", func() (int, error) {
 			return runDartFormat(Options{Args: []string{"--line-length", "80", "my file.dart"}})
-		})
-		want := []string{"format", "--line-length", "80", "my file.dart"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--line-length", "80", "my file.dart"})
 	})
 }
 
@@ -2386,73 +1918,45 @@ func TestDotnetFormatArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default uses whitespace folder mode with include", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+		checkArgv(t, "dotnet", func() (int, error) {
 			return runDotnetFormat(Options{Args: []string{"a.cs", "b.vb"}})
-		})
-		want := []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "b.vb"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "b.vb"})
 	})
 
 	t.Run("check adds verify-no-changes", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+		checkArgv(t, "dotnet", func() (int, error) {
 			return runDotnetFormat(Options{Check: true, Args: []string{"a.cs"}})
-		})
-		want := []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "--verify-no-changes"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "--verify-no-changes"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+		checkArgv(t, "dotnet", func() (int, error) {
 			return runDotnetFormat(Options{DryRun: true, Args: []string{"a.cs"}})
-		})
-		want := []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "--verify-no-changes"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "--verify-no-changes"})
 	})
 
 	t.Run("help passthrough is forwarded verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+		checkArgv(t, "dotnet", func() (int, error) {
 			return runDotnetFormat(Options{Args: []string{"--version"}})
-		})
-		want := []string{"format", "--version"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--version"})
 	})
 
 	t.Run("style subcommand forwarded verbatim opt-in", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+		checkArgv(t, "dotnet", func() (int, error) {
 			return runDotnetFormat(Options{Args: []string{"style", "--severity", "info", "src/app.csproj"}})
-		})
-		want := []string{"format", "style", "--severity", "info", "src/app.csproj"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "style", "--severity", "info", "src/app.csproj"})
 	})
 
 	t.Run("project path opts into verbatim mode", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+		checkArgv(t, "dotnet", func() (int, error) {
 			return runDotnetFormat(Options{Args: []string{"src/app.csproj"}})
-		})
-		want := []string{"format", "src/app.csproj"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "src/app.csproj"})
 	})
 
 	t.Run("valued flag is not mistaken for a file", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"dotnet"}, func() (int, error) {
+		checkArgv(t, "dotnet", func() (int, error) {
 			return runDotnetFormat(Options{Args: []string{"--severity", "warn", "a.cs"}})
-		})
-		want := []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "--severity", "warn"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "whitespace", "--folder", ".", "--include", "a.cs", "--severity", "warn"})
 	})
 }
 
@@ -2486,53 +1990,33 @@ func TestMixFormatArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place with no-compile", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"mix"}, func() (int, error) {
+		checkArgv(t, "mix", func() (int, error) {
 			return runMixFormat(Options{})
-		})
-		want := []string{"format", "--no-compile"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--no-compile"})
 	})
 
 	t.Run("check uses check-formatted with no-compile", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"mix"}, func() (int, error) {
+		checkArgv(t, "mix", func() (int, error) {
 			return runMixFormat(Options{Check: true})
-		})
-		want := []string{"format", "--check-formatted", "--no-compile"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--check-formatted", "--no-compile"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"mix"}, func() (int, error) {
+		checkArgv(t, "mix", func() (int, error) {
 			return runMixFormat(Options{DryRun: true})
-		})
-		want := []string{"format", "--check-formatted", "--no-compile"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--check-formatted", "--no-compile"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"mix"}, func() (int, error) {
+		checkArgv(t, "mix", func() (int, error) {
 			return runMixFormat(Options{Args: []string{"--version"}})
-		})
-		want := []string{"format", "--version"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--version"})
 	})
 
 	t.Run("dot-formatter args forwarded verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"mix"}, func() (int, error) {
+		checkArgv(t, "mix", func() (int, error) {
 			return runMixFormat(Options{Args: []string{"--dot-formatter", "ci.exs", "a.ex"}})
-		})
-		want := []string{"format", "--no-compile", "--dot-formatter", "ci.exs", "a.ex"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--no-compile", "--dot-formatter", "ci.exs", "a.ex"})
 	})
 
 	t.Run("fixture check does not modify", func(t *testing.T) {
@@ -2569,53 +2053,33 @@ func TestZigFmtArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"zig"}, func() (int, error) {
+		checkArgv(t, "zig", func() (int, error) {
 			return runZigFmt(Options{})
-		})
-		want := []string{"fmt"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt"})
 	})
 
 	t.Run("check uses check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"zig"}, func() (int, error) {
+		checkArgv(t, "zig", func() (int, error) {
 			return runZigFmt(Options{Check: true})
-		})
-		want := []string{"fmt", "--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--check"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"zig"}, func() (int, error) {
+		checkArgv(t, "zig", func() (int, error) {
 			return runZigFmt(Options{DryRun: true})
-		})
-		want := []string{"fmt", "--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--check"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"zig"}, func() (int, error) {
+		checkArgv(t, "zig", func() (int, error) {
 			return runZigFmt(Options{Args: []string{"version"}})
-		})
-		want := []string{"fmt", "version"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "version"})
 	})
 
 	t.Run("zon opt-in is forwarded verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"zig"}, func() (int, error) {
+		checkArgv(t, "zig", func() (int, error) {
 			return runZigFmt(Options{Args: []string{"--zon", "build.zig.zon"}})
-		})
-		want := []string{"fmt", "--zon", "build.zig.zon"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--zon", "build.zig.zon"})
 	})
 
 	t.Run("fixture check does not modify", func(t *testing.T) {
@@ -2652,43 +2116,27 @@ func TestGleamFormatArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gleam"}, func() (int, error) {
+		checkArgv(t, "gleam", func() (int, error) {
 			return runGleamFormat(Options{})
-		})
-		want := []string{"format"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format"})
 	})
 
 	t.Run("check uses check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gleam"}, func() (int, error) {
+		checkArgv(t, "gleam", func() (int, error) {
 			return runGleamFormat(Options{Check: true})
-		})
-		want := []string{"format", "--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--check"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gleam"}, func() (int, error) {
+		checkArgv(t, "gleam", func() (int, error) {
 			return runGleamFormat(Options{DryRun: true})
-		})
-		want := []string{"format", "--check"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--check"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gleam"}, func() (int, error) {
+		checkArgv(t, "gleam", func() (int, error) {
 			return runGleamFormat(Options{Args: []string{"--version"}})
-		})
-		want := []string{"format", "--version"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "--version"})
 	})
 
 	t.Run("fixture check does not modify", func(t *testing.T) {
@@ -2745,32 +2193,21 @@ func TestMojoFormatArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"mojo"}, func() (int, error) {
+		checkArgv(t, "mojo", func() (int, error) {
 			return runMojoFormat(Options{Args: []string{"my file.mojo"}})
-		})
-		want := []string{"format", "my file.mojo"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "my file.mojo"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"mojo"}, func() (int, error) {
+		checkArgv(t, "mojo", func() (int, error) {
 			return runMojoFormat(Options{Args: []string{"--help"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"format", "--help"}) {
-			t.Errorf("argv = %v, want [format --help]", recorded)
-		}
+		}, []string{"format", "--help"})
 	})
 
 	t.Run("line length forwarded verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"mojo"}, func() (int, error) {
+		checkArgv(t, "mojo", func() (int, error) {
 			return runMojoFormat(Options{Args: []string{"-l", "100", "a.mojo"}})
-		})
-		want := []string{"format", "-l", "100", "a.mojo"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"format", "-l", "100", "a.mojo"})
 	})
 }
 
@@ -2824,22 +2261,15 @@ func TestOdinfmtArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place with -w", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"odinfmt"}, func() (int, error) {
+		checkArgv(t, "odinfmt", func() (int, error) {
 			return runOdinfmt(Options{Args: []string{"a.odin", "b.odin"}})
-		})
-		want := []string{"-w", "a.odin", "b.odin"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-w", "a.odin", "b.odin"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"odinfmt"}, func() (int, error) {
+		checkArgv(t, "odinfmt", func() (int, error) {
 			return runOdinfmt(Options{Args: []string{"--help"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--help"}) {
-			t.Errorf("argv = %v, want [--help]", recorded)
-		}
+		}, []string{"--help"})
 	})
 }
 
@@ -2891,53 +2321,33 @@ func TestForgeFmtArgv(t *testing.T) {
 	requirePOSIX(t)
 
 	t.Run("default formats in place", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"forge"}, func() (int, error) {
+		checkArgv(t, "forge", func() (int, error) {
 			return runForgeFmt(Options{Args: []string{"a.sol", "b.sol"}})
-		})
-		want := []string{"fmt", "a.sol", "b.sol"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "a.sol", "b.sol"})
 	})
 
 	t.Run("check uses check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"forge"}, func() (int, error) {
+		checkArgv(t, "forge", func() (int, error) {
 			return runForgeFmt(Options{Check: true, Args: []string{"a.sol"}})
-		})
-		want := []string{"fmt", "--check", "a.sol"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--check", "a.sol"})
 	})
 
 	t.Run("dry run maps to check", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"forge"}, func() (int, error) {
+		checkArgv(t, "forge", func() (int, error) {
 			return runForgeFmt(Options{DryRun: true, Args: []string{"a.sol"}})
-		})
-		want := []string{"fmt", "--check", "a.sol"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--check", "a.sol"})
 	})
 
 	t.Run("raw diff passthrough is verbatim", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"forge"}, func() (int, error) {
+		checkArgv(t, "forge", func() (int, error) {
 			return runForgeFmt(Options{Check: true, Args: []string{"--check", "-r", "a.sol"}})
-		})
-		want := []string{"fmt", "--check", "--check", "-r", "a.sol"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--check", "--check", "-r", "a.sol"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"forge"}, func() (int, error) {
+		checkArgv(t, "forge", func() (int, error) {
 			return runForgeFmt(Options{Args: []string{"--version"}})
-		})
-		want := []string{"fmt", "--version"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"fmt", "--version"})
 	})
 
 	t.Run("fixture check does not modify", func(t *testing.T) {
@@ -2975,37 +2385,25 @@ func TestGnatformatArgv(t *testing.T) {
 
 	t.Run("default uses no-project when no gpr exists", func(t *testing.T) {
 		t.Chdir(t.TempDir()) // empty dir: no .gpr files
-		_, recorded := runFake(t, []string{"gnatformat"}, func() (int, error) {
+		checkArgv(t, "gnatformat", func() (int, error) {
 			return runGnatformat(Options{Args: []string{"a.adb"}})
-		})
-		want := []string{"--no-project", "a.adb"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--no-project", "a.adb"})
 	})
 
 	t.Run("check uses check with no-project when no gpr exists", func(t *testing.T) {
 		t.Chdir(t.TempDir())
-		_, recorded := runFake(t, []string{"gnatformat"}, func() (int, error) {
+		checkArgv(t, "gnatformat", func() (int, error) {
 			return runGnatformat(Options{Check: true, Args: []string{"a.adb"}})
-		})
-		want := []string{"--no-project", "--check", "a.adb"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"--no-project", "--check", "a.adb"})
 	})
 
 	t.Run("exactly one gpr: tool auto-loads it, no --no-project", func(t *testing.T) {
 		dir := t.TempDir()
 		writeFile(t, filepath.Join(dir, "proj.gpr"), "project Proj is end Proj;\n")
 		t.Chdir(dir)
-		_, recorded := runFake(t, []string{"gnatformat"}, func() (int, error) {
+		checkArgv(t, "gnatformat", func() (int, error) {
 			return runGnatformat(Options{Args: []string{"a.adb"}})
-		})
-		want := []string{"a.adb"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"a.adb"})
 	})
 
 	t.Run("user --no-project wins; -P passes through", func(t *testing.T) {
@@ -3013,22 +2411,15 @@ func TestGnatformatArgv(t *testing.T) {
 		writeFile(t, filepath.Join(dir, "p.gpr"), "project P is end P;\n")
 		writeFile(t, filepath.Join(dir, "q.gpr"), "project Q is end Q;\n")
 		t.Chdir(dir)
-		_, recorded := runFake(t, []string{"gnatformat"}, func() (int, error) {
+		checkArgv(t, "gnatformat", func() (int, error) {
 			return runGnatformat(Options{Args: []string{"-P", "p.gpr", "a.adb"}})
-		})
-		want := []string{"-P", "p.gpr", "a.adb"}
-		if !reflect.DeepEqual(recorded, want) {
-			t.Errorf("argv = %v, want %v", recorded, want)
-		}
+		}, []string{"-P", "p.gpr", "a.adb"})
 	})
 
 	t.Run("help passthrough", func(t *testing.T) {
-		_, recorded := runFake(t, []string{"gnatformat"}, func() (int, error) {
+		checkArgv(t, "gnatformat", func() (int, error) {
 			return runGnatformat(Options{Args: []string{"--help"}})
-		})
-		if !reflect.DeepEqual(recorded, []string{"--help"}) {
-			t.Errorf("argv = %v, want [--help]", recorded)
-		}
+		}, []string{"--help"})
 	})
 
 	t.Run("fixture check does not modify", func(t *testing.T) {

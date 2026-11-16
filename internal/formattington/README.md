@@ -23,7 +23,7 @@ If you want the big picture first, open the [architecture diagram](architecture.
 
 ## The contract with the integrations
 
-Every integration is a function with the signature `func(Options) (int, error)` ([formatter.go.md](formatter.go.md)), registered by name in `cli.go`'s `registry` ([cli.go.md](cli.go.md)), resolving its executable through `FindTool` ([tools.go.md](tools.go.md)), and receiving pre-discovered files from `DiscoverFiles` ([discovery.go.md](discovery.go.md)). Exit codes above `0` are upstream exit codes; `1` is reserved for "files need formatting" (`ExitFormatRequired`), `127` for a missing tool, and `2` for usage errors.
+Every integration is a function with the signature `func(Options) (int, error)` ([formatter.go.md](formatter.go.md)), registered by name in `cli.go`'s `registry` ([cli.go.md](cli.go.md)), resolving its executable through the shared `beginIntegration` opening in [formatter.go.md](formatter.go.md) (which wraps `FindTool` in [tools.go.md](tools.go.md) and short-circuits informational help/version passthroughs), and receiving pre-discovered files from `DiscoverFiles` ([discovery.go.md](discovery.go.md)). Exit codes above `0` are upstream exit codes; `1` is reserved for "files need formatting" (`ExitFormatRequired`), `127` for a missing tool, and `2` for usage errors.
 
 ## Core pages
 

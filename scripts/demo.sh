@@ -139,14 +139,9 @@ fmt() {
   "$FMT_BIN" "$@"
 }
 
-# demo_run <formattington-args...> — log the command, run it without
-# letting `set -e` abort the tour on the expected non-zero exits
-# (1 changes required, 2 usage, 127 missing), then log the exit code
-# with its meaning. Always returns 0 so the tour continues.
-demo_run() {
-  log INFO "run: formattington $*"
-  local rc=0
-  fmt "$@" || rc=$?
+# log_exit <rc> — log a formattington exit code with its meaning.
+log_exit() {
+  local rc="$1"
   local meaning="tool error"
   case "$rc" in
   0) meaning="ok" ;;
@@ -156,6 +151,17 @@ demo_run() {
   *) meaning="formatter returned $rc (preserved)" ;;
   esac
   log INFO "exit: $rc ($meaning)"
+}
+
+# demo_run <formattington-args...> — log the command, run it without
+# letting `set -e` abort the tour on the expected non-zero exits
+# (1 changes required, 2 usage, 127 missing), then log the exit code
+# with its meaning. Always returns 0 so the tour continues.
+demo_run() {
+  log INFO "run: formattington $*"
+  local rc=0
+  fmt "$@" || rc=$?
+  log_exit "$rc"
   return 0
 }
 
@@ -166,15 +172,7 @@ demo_run_tmp() {
   log INFO "run (cwd=$TMP_DIR): formattington $*"
   local rc=0
   (cd "$TMP_DIR" && fmt "$@") || rc=$?
-  local meaning="tool error"
-  case "$rc" in
-  0) meaning="ok" ;;
-  1) meaning="formatting changes required" ;;
-  2) meaning="usage error" ;;
-  127) meaning="formatter not found (bundled missing and not on PATH)" ;;
-  *) meaning="formatter returned $rc (preserved)" ;;
-  esac
-  log INFO "exit: $rc ($meaning)"
+  log_exit "$rc"
   return 0
 }
 

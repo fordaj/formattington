@@ -68,15 +68,9 @@ const dotnetVerifyExitCode = 2
 // "format --version" (a harmless no-op) to preserve the suite-wide
 // contract that the selected tool runs.
 func runDotnetFormat(opts Options) (int, error) {
-	executable, err := FindTool("dotnet", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, withArgs([]string{"format"}, forwarded), false)
+	executable, forwarded, done, code, err := beginIntegration("dotnet", opts, []string{"format"})
+	if err != nil || done {
+		return code, err
 	}
 
 	files, flags := splitArgsAndFiles(forwarded, dotnetFormatValuedFlags)

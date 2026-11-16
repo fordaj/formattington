@@ -6,7 +6,7 @@ flowchart TD
     Cmd --> Verify["verify the built binary<br/>reports that version"]
     Cmd --> Build["cross-compile lite + full<br/>into dist/<platform>/"]
     Build --> Smoke["smoke-test the host full binary"]
-    Smoke --> Package["package archives<br/>+ checksums.txt"]
+    Smoke --> Package["package archives<br/>lite + full · NOTICE + LICENSES"]
     Package --> Release["tag HEAD · push · gh release<br/>one archive per platform"]
     click Version href "version.sh.md"
 ```
@@ -28,7 +28,7 @@ Both archives carry the binary plus `NOTICE.md` and `LICENSES/` with every bundl
 2. Fetches the bundled formatters with per-tool `formatters/<tool>/update.sh` (or `FORMATTER_VERSION=<pin>`), each verified at fetch time; a tool that cannot be fetched for a platform is omitted from that platform's full binary with a warning, and a release refuses to proceed when a tool cannot be fetched for any platform. `make dist` runs the same fetch/build/package sequence without tagging.
 3. Cross-compiles CGO-disabled binaries into `dist/` with `-ldflags -X ...buildVersion=<version>` stamping.
 4. Smoke-tests the host's full binary — with a stripped `PATH` and empty `HOME`, every embedded formatter is invoked with `--version`.
-5. Tags `v<version>`, pushes it, and creates the GitHub release with the archives (and `checksums.txt`) attached. Re-running attaches/refreshes assets on an existing tag instead of failing.
+5. Tags `v<version>`, pushes it, and creates the GitHub release with the archives attached. Re-running attaches/refreshes assets on an existing tag instead of failing.
 
 `scripts/release.sh --build-only` stops after step 4; `--dry-run` computes and builds but touches nothing remote; `--allow-latest` permits fetching `FORMATTER_VERSION=latest`. Prerequisites: git, Go 1.24+, and `gh` authenticated for real releases.
 

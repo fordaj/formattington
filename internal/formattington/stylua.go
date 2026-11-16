@@ -14,15 +14,9 @@ var styluaExtensions = []string{".lua"}
 // ".editorconfig" unless "--no-editorconfig" is passed) is discovered by
 // the tool itself.
 func runStylua(opts Options) (int, error) {
-	executable, err := FindTool("stylua", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("stylua", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

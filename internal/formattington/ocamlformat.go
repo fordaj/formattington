@@ -20,15 +20,9 @@ var ocamlformatExtensions = []string{".ml", ".mli"}
 // reconcile the pin with the installed release (or run "dune build" which
 // pins it).
 func runOcamlformat(opts Options) (int, error) {
-	executable, err := FindTool("ocamlformat", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("ocamlformat", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

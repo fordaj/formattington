@@ -18,15 +18,9 @@ var gdformatExtensions = []string{".gd"}
 // prologue/epilogue validation is never disabled by Formattington ("--fast"
 // is deliberately not set).
 func runGdformat(opts Options) (int, error) {
-	executable, err := FindTool("gdformat", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("gdformat", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

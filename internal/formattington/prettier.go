@@ -37,15 +37,9 @@ var prettierWriteFlags = []string{
 // "--list-different", which lists files that differ from Prettier
 // formatting without modifying them.
 func runPrettier(opts Options) (int, error) {
-	executable, err := FindTool("prettier", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	arguments := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding formatting flags.
-	if IsInformational(arguments) {
-		return runTool(executable, arguments, false)
+	executable, arguments, done, code, err := beginIntegration("prettier", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

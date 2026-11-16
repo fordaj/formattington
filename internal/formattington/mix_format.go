@@ -24,15 +24,9 @@ var mixFormatExtensions = []string{".ex", ".exs"}
 // projects. Formatter output can also change between Elixir versions.
 // Args are forwarded verbatim.
 func runMixFormat(opts Options) (int, error) {
-	executable, err := FindTool("mix", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, withArgs([]string{"format"}, forwarded), false)
+	executable, forwarded, done, code, err := beginIntegration("mix", opts, []string{"format"})
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

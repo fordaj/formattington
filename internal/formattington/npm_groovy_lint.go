@@ -26,15 +26,9 @@ var npmGroovyLintExtensions = []string{".groovy", ".gradle"}
 // Args are forwarded verbatim; ".groovylintrc.js/.json/.yml" discovery
 // is tool-native, or pass "-c" yourself.
 func runNpmGroovyLint(opts Options) (int, error) {
-	executable, err := FindTool("npm-groovy-lint", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("npm-groovy-lint", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {

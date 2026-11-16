@@ -11,15 +11,9 @@ var nixfmtExtensions = []string{".nix"}
 // the same "--check" invocation. Arguments are forwarded verbatim; nixfmt
 // takes no configuration file ("--width"/"--indent" exist as flags only).
 func runNixfmt(opts Options) (int, error) {
-	executable, err := FindTool("nixfmt", "", opts.Verbose)
-	if err != nil {
-		return ExitNotFound, err
-	}
-	forwarded := append([]string{}, opts.Args...)
-
-	// Preserve native informational commands without adding format flags.
-	if IsInformational(forwarded) {
-		return runTool(executable, forwarded, false)
+	executable, forwarded, done, code, err := beginIntegration("nixfmt", opts, nil)
+	if err != nil || done {
+		return code, err
 	}
 
 	switch {
