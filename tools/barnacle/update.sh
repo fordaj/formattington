@@ -366,9 +366,12 @@ for archive in "${archives[@]}"; do
     cp -p "$bin_src" "$target_dir/$bin_name"
     chmod +x "$target_dir/$bin_name"
     [[ -s "$target_dir/$bin_name" ]] || die "installed binary is empty: $target_dir/$bin_name"
-    for extra in LICENSE; do
-        if [[ -f "$extract_dir/$extra" ]]; then
-            cp -p "$extract_dir/$extra" "$target_dir/$extra"
+    # The archives nest everything one level deep, so check the archive root
+    # and one level down, exactly like the binary search above.
+    for candidate in "$extract_dir/LICENSE" "$extract_dir"/*/LICENSE; do
+        if [[ -f "$candidate" ]]; then
+            cp -p "$candidate" "$target_dir/LICENSE"
+            break
         fi
     done
     log INFO "installed $PLATFORM/$bin_name (from $base)"

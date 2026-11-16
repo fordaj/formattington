@@ -1,10 +1,10 @@
 flowchart TD
     A["main.go (cmd/formattington)<br/>os.Exit(formattington.Main(argv))"] --> B
     B["cli.go Main()<br/>parse globals: --verbose --config --series --check --dry-run"] --> C{"findFormatterIndex"}
-    C -->|"list"| D["list.go<br/>bundled vs PATH versions"]
-    C -->|"init"| E["init.go<br/>scan git files, write .formattington.json"]
-    C -->|"all"| F["registry loop (registration order)"]
-    C -->|"tool name or alias"| G["lookupTool(cli.go)"]
+    C -->|"<a href='list.go.md'>list</a>"| D["list.go<br/>bundled vs PATH versions"]
+    C -->|"<a href='init.go.md'>init</a>"| E["init.go<br/>scan git files, write .formattington.json"]
+    C -->|"<a href='cli.go.md#the-registry'>all</a>"| F["registry loop (registration order)"]
+    C -->|"<a href='README.md#integration-pages-registration-order'>tool name or alias</a>"| G["lookupTool(cli.go)"]
     F --> G
     G --> H["DiscoverFiles(discovery.go)<br/>batch by maxFilesPerInvocation"]
     H --> I["integration runToolName()<br/>tool-specific invocation"]
@@ -12,3 +12,16 @@ flowchart TD
     J --> K["runTool() subprocess<br/>args as slice, capture stdout/stderr"]
     K --> L["formatterResult<br/>missing tool = 127"]
     L --> M["aggregateCodes()<br/>last non-zero wins; 0 only if all succeed"]
+click A href "../../cmd/formattington/main.go.md"
+click B href "cli.go.md"
+click C href "cli.go.md"
+click D href "list.go.md"
+click E href "init.go.md"
+click F href "cli.go.md"
+click G href "cli.go.md"
+click H href "discovery.go.md"
+click I href "README.md"
+click J href "tools.go.md"
+click K href "tools.go.md"
+click L href "formatter.go.md"
+click M href "cli.go.md"

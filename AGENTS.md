@@ -1,5 +1,14 @@
 # AGENTS.md
 
+```mermaid
+flowchart LR
+    Code[Edit source + sibling .md<br/>in the same change] --> Check[make check]
+    Check --> Docs[scripts/docs.sh]
+    Docs --> Site[./site — git-ignored]
+    Site --> Review[Self-review the<br/>changed pages]
+    Review --> Commit[Commit source + doc together]
+```
+
 ## Project Overview
 
 Formattington is a cross-platform, multi-language formatting and code-quality tool orchestrator. It provides a unified command-line interface for invoking existing tools across multidisciplinary projects.
@@ -334,25 +343,31 @@ Use the project's existing linting, formatting, and test tools where available. 
 
 ## Documentation files (barnacle)
 
-The repository's documentation is a set of Markdown (`.md`) and Mermaid (`.mmd`) source files rendered into a static site by the pinned [barnacle](https://github.com/fordaj/barnacle) binary (`tools/barnacle/`, wired into the environment cascade as `BARNACLE_BIN`). Generate the site with `scripts/docs.sh`; the output (`./site/`) is git-ignored and never committed.
+The repository's documentation is a set of Markdown (`.md`) and Mermaid (`.mmd`) source files rendered into a static, navigable site by the pinned [barnacle](https://github.com/fordaj/barnacle) binary (`tools/barnacle/`, wired into the environment cascade as `BARNACLE_BIN`). Generate the site with `scripts/docs.sh`; the output (`./site/`) is git-ignored and never committed. The site's shape is governed by three conventions:
+
+- **Every page opens with a Mermaid diagram** directly under its `#` heading — a map of what the page covers, in whatever diagram type fits best (flowchart, class, sequence, state, dependency graph). A brand-new reader should get the territory before the prose. Two or three nodes of substance beat a diagram that merely repeats the heading. If a page you touch has no diagram at the top, add one. Barnacle prints a non-fatal note listing pages without a diagram; keep that list empty.
+- **Diagrams are navigable.** In flowcharts, `click Node href "target.md"` makes a node link to the page it describes; inline anchors (`<a href="target.md">label</a>`) inside edge labels make transitions navigable too. Quoting rules: state-diagram labels may not contain `:`; flowchart labels with parens must be double-quoted with single-quoted hrefs inside (`A -->|"<a href='x.md'>send(cmd)</a>"| B`); plain labels are fine as-is. Targets are relative to the current page, exactly like Markdown links; `.md`/`.markdown`/`.mmd` targets are rewritten to `.html`.
+- **Retained suffixes.** A documentation page for `main.go` is `main.go.md`; for `scripts/docs.sh` it is `scripts/docs.sh.md`. Files that share a base name stay individually documentable. Hub pages (`README.md`) keep their plain names; free-standing diagrams that document no particular file (`architecture.mmd`) keep plain names too.
 
 Layout — documentation lives next to the code it describes:
 
-- One sibling `.md` per Go integration and core file in `internal/formattington/` (for example `black.go` → `black.md`, `cli.go` → [cli.md](internal/formattington/cli.md)), plus `README.md` as the package hub and `architecture.mmd` for the standalone diagram.
-- One sibling `.md` per bash script (`scripts/entry.sh` → `entry.md`, `scripts/env.sh` → `env.md`, `scripts/version.sh` → `version.md`, `scripts/docs.sh` → `docs.md`, `scripts/release.sh` → `release.md`, `scripts/demo.sh` → `demo.md`), plus `scripts/README.md` as the hub.
-- One sibling `.md` per bundle in `tools/` (`tools/<name>/update.md`), plus `tools/README.md` as the hub.
+- One sibling `.md` per Go integration and core file in `internal/formattington/` (for example `black.go` → `black.go.md`, `cli.go` → [cli.go.md](internal/formattington/cli.go.md)), plus `README.md` as the package hub and `architecture.mmd` for the standalone diagram.
+- One sibling `.md` per bash script (`scripts/entry.sh` → `entry.sh.md`, `scripts/env.sh` → `env.sh.md`, `scripts/version.sh` → `version.sh.md`, `scripts/docs.sh` → `docs.sh.md`, `scripts/release.sh` → `release.sh.md`, `scripts/demo.sh` → `demo.sh.md`), plus `scripts/README.md` as the hub.
+- One sibling `.md` per bundle in `tools/` (`tools/<name>/update.sh.md`), plus `tools/README.md` as the hub. `tools/` is excluded from the generated site via `.barnacle.json`, so these pages exist for the repository, not the site.
 
 Rules for keeping these files current:
 
 - When you add, rename, remove, or repurpose a documented file — an integration, a core file, a script, or a bundle — update its sibling `.md` **in the same change**. A new file without its page is incomplete work; a stale page is worse than none.
+- Every page opens with a Mermaid diagram under its `#` heading (guidance, never a hard rule): what the thing is and how it fits, in the diagram type that fits best. If a page you touch has no diagram at the top, add one.
 - Source every fact: the `.go`/`.sh` file itself, this file (AGENTS.md), and README.md are the accepted sources. Never invent flags, exit codes, extensions, or bundle-platform matrices.
-- Use plain relative links (`cli.md`, `../../README.md`) with the linking file's `.md` path — barnacle rewrites them to `.html`. Do not link to files barnacle does not render (binaries, `.sh`, `LICENSE`); link the related `.md` page (for external references, a full `https://` URL is fine).
-- A `foo.md` and a `foo.mmd` may not coexist for the same stem — barnacle fails the whole site rather than overwriting.
+- Use plain relative links (`cli.go.md`, `../../README.md`) with the linking file's `.md` path — barnacle rewrites them to `.html`. Do not link to files barnacle does not render (binaries, `.sh`, `LICENSE`); link the related `.md` page (for external references, a full `https://` URL is fine). Pages that are not rendered (`tools/`) may still be linked from other unrendered pages; rendered pages must not hyperlink into `tools/` — refer to those pages as code (for example `tools/barnacle/update.sh.md`), because `.barnacle.json` excludes them from the site.
+- Mermaid `click` directives are rewritten too (`click Scan href "scan.go.md"`), so diagram nodes may link between pages — prefer this in the top-of-page diagram; it makes the site explorable by diagram alone. Transitions work the same way with an inline anchor in the label (`Idle --> Waiting : <a href="scan.go.md">send(cmd)</a>`, or a double-quoted flowchart label for parens), no JS and no directives needed.
+- A `foo.md` and a `foo.mmd` may not coexist for the same stem — barnacle fails the whole site rather than overwriting. The retained-suffix convention makes this just as true for `main.py.md`/`main.py.mmd` (both generate `main.py.html`).
 - Hub pages (`README.md` in each documented directory) list their siblings; adding a page means linking it from the hub too, in registry order where a registry order exists.
-- Barnacle skips hidden files by default, so the `.common.env` and `.<platform>.env` cascade is documented inside `scripts/env.md` — keep it accurate there instead of adding hidden doc files.
-- Regenerate and self-review the site before publishing: `scripts/docs.sh`, then click through the changed pages. The generator output must remain free of broken local links.
+- Barnacle skips hidden files by default, so the `.common.env` and `.<platform>.env` cascade is documented inside `scripts/env.sh.md` — keep it accurate there instead of adding hidden doc files.
+- Regenerate and self-review the site before publishing: `scripts/docs.sh`, then click through the changed pages. The generator output must remain free of broken local links, and the "pages have no Mermaid diagram" note must stay empty.
 
-Definition of Done addition: a change that touches any documented file updates (or creates) its sibling page in the same commit.
+Definition of Done addition: a change that touches any documented file updates (or creates) its sibling page in the same commit — including the diagram at the top.
 
 ## Definition of Done
 
