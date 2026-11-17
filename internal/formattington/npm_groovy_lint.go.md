@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".groovy<br/>.gradle<br/>covered files"] --> Reg["formattington npm-groovy-lint<br/>cli.go registry entry"]
-    Reg --> Tool["npm-groovy-lint<br/>PATH only"]
-    Tool --> Ops["Operations: Format (layout-only), Lint"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.groovy<br/>.gradle<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington npm-groovy-lint<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>npm-groovy-lint<br/>PATH only</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format (layout-only), Lint</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 npm-groovy-lint is the only viable Groovy formatter (Spotless is a Gradle/Maven build plugin with no standalone CLI; Apache Groovy ships no formatter). It covers `.groovy` and `.gradle` files.

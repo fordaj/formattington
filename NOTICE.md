@@ -2,10 +2,15 @@
 
 ```mermaid
 flowchart LR
-    Fmt["formattington<br/>MIT"] --> Full["full release binaries<br/>redistribute unmodified upstream tools"]
-    Full --> Verified["fetched at release time<br/>SHA-256/SHA-512 verified · hard-fail on mismatch"]
-    Verified --> Licenses["LICENSES/<br/>one license text per tool"]
-    Fmt --> Lite["lite binaries<br/>redistribute nothing"]
+    Fmt("<img src='barnacle:package.svg' width='20' alt=''/><br/>formattington<br/>MIT") --> Full("<img src='barnacle:package.svg' width='20' alt=''/><br/>full release binaries<br/>redistribute unmodified upstream tools")
+    Full --> Verified("<img src='barnacle:check.svg' width='20' alt=''/><br/>fetched at release time<br/>SHA-256/SHA-512 verified · hard-fail on mismatch")
+    Verified --> Licenses("<img src='barnacle:scroll-text.svg' width='20' alt=''/><br/>LICENSES/<br/>one license text per tool")
+    Fmt --> Lite("<img src='barnacle:package.svg' width='20' alt=''/><br/>lite binaries<br/>redistribute nothing")
+    class Full boxNode
+    class Verified checkNode
+    class Lite boxNode
+    classDef boxNode fill:#e8cf9d,stroke:#a16207,color:#33240a
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 Formattington orchestrates existing open-source tools. The `formattington-<platform>-full` release binaries redistribute unmodified upstream executables for the tools listed below (and, for Prettier and markdownlint, binaries built at release time from pinned upstream npm sources with Bun). The `formattington-<platform>-lite` binaries redistribute nothing. This file and the `LICENSES/` directory are included in every release archive so the notices below travel with the binaries.

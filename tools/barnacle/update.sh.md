@@ -2,9 +2,16 @@
 
 ```mermaid
 flowchart TD
-    Release[fordaj/barnacle<br/>GitHub release] -->|update.sh| Bundle[tools/barnacle/v254.0.1.1.22/<br/>per-platform binaries + LICENSE]
-    Bundle -->|BARNACLE_BIN| Docs[scripts/docs.sh]
-    Docs --> Site[./site — git-ignored]
+    Release("<img src='barnacle:tag.svg' width='20' alt=''/><br/>fordaj/barnacle<br/>GitHub release") -->|update.sh| Bundle("<img src='barnacle:folder.svg' width='20' alt=''/><br/>tools/barnacle/v0.0.2.1.25/<br/>per-platform binaries + LICENSE")
+    Bundle -->|BARNACLE_BIN| Docs("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>scripts/docs.sh</u>")
+    Docs --> Site("<img src='barnacle:folder.svg' width='20' alt=''/><br/>./site — git-ignored")
+    class Release tagNode
+    class Bundle folder
+    class Docs shFile
+    class Site folder
+    classDef tagNode fill:#f6b8d4,stroke:#be185d,color:#500724
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
     click Docs href "../../scripts/docs.sh.md"
 ```
 
@@ -15,7 +22,7 @@ flowchart TD
 ```text
 tools/barnacle/
   update.sh                     # refresh from fordaj/barnacle releases
-  v254.0.1.1.22/
+  v0.0.2.1.25/
     macos-arm64/barnacle
     macos-arm64/LICENSE           # upstream MIT text, retained unmodified
     macos-x86_64/barnacle
@@ -42,7 +49,7 @@ The refresh logic lives in [../update.sh.md](../update.sh.md) (the `tools/update
 4. Copies each archive's `LICENSE` (archive root or one level down, like the binary) into the platform directory.
 5. Swaps in the new version directory and deletes superseded ones, then smoke-tests the host binary (`barnacle --version`).
 
-Licenses: MIT — see `v254.0.1.1.22/<platform>/LICENSE`. Environment overrides: `BARNACLE_REPO`, `BARNACLE_TAG`. `--dry-run` lists assets without touching anything.
+Licenses: MIT — see `v0.0.2.1.25/<platform>/LICENSE`. Environment overrides: `BARNACLE_REPO`, `BARNACLE_TAG`. `--dry-run` lists assets without touching anything.
 
 ## How the repository uses it
 

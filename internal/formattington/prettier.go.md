@@ -2,12 +2,16 @@
 
 ```mermaid
 flowchart LR
-    Src[".js · .ts · .tsx · .jsx · .json · .html<br/>.css · .scss · .yaml · .yml · .md · .markdown<br/>covered files"] --> Reg["formattington prettier<br/>cli.go registry entry"]
-    Reg --> Tool["prettier<br/>bundled, then PATH"]
-    Tool --> Ops["Operations: Format, Check"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.js · .ts · .tsx · .jsx · .json · .html<br/>.css · .scss · .yaml · .yml · .md · .markdown<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington prettier<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>prettier<br/>bundled, then PATH</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format, Check</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 Prettier is the JavaScript/TypeScript-family formatter covering JS, TS, JSX/TSX, JSON, HTML, CSS/SCSS, YAML, and Markdown. It is the sole owner of Markdown formatting in Formattington.

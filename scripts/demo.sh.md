@@ -2,10 +2,14 @@
 
 ```mermaid
 flowchart LR
-    Cmd["scripts/demo.sh"] --> Sandbox["throwaway sandbox<br/>temp dir · path with spaces"]
-    Sandbox --> Runs["every demonstrated invocation<br/>help · version · verbose · check · dry-run"]
-    Runs --> Narrate["log() narration<br/>file:line via LOG_SOURCE"]
-    Narrate --> Cleanup["sandbox removed on exit<br/>the repository is never touched"]
+    Cmd("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>scripts/demo.sh") --> Sandbox("<img src='barnacle:folder.svg' width='20' alt=''/><br/>throwaway sandbox<br/>temp dir · path with spaces")
+    Sandbox --> Runs("<img src='barnacle:rocket.svg' width='20' alt=''/><br/>every demonstrated invocation<br/>help · version · verbose · check · dry-run")
+    Runs --> Narrate("<img src='barnacle:scroll-text.svg' width='20' alt=''/><br/><u>log() narration<br/>file:line via LOG_SOURCE</u>")
+    Narrate --> Cleanup("<img src='barnacle:trash.svg' width='20' alt=''/><br/>sandbox removed on exit<br/>the repository is never touched")
+    class Cmd shFile
+    class Sandbox folder
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
     click Narrate href "entry.sh.md"
 ```
 

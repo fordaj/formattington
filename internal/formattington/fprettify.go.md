@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".f90<br/>.f95<br/>.f03<br/>.f08<br/>.f18<br/>covered files"] --> Reg["formattington fprettify<br/>cli.go registry entry"]
-    Reg --> Tool["fprettify<br/>PATH only"]
-    Tool --> Ops["Operations: Format, Check (synthesized)"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.f90<br/>.f95<br/>.f03<br/>.f08<br/>.f18<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington fprettify<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>fprettify<br/>PATH only</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format, Check (synthesized)</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 fprettify (github.com/pseewald/fprettify) is the de-facto Fortran free-form source formatter. Formattington registers it for `.f90`, `.f95`, `.f03`, `.f08`, and `.f18` files.

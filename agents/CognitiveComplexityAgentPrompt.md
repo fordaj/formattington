@@ -2,10 +2,10 @@
 
 ```mermaid
 flowchart TD
-    Read["a reader scanning the code"] --> Organize["logical organization<br/>group by responsibility · natural sequence"]
-    Organize --> Naming["descriptive naming<br/>explicit over clever"]
-    Naming --> Guard["flatten control flow<br/>guard clauses · early returns"]
-    Guard --> Comprehend["low cognitive cost<br/>understandable on first read"]
+    Read("<img src='barnacle:book-open.svg' width='20' alt=''/><br/>a reader scanning the code") --> Organize("<img src='barnacle:folder-tree.svg' width='20' alt=''/><br/>logical organization<br/>group by responsibility · natural sequence")
+    Organize --> Naming("<img src='barnacle:type.svg' width='20' alt=''/><br/>descriptive naming<br/>explicit over clever")
+    Naming --> Guard("<img src='barnacle:shield.svg' width='20' alt=''/><br/>flatten control flow<br/>guard clauses · early returns")
+    Guard --> Comprehend("<img src='barnacle:lightbulb.svg' width='20' alt=''/><br/>low cognitive cost<br/>understandable on first read")
 ```
 
 ## Mission

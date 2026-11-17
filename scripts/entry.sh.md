@@ -2,10 +2,14 @@
 
 ```mermaid
 flowchart LR
-    Caller[any script in scripts/] --> Entry["entry.sh"]
-    Entry --> Env["env.sh<br/>sources .common.env + platform env"]
-    Entry --> Log["log() wrapper<br/>logamuffin binary or printf fallback"]
-    Log --> Source["LOG_SOURCE<br/>file:line of the caller"]
+    Caller("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>any script in scripts/") --> Entry("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>entry.sh")
+    Entry --> Env("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>env.sh<br/>sources .common.env + platform env</u>")
+    Entry --> Log("<img src='barnacle:scroll-text.svg' width='20' alt=''/><br/>log() wrapper<br/>logamuffin binary or printf fallback")
+    Log --> Source("<img src='barnacle:file-search.svg' width='20' alt=''/><br/>LOG_SOURCE<br/>file:line of the caller")
+    class Caller shFile
+    class Entry shFile
+    class Env shFile
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
     click Env href "env.sh.md"
 ```
 

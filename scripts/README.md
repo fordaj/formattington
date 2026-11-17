@@ -2,12 +2,21 @@
 
 ```mermaid
 flowchart TD
-    Scripts["scripts/<br/>bash tooling"] --> Entry["entry.sh<br/>env cascade + log()"]
-    Entry --> Env["env.sh<br/>.common.env + platform env"]
-    Entry --> Version["version.sh<br/>versioner"]
-    Entry --> Docs["docs.sh<br/>the documentation site"]
-    Entry --> Release["release.sh<br/>dist + GitHub release"]
-    Entry --> Demo["demo.sh<br/>CLI tour in a sandbox"]
+    Scripts("<img src='barnacle:folder.svg' width='20' alt=''/><br/>scripts/<br/>bash tooling") --> Entry("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>entry.sh<br/>env cascade + log()</u>")
+    Entry --> Env("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>env.sh<br/>.common.env + platform env</u>")
+    Entry --> Version("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>version.sh<br/>versioner</u>")
+    Entry --> Docs("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>docs.sh<br/>the documentation site</u>")
+    Entry --> Release("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>release.sh<br/>dist + GitHub release</u>")
+    Entry --> Demo("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>demo.sh<br/>CLI tour in a sandbox</u>")
+    class Scripts folder
+    class Entry shFile
+    class Env shFile
+    class Version shFile
+    class Docs shFile
+    class Release shFile
+    class Demo shFile
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
     click Entry href "entry.sh.md"
     click Env href "env.sh.md"
     click Version href "version.sh.md"

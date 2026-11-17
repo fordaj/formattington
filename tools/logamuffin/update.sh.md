@@ -2,9 +2,15 @@
 
 ```mermaid
 flowchart LR
-    Gh["fordaj/logamuffin<br/>GitHub release"] --> Upd["update.sh<br/>gh · checksums · stage · swap"]
-    Upd --> Dir["tools/logamuffin/v254.1.3.0.48/<br/>per-platform binary"]
-    Dir --> Log["log() in scripts/entry.sh<br/>timestamped leveled records"]
+    Gh("<img src='barnacle:tag.svg' width='20' alt=''/><br/>fordaj/logamuffin<br/>GitHub release") --> Upd("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>update.sh<br/>gh · checksums · stage · swap")
+    Upd --> Dir("<img src='barnacle:folder.svg' width='20' alt=''/><br/>tools/logamuffin/v254.1.3.0.48/<br/>per-platform binary")
+    Dir --> Log("<img src='barnacle:scroll-text.svg' width='20' alt=''/><br/><u>log() in scripts/entry.sh<br/>timestamped leveled records</u>")
+    class Gh tagNode
+    class Upd shFile
+    class Dir folder
+    classDef tagNode fill:#f6b8d4,stroke:#be185d,color:#500724
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
     click Log href "../../scripts/entry.sh.md"
 ```
 

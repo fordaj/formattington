@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".sql<br/>covered files"] --> Reg["formattington sqlfluff<br/>cli.go registry entry"]
-    Reg --> Tool["sqlfluff<br/>PATH only"]
-    Tool --> Ops["Operations: Lint / Check, Format"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.sql<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington sqlfluff<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>sqlfluff<br/>PATH only</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Lint / Check, Format</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 SQLFluff is the dialect-aware SQL linter/formatter, covering `.sql` files. The SQL dialect is never hardcoded: set it in the project config or forward `--dialect`.

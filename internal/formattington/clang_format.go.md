@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".c · .cc · .cpp · .cxx · .c++<br/>.h · .hh · .hpp · .hxx<br/>covered files"] --> Reg["formattington clang-format<br/>cli.go registry entry"]
-    Reg --> Tool["clang-format<br/>PATH or bundled"]
-    Tool --> Ops["Operations: Format, Check"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.c · .cc · .cpp · .cxx · .c++<br/>.h · .hh · .hpp · .hxx<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington clang-format<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>clang-format<br/>PATH or bundled</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format, Check</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 clang-format is LLVM's C/C++/Objective-C family code formatter. Formattington registers it for C, C++, and C/C++ header files.

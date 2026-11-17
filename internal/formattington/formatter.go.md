@@ -2,10 +2,14 @@
 
 ```mermaid
 flowchart LR
-    Opts["Options<br/>Check · DryRun · Args · Verbose"] --> Contract["Formatter<br/>func(Options) (int, error)"]
-    Contract --> Impls["one integration per tool<br/>registered in cli.go"]
-    Contract --> Codes["returned exit code<br/>0 ok · 1 ExitFormatRequired<br/>127 missing tool · 2 usage error"]
-    Impls -->|forwarded verbatim| Args[Args<br/>tool-native flags]
+    Opts("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>Options<br/>Check · DryRun · Args · Verbose") --> Contract("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>Formatter<br/>func(Options) (int, error)</u>")
+    Contract --> Impls("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>one integration per tool<br/>registered in cli.go</u>")
+    Contract --> Codes("<img src='barnacle:binary.svg' width='20' alt=''/><br/>returned exit code<br/>0 ok · 1 ExitFormatRequired<br/>127 missing tool · 2 usage error")
+    Impls -->|forwarded verbatim| Args("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>Args<br/>tool-native flags")
+    class Opts goFile
+    class Contract goFile
+    class Impls goFile
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
     click Impls href "cli.go.md"
     click Contract href "cli.go.md"
 ```

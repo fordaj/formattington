@@ -2,9 +2,14 @@
 
 ```mermaid
 flowchart LR
-    Cmd["scripts/version.sh"] --> Entry["entry.sh cascade"]
-    Entry --> Versioner["versioner --repo-dir root --quiet<br/>--format text|shell|json"]
-    Versioner --> Out["the repository version<br/>same computation the release pipeline uses"]
+    Cmd("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>scripts/version.sh") --> Entry("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>entry.sh cascade</u>")
+    Entry --> Versioner("<img src='barnacle:tag.svg' width='20' alt=''/><br/>versioner --repo-dir root --quiet<br/>--format text|shell|json")
+    Versioner --> Out("<img src='barnacle:type.svg' width='20' alt=''/><br/>the repository version<br/>same computation the release pipeline uses")
+    class Cmd shFile
+    class Entry shFile
+    class Versioner tagNode
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef tagNode fill:#f6b8d4,stroke:#be185d,color:#500724
     click Entry href "entry.sh.md"
 ```
 
