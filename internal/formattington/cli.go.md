@@ -2,15 +2,24 @@
 
 ```mermaid
 flowchart TD
-    Parse[parseGlobalArgs<br/>--verbose · --check · --dry-run · --config · --series] --> Find[findFormatterIndex<br/>first bare token picks the mode]
-    Find --> Dispatch{dispatch}
-    Dispatch -->|"list"| List[list.go<br/>bundled vs PATH versions]
-    Dispatch -->|"init"| Init[init.go<br/>scan the tree, write .formattington.json]
-    Dispatch -->|"all"| All[registry loop<br/>registration order · concurrent unless --series]
-    Dispatch -->|"tool name or alias"| Lookup[registry / languageAliases]
+    Parse("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>parseGlobalArgs<br/>--verbose · --check · --dry-run · --config · --series") --> Find("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>findFormatterIndex<br/>first bare token picks the mode")
+    Find --> Dispatch{{"<img src='barnacle:hexagon.svg' width='20' alt=''/><br/>dispatch"}}
+    Dispatch -->|"list"| List("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>list.go<br/>bundled vs PATH versions</u>")
+    Dispatch -->|"init"| Init("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>init.go<br/>scan the tree, write .formattington.json</u>")
+    Dispatch -->|"all"| All("<img src='barnacle:repeat.svg' width='20' alt=''/><br/>registry loop<br/>registration order · concurrent unless --series")
+    Dispatch -->|"tool name or alias"| Lookup("<img src='barnacle:search.svg' width='20' alt=''/><br/>registry / languageAliases")
     All --> Lookup
-    Lookup --> Run[runFormatter<br/>DiscoverFiles + maxFilesPerInvocation batches]
-    Run --> Agg[aggregateCodes<br/>last non-zero wins · 0 only if all succeed]
+    Lookup --> Run("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>runFormatter<br/>DiscoverFiles + maxFilesPerInvocation batches</u>")
+    Run --> Agg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>aggregateCodes<br/>last non-zero wins · 0 only if all succeed</u>")
+    class Parse goFile
+    class Find goFile
+    class Dispatch hexNode
+    class List goFile
+    class Init goFile
+    class Run goFile
+    class Agg goFile
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef hexNode fill:#ffe08a,stroke:#a16207,color:#422006
     click List href "list.go.md"
     click Init href "init.go.md"
     click Run href "discovery.go.md"

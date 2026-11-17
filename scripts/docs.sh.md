@@ -2,9 +2,15 @@
 
 ```mermaid
 flowchart LR
-    Repo["repository .md / .mmd files"] --> Barnacle["BARNACLE_BIN<br/>pinned bundle under tools/barnacle"]
-    Cascade["env cascade<br/>scripts/.common.env"] --> Barnacle
-    Barnacle --> Site["./site<br/>static HTML · git-ignored"]
+    Repo("<img src='barnacle:file-text.svg' width='20' alt=''/><br/>repository .md / .mmd files") --> Barnacle("<img src='barnacle:package.svg' width='20' alt=''/><br/>BARNACLE_BIN<br/>pinned bundle under tools/barnacle")
+    Cascade("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>env cascade<br/>scripts/.common.env</u>") --> Barnacle
+    Barnacle --> Site("<img src='barnacle:folder.svg' width='20' alt=''/><br/>./site<br/>static HTML · git-ignored")
+    class Cascade shFile
+    class Barnacle boxNode
+    class Site folder
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef boxNode fill:#e8cf9d,stroke:#a16207,color:#33240a
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
     click Cascade href "env.sh.md"
 ```
 

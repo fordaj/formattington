@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".mojo<br/>covered files"] --> Reg["formattington mojo-format<br/>cli.go registry entry"]
-    Reg --> Tool["mojo via mojo format<br/>PATH only"]
-    Tool --> Ops["Operations: Format, Check"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.mojo<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington mojo-format<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>mojo via mojo format<br/>PATH only</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format, Check</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 mojo format is the formatter built into the Mojo toolchain (Modular). It covers `.mojo` files. The tool name is `mojo-format` — the bare binary is `mojo`, invoked as `mojo format`.

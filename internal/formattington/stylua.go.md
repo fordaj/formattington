@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".lua<br/>covered files"] --> Reg["formattington stylua<br/>cli.go registry entry"]
-    Reg --> Tool["stylua<br/>bundled, then PATH"]
-    Tool --> Ops["Operations: Format, Check"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.lua<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington stylua<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>stylua<br/>bundled, then PATH</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format, Check</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 StyLua is the standard Lua formatter, covering `.lua` files. It is resolved from the bundled formatters (full release archives) or from `PATH`, and respects `stylua.toml` / `.stylua.toml`.

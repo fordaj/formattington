@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".sol<br/>covered files"] --> Reg["formattington forge-fmt<br/>cli.go registry entry"]
-    Reg --> Tool["forge<br/>PATH only"]
-    Tool --> Ops["Operations: Format, Check"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.sol<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington forge-fmt<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>forge<br/>PATH only</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format, Check</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 `forge fmt` is the standard Solidity formatter, shipped with Foundry. Formattington invokes the `forge` binary's `fmt` subcommand and registers the tool as `forge-fmt`.

@@ -2,12 +2,18 @@
 
 ```mermaid
 flowchart LR
-    Src[".ps1<br/>.psm1<br/>covered files"] --> Reg["formattington powershell<br/>cli.go registry entry"]
-    Reg --> Tool["pwsh<br/>PATH only"]
-    Tool --> Ops["Operations: Lint"]
+    Src("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>.ps1<br/>.psm1<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington powershell<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>pwsh<br/>PATH only</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Lint</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src shFile
+    class Reg goFile
+    class Ops checkNode
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 PowerShell integration: lints `.ps1` and `.psm1` files with [PSScriptAnalyzer](https://github.com/PowerShell/PSScriptAnalyzer) through PowerShell, rather than formatting them. There is no in-place formatting; every mode is a read-only lint.

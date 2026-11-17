@@ -2,16 +2,27 @@
 
 ```mermaid
 flowchart TD
-    Resolve[resolveConfigPath] --> Precedence{precedence}
-    Precedence -->|"1"| Explicit["--config PATH"]
-    Precedence -->|"2"| EnvVar["FORMATTINGTON_CONFIG_PATH"]
-    Precedence -->|"3"| Cwd["./.formattington.json<br/>cwd only · no parent search"]
-    Explicit --> Load[loadConfig]
+    Resolve("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>resolveConfigPath") --> Precedence{{"<img src='barnacle:hexagon.svg' width='20' alt=''/><br/>precedence"}}
+    Precedence -->|"1"| Explicit("<img src='barnacle:braces.svg' width='20' alt=''/><br/>--config PATH")
+    Precedence -->|"2"| EnvVar("<img src='barnacle:variable.svg' width='20' alt=''/><br/>FORMATTINGTON_CONFIG_PATH")
+    Precedence -->|"3"| Cwd("<img src='barnacle:braces.svg' width='20' alt=''/><br/>./.formattington.json<br/>cwd only · no parent search")
+    Explicit --> Load("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>loadConfig")
     EnvVar --> Load
     Cwd --> Load
-    Load --> Validate["validateConfig<br/>commands: array of string arrays<br/>first element a registered tool or alias"]
-    Validate -->|"invalid / missing file"| Exit2["exit 2 — usage error · never silent"]
-    Validate -->|"valid"| Run[commands run with<br/>discovery as usual]
+    Load --> Validate("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>validateConfig<br/>commands: array of string arrays<br/>first element a registered tool or alias")
+    Validate -->|"invalid / missing file"| Exit2("<img src='barnacle:circle-exclamation-point.svg' width='20' alt=''/><br/><u>exit 2 — usage error · never silent</u>")
+    Validate -->|"valid"| Run("<img src='barnacle:play.svg' width='20' alt=''/><br/><u>commands run with<br/>discovery as usual</u>")
+    class Resolve goFile
+    class Precedence hexNode
+    class Explicit jsonFile
+    class Cwd jsonFile
+    class Load goFile
+    class Validate goFile
+    class Exit2 errNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef hexNode fill:#ffe08a,stroke:#a16207,color:#422006
+    classDef jsonFile fill:#cdb9f7,stroke:#6d28d9,color:#2e1065
+    classDef errNode fill:#f6b8b8,stroke:#b91c1c,color:#450a0a
     click Run href "cli.go.md"
     click Exit2 href "cli.go.md"
 ```

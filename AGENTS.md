@@ -2,11 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Code[Edit source + sibling .md<br/>in the same change] --> Check[make check]
-    Check --> Docs[scripts/docs.sh]
-    Docs --> Site[./site — git-ignored]
-    Site --> Review[Self-review the<br/>changed pages]
-    Review --> Commit[Commit source + doc together]
+    Code("<img src='barnacle:pencil.svg' width='20' alt=''/><br/>Edit source + sibling .md<br/>in the same change") --> Check("<img src='barnacle:check.svg' width='20' alt=''/><br/>make check")
+    Check --> Docs("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>scripts/docs.sh")
+    Docs --> Site("<img src='barnacle:folder.svg' width='20' alt=''/><br/>./site — git-ignored")
+    Site --> Review("<img src='barnacle:eye.svg' width='20' alt=''/><br/>Self-review the<br/>changed pages")
+    Review --> Commit("<img src='barnacle:git-commit-horizontal.svg' width='20' alt=''/><br/>Commit source + doc together")
+    class Check checkNode
+    class Docs shFile
+    class Site folder
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
 ```
 
 ## Project Overview

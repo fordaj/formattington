@@ -2,9 +2,15 @@
 
 ```mermaid
 flowchart LR
-    Gh["fordaj/runner-spawner<br/>GitHub release"] --> Upd["update.sh<br/>gh · checksums · stage · swap"]
-    Upd --> Dir["tools/runner-spawner/v0.0.1.2.6/<br/>per-platform binary"]
-    Dir --> CI["self-hosted CI runners<br/>driven by .runner-spawner.json"]
+    Gh("<img src='barnacle:tag.svg' width='20' alt=''/><br/>fordaj/runner-spawner<br/>GitHub release") --> Upd("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>update.sh<br/>gh · checksums · stage · swap")
+    Upd --> Dir("<img src='barnacle:folder.svg' width='20' alt=''/><br/>tools/runner-spawner/v0.0.1.2.6/<br/>per-platform binary")
+    Dir --> CI("<img src='barnacle:server.svg' width='20' alt=''/><br/>self-hosted CI runners<br/>driven by .runner-spawner.json")
+    class Gh tagNode
+    class Upd shFile
+    class Dir folder
+    classDef tagNode fill:#f6b8d4,stroke:#be185d,color:#500724
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
 ```
 
 [Runner-spawner](https://github.com/fordaj/runner-spawner) manages self-hosted GitHub Actions runners. In this repository it drives the planned self-hosted CI on macOS and Windows runners (see [README.md — Continuous integration](../../README.md)); it operates on the committed `.runner-spawner.json`:

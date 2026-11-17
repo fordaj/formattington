@@ -2,13 +2,15 @@
 
 ```mermaid
 flowchart TD
-    Main["cmd/formattington/main.go<br/>process boundary"] --> CLI["cli.go<br/>the sole registry + dispatch"]
-    CLI --> Core["core support<br/>tools · discovery · config<br/>formatter · help · list · init · embedded · version"]
-    CLI --> Integ["one integration function per tool<br/>registered in survey order"]
-    Core --> Tools["tools.go<br/>FindTool resolution + runTool subprocess"]
+    Main("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>cmd/formattington/main.go<br/>process boundary") --> CLI("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>cli.go<br/>the sole registry + dispatch</u>")
+    CLI --> Core("<img src='barnacle:layers.svg' width='20' alt=''/><br/><u>core support<br/>tools · discovery · config<br/>formatter · help · list · init · embedded · version</u>")
+    CLI --> Integ("<img src='barnacle:puzzle.svg' width='20' alt=''/><br/><u>one integration function per tool<br/>registered in survey order</u>")
+    Core --> Tools("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>tools.go<br/>FindTool resolution + runTool subprocess</u>")
     Integ --> Tools
-    Integ --> Fmt["formatter.go<br/>Options · Formatter contract"]
-    Arch["architecture.mmd<br/>the map of the package"] -.-> CLI
+    Integ --> Fmt("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formatter.go<br/>Options · Formatter contract</u>")
+    Arch("<img src='barnacle:workflow.svg' width='20' alt=''/><br/><u>architecture.mmd<br/>the map of the package</u>") -.-> CLI
+    class Main,CLI,Tools,Fmt goFile
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
     click CLI href "cli.go.md"
     click Core href "tools.go.md"
     click Integ href "prettier.go.md"

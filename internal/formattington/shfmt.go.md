@@ -2,12 +2,18 @@
 
 ```mermaid
 flowchart LR
-    Src[".sh<br/>.bash<br/>covered files"] --> Reg["formattington shfmt<br/>cli.go registry entry"]
-    Reg --> Tool["shfmt<br/>bundled, then PATH"]
-    Tool --> Ops["Operations: Format, Check"]
+    Src("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>.sh<br/>.bash<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington shfmt<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>shfmt<br/>bundled, then PATH</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format, Check</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src shFile
+    class Reg goFile
+    class Ops checkNode
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 shfmt formats shell scripts (`.sh`, `.bash`), from the [mvdan/sh](https://github.com/mvdan/sh) project. Formattington owns the mode; shfmt owns everything else.

@@ -2,13 +2,19 @@
 
 ```mermaid
 flowchart TD
-    Root[walk the root recursively] --> Filter{candidate file?}
-    Filter -->|"hidden directory or file"| Pruned[pruned — never rewrites secrets]
-    Filter -->|"generated / vendored / dependency dirs"| Pruned2[pruned]
-    Filter -->|"regular file, matching extension"| Collect[collect it]
-    Filter -->|"other extension"| Skip[skip]
-    Collect --> Sort[stable, sorted order<br/>deterministic runs]
-    Sort --> Batch[iterChunks<br/>maxFilesPerInvocation batches]
+    Root("<img src='barnacle:folder.svg' width='20' alt=''/><br/>walk the root recursively") --> Filter{{"<img src='barnacle:hexagon.svg' width='20' alt=''/><br/>candidate file?"}}
+    Filter -->|"hidden directory or file"| Pruned("<img src='barnacle:scissors.svg' width='20' alt=''/><br/>pruned — never rewrites secrets")
+    Filter -->|"generated / vendored / dependency dirs"| Pruned2("<img src='barnacle:scissors.svg' width='20' alt=''/><br/>pruned")
+    Filter -->|"regular file, matching extension"| Collect("<img src='barnacle:files.svg' width='20' alt=''/><br/>collect it")
+    Filter -->|"other extension"| Skip("<img src='barnacle:skip-forward.svg' width='20' alt=''/><br/>skip")
+    Collect --> Sort("<img src='barnacle:arrow-down-a-z.svg' width='20' alt=''/><br/>stable, sorted order<br/>deterministic runs")
+    Sort --> Batch("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>iterChunks<br/>maxFilesPerInvocation batches</u>")
+    class Root folder
+    class Filter hexNode
+    class Batch goFile
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
+    classDef hexNode fill:#ffe08a,stroke:#a16207,color:#422006
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
     click Batch href "tools.go.md"
 ```
 

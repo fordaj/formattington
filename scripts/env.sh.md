@@ -2,11 +2,17 @@
 
 ```mermaid
 flowchart TD
-    Entry["entry.sh"] --> Common[".common.env<br/>TOOLS_DIR · fordaj upstreams · *_VERSION_DIR pins"]
-    Common --> Platform[".<os>-<arch>.env<br/>PROJECT_PLATFORM + *_BIN paths"]
-    Platform --> Anchor["repo-relative *_BIN paths<br/>anchored to absolute"]
-    Anchor --> Root["REPO_ROOT_DIR exported<br/>for callers that need the repo root"]
-    Anchor --> Bins["BARNACLE_BIN · VERSIONER_BIN<br/>LOGAMUFFIN_BIN · RUNNER_SPAWNER_BIN"]
+    Entry("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>entry.sh") --> Common("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>.common.env<br/>TOOLS_DIR · fordaj upstreams · *_VERSION_DIR pins")
+    Common --> Platform("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>.<os>-<arch>.env<br/>PROJECT_PLATFORM + *_BIN paths")
+    Platform --> Anchor("<img src='barnacle:link.svg' width='20' alt=''/><br/>repo-relative *_BIN paths<br/>anchored to absolute")
+    Anchor --> Root("<img src='barnacle:folder.svg' width='20' alt=''/><br/>REPO_ROOT_DIR exported<br/>for callers that need the repo root")
+    Anchor --> Bins("<img src='barnacle:binary.svg' width='20' alt=''/><br/>BARNACLE_BIN · VERSIONER_BIN<br/>LOGAMUFFIN_BIN · RUNNER_SPAWNER_BIN")
+    class Entry shFile
+    class Common shFile
+    class Platform shFile
+    class Root folder
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
 ```
 
 `scripts/env.sh` is the plumbing that makes the pinned helper tools resolvable from any script, in any working directory, on every supported platform. It is sourced — never executed — and it works from both bash and zsh.

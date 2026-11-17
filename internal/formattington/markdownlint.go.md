@@ -2,12 +2,18 @@
 
 ```mermaid
 flowchart LR
-    Src[".md<br/>.markdown<br/>covered files"] --> Reg["formattington markdownlint<br/>cli.go registry entry"]
-    Reg --> Tool["markdownlint<br/>PATH or bundled"]
-    Tool --> Ops["Operations: Lint (Fix only via an explicitly forwarded --fix)"]
+    Src("<img src='barnacle:file-text.svg' width='20' alt=''/><br/>.md<br/>.markdown<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington markdownlint<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>markdownlint<br/>PATH or bundled</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Lint (Fix only via an explicitly forwarded --fix)</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src mdFile
+    class Reg goFile
+    class Ops checkNode
+    classDef mdFile fill:#dcd6ce,stroke:#6b6255,color:#292524
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 markdownlint runs `markdownlint-cli` to lint Markdown files for style and consistency. It covers `.md` and `.markdown` files and is read-only unless you pass `--fix`.

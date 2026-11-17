@@ -2,17 +2,26 @@
 
 ```mermaid
 flowchart TD
-    Need[integration needs an executable] --> Find[FindTool]
-    Find --> Override["1 · FORMATTINGTON_FORMATTERS_DIR<br/>environment override"]
-    Find --> Bundle["2 · FormattersDir()<br/>checkout formatters/ or unpacked embedded cache<br/>newest numeric version wins"]
-    Find --> PathLookup["3 · PATH via findOnPath<br/>name, then name.exe on Windows"]
+    Need("<img src='barnacle:puzzle.svg' width='20' alt=''/><br/>integration needs an executable") --> Find("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>FindTool")
+    Find --> Override("<img src='barnacle:variable.svg' width='20' alt=''/><br/>1 · FORMATTINGTON_FORMATTERS_DIR<br/>environment override")
+    Find --> Bundle("<img src='barnacle:folder.svg' width='20' alt=''/><br/>2 · FormattersDir()<br/>checkout formatters/ or unpacked embedded cache<br/>newest numeric version wins")
+    Find --> PathLookup("<img src='barnacle:search.svg' width='20' alt=''/><br/>3 · PATH via findOnPath<br/>name, then name.exe on Windows")
     Override -->|unset or missing| Bundle
     Bundle -->|no bundle matches| PathLookup
-    PathLookup -->|not found| Missing[ExitNotFound 127]
-    Bundle --> Exe[resolved executable]
+    PathLookup -->|not found| Missing("<img src='barnacle:circle-exclamation-point.svg' width='20' alt=''/><br/>ExitNotFound 127")
+    Bundle --> Exe("<img src='barnacle:binary.svg' width='20' alt=''/><br/>resolved executable")
     PathLookup --> Exe
-    Exe --> Run["runTool()<br/>arguments as a slice · no shell · captures exit code"]
-    Bundle -.-> Embedded[full-release payload<br/>unpacked on first use]
+    Exe --> Run("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>runTool()<br/>arguments as a slice · no shell · captures exit code</u>")
+    Bundle -.-> Embedded("<img src='barnacle:package.svg' width='20' alt=''/><br/><u>full-release payload<br/>unpacked on first use</u>")
+    class Find goFile
+    class Bundle folder
+    class Missing errNode
+    class Run goFile
+    class Embedded boxNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
+    classDef errNode fill:#f6b8b8,stroke:#b91c1c,color:#450a0a
+    classDef boxNode fill:#e8cf9d,stroke:#a16207,color:#33240a
     click Embedded href "embedded.go.md"
     click Run href "cli.go.md"
 ```

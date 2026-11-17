@@ -2,15 +2,26 @@
 
 ```mermaid
 flowchart TD
-    Build["scripts/release.sh<br/>-tags full"] --> Payload["embedded_full.go<br/>assets/formatters.zip — not committed"]
-    Payload --> FirstUse["first use: installEmbeddedFormatters"]
-    FirstUse --> Cache{"zipFingerprint matches<br/>the existing extraction?"}
-    Cache -->|yes| Reuse[reuse the per-user cache]
-    Cache -->|no| Extract["extract under os.UserCacheDir()/formatters<br/>secureMkdirAll + entry guards<br/>collectGarbage prunes superseded entries"]
-    Reuse --> Dir[FormattersDir resolution]
+    Build("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>scripts/release.sh<br/>-tags full") --> Payload("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>embedded_full.go<br/>assets/formatters.zip — not committed")
+    Payload --> FirstUse("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>first use: installEmbeddedFormatters")
+    FirstUse --> Cache{{"<img src='barnacle:hexagon.svg' width='20' alt=''/><br/>zipFingerprint matches<br/>the existing extraction?"}}
+    Cache -->|yes| Reuse("<img src='barnacle:rotate-ccw.svg' width='20' alt=''/><br/>reuse the per-user cache")
+    Cache -->|no| Extract("<img src='barnacle:archive.svg' width='20' alt=''/><br/>extract under os.UserCacheDir()/formatters<br/>secureMkdirAll + entry guards<br/>collectGarbage prunes superseded entries")
+    Reuse --> Dir("<img src='barnacle:folder.svg' width='20' alt=''/><br/><u>FormattersDir resolution</u>")
     Extract --> Dir
-    Lite["embedded_lite.go (!full)<br/>empty payload · lite builds skip this"] -.-> Dir
-    Dir --> FindTool[FindTool resolves executables]
+    Lite("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>embedded_lite.go (!full)<br/>empty payload · lite builds skip this") -.-> Dir
+    Dir --> FindTool("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>FindTool resolves executables</u>")
+    class Build shFile
+    class Payload goFile
+    class FirstUse goFile
+    class Cache hexNode
+    class Lite goFile
+    class Dir folder
+    class FindTool goFile
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef hexNode fill:#ffe08a,stroke:#a16207,color:#422006
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
     click Dir href "tools.go.md"
     click FindTool href "tools.go.md"
 ```

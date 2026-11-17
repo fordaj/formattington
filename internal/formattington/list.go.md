@@ -2,12 +2,15 @@
 
 ```mermaid
 flowchart TD
-    Cmd["formattington list"] --> Loop[for each registered tool]
-    Loop --> Bundled["Bundled cell<br/>newest host-platform bundle FindTool<br/>would resolve · or unpacked full payload"]
-    Loop --> PathCell["PATH cell<br/>same executable the integration resolves<br/>--version probe · short timeout · read-only"]
-    Bundled --> Table["pipe-separated table<br/>dash when either side is missing"]
+    Cmd("<img src='barnacle:play.svg' width='20' alt=''/><br/>formattington list") --> Loop("<img src='barnacle:repeat.svg' width='20' alt=''/><br/>for each registered tool")
+    Loop --> Bundled("<img src='barnacle:package.svg' width='20' alt=''/><br/><u>Bundled cell<br/>newest host-platform bundle FindTool<br/>would resolve · or unpacked full payload</u>")
+    Loop --> PathCell("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>PATH cell<br/>same executable the integration resolves<br/>--version probe · short timeout · read-only</u>")
+    Bundled --> Table("<img src='barnacle:table.svg' width='20' alt=''/><br/>pipe-separated table<br/>dash when either side is missing")
     PathCell --> Table
-    Bundled -.-> Embedded[full-release embedded payload]
+    Bundled -.-> Embedded("<img src='barnacle:package.svg' width='20' alt=''/><br/><u>full-release embedded payload</u>")
+    class Bundled boxNode
+    class Embedded boxNode
+    classDef boxNode fill:#e8cf9d,stroke:#a16207,color:#33240a
     click Bundled href "tools.go.md"
     click PathCell href "tools.go.md"
     click Embedded href "embedded.go.md"

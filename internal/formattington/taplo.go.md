@@ -2,12 +2,16 @@
 
 ```mermaid
 flowchart LR
-    Src[".toml<br/>covered files"] --> Reg["formattington taplo<br/>cli.go registry entry"]
-    Reg --> Tool["taplo<br/>bundled, then PATH"]
-    Tool --> Ops["Operations: Format, Check"]
+    Src("<img src='barnacle:file-cog.svg' width='20' alt=''/><br/>.toml<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington taplo<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>taplo<br/>bundled, then PATH</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format, Check</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 Taplo formats TOML files via `taplo fmt`, respecting project `taplo.toml` configuration discovered automatically by the tool. Bundled in the full release archives for offline use.

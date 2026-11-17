@@ -2,16 +2,23 @@
 
 ```mermaid
 flowchart TD
-    Cmd["formattington --version"] --> Memo["Version()<br/>memoized"]
-    Memo --> R{"resolveVersion()<br/>highest wins"}
-    R -->|"1"| Env["FORMATTINGTON_VERSION<br/>explicit override"]
-    R -->|"2"| Stamp["buildVersion<br/>ldflags -X stamp at release time"]
-    R -->|"3"| Pkg["PKG-INFO in cwd / repo root<br/>sdist-style builds"]
-    R -->|"4"| Versioner["bundled versioner, or versioner on PATH<br/>--repo-dir root --quiet --format json"]
-    Env --> Out[the reported version string]
+    Cmd("<img src='barnacle:play.svg' width='20' alt=''/><br/>formattington --version") --> Memo("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>Version()<br/>memoized")
+    Memo --> R{{"<img src='barnacle:hexagon.svg' width='20' alt=''/><br/>resolveVersion()<br/>highest wins"}}
+    R -->|"1"| Env("<img src='barnacle:variable.svg' width='20' alt=''/><br/>FORMATTINGTON_VERSION<br/>explicit override")
+    R -->|"2"| Stamp("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>buildVersion<br/>ldflags -X stamp at release time")
+    R -->|"3"| Pkg("<img src='barnacle:file-text.svg' width='20' alt=''/><br/>PKG-INFO in cwd / repo root<br/>sdist-style builds")
+    R -->|"4"| Versioner("<img src='barnacle:tag.svg' width='20' alt=''/><br/>bundled versioner, or versioner on PATH<br/>--repo-dir root --quiet --format json")
+    Env --> Out("<img src='barnacle:type.svg' width='20' alt=''/><br/>the reported version string")
     Stamp --> Out
     Pkg --> Out
     Versioner --> Out
+    class Memo goFile
+    class R hexNode
+    class Stamp goFile
+    class Versioner tagNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef hexNode fill:#ffe08a,stroke:#a16207,color:#422006
+    classDef tagNode fill:#f6b8d4,stroke:#be185d,color:#500724
 ```
 
 `version.go` makes `formattington --version` report the same version the release was tagged with.

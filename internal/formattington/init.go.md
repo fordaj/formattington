@@ -2,15 +2,24 @@
 
 ```mermaid
 flowchart TD
-    Cmd["formattington init"] --> Scan[scanCurrentDirectory]
-    Scan -->|inside a git repo| Git["git ls-files incl. submodules<br/>plus untracked, non-ignored files<br/>tracked deletes are not counted"]
-    Scan -->|otherwise| Walk["walk every regular file<br/>skip hidden + generated dirs"]
-    Git --> Count[count files by extension]
+    Cmd("<img src='barnacle:play.svg' width='20' alt=''/><br/>formattington init") --> Scan("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>scanCurrentDirectory")
+    Scan -->|inside a git repo| Git("<img src='barnacle:git-branch.svg' width='20' alt=''/><br/>git ls-files incl. submodules<br/>plus untracked, non-ignored files<br/>tracked deletes are not counted")
+    Scan -->|otherwise| Walk("<img src='barnacle:folder.svg' width='20' alt=''/><br/>walk every regular file<br/>skip hidden + generated dirs")
+    Git --> Count("<img src='barnacle:hash.svg' width='20' alt=''/><br/>count files by extension")
     Walk --> Count
-    Count --> Select[selectInitCommands<br/>catalogue ∩ detected extensions]
-    Select --> Render[renderInitConfig<br/>atomic write ./.formattington.json]
-    Render --> Catalogue["init.json<br/>one command per tool · registration order"]
-    Catalogue --> Lock["kept in lockstep by template_test.go<br/>with cli.go · help.go · README · AGENTS"]
+    Count --> Select("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>selectInitCommands<br/>catalogue ∩ detected extensions</u>")
+    Select --> Render("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>renderInitConfig<br/>atomic write ./.formattington.json")
+    Render --> Catalogue("<img src='barnacle:braces.svg' width='20' alt=''/><br/>init.json<br/>one command per tool · registration order")
+    Catalogue --> Lock("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>kept in lockstep by template_test.go<br/>with cli.go · help.go · README · AGENTS</u>")
+    class Scan goFile
+    class Select goFile
+    class Render goFile
+    class Walk folder
+    class Catalogue jsonFile
+    class Lock goFile
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
+    classDef jsonFile fill:#cdb9f7,stroke:#6d28d9,color:#2e1065
     click Select href "cli.go.md"
     click Lock href "cli.go.md"
 ```

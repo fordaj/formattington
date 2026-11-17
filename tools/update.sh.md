@@ -2,9 +2,16 @@
 
 ```mermaid
 flowchart TD
-    Wrapper["tools/&lt;tool&gt;/update.sh<br/>thin wrapper · tool name as argument"] --> Shared["tools/update.sh<br/>gh · checksums · stage · swap"]
-    Shared --> GitHub["GitHub releases<br/>fordaj/* · upstream projects"]
-    Shared --> Layout["tools/&lt;tool&gt;/v&lt;tag&gt;/&lt;platform&gt;/&lt;binary&gt;"]
+    Wrapper("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>tools/&lt;tool&gt;/update.sh<br/>thin wrapper · tool name as argument</u>") --> Shared("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>tools/update.sh<br/>gh · checksums · stage · swap")
+    Shared --> GitHub("<img src='barnacle:tag.svg' width='20' alt=''/><br/>GitHub releases<br/>fordaj/* · upstream projects")
+    Shared --> Layout("<img src='barnacle:folder.svg' width='20' alt=''/><br/>tools/&lt;tool&gt;/v&lt;tag&gt;/&lt;platform&gt;/&lt;binary&gt;")
+    class Wrapper shFile
+    class Shared shFile
+    class GitHub tagNode
+    class Layout folder
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef tagNode fill:#f6b8d4,stroke:#be185d,color:#500724
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
     click Wrapper href "logamuffin/update.sh.md"
 ```
 

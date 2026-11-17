@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".jl<br/>covered files"] --> Reg["formattington jlfmt<br/>cli.go registry entry"]
-    Reg --> Tool["jlfmt<br/>PATH only"]
-    Tool --> Ops["Operations: Format / Check / Diff"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.jl<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington jlfmt<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>jlfmt<br/>PATH only</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format / Check / Diff</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 jlfmt is the Julia formatter, distributed as a Julia app from JuliaFormatter.jl (installed via `Pkg.Apps.add`). The integration handles `.jl` files; the `julia` language alias resolves to `jlfmt`.

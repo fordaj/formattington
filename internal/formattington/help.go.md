@@ -2,11 +2,14 @@
 
 ```mermaid
 flowchart LR
-    Req["formattington --help<br/>or a usage error"] --> Help[printHelp]
-    Help --> Line[usageLine<br/>compact synopsis]
-    Help --> Modes["invocation patterns<br/>all · tool · alias · list · init"]
-    Help --> Order["alias list in survey rank order<br/>of the backend tool"]
-    Order --> Mirror["mirrors the cli.go registry,<br/>README, AGENTS, init.json"]
+    Req("<img src='barnacle:circle-question-mark.svg' width='20' alt=''/><br/>formattington --help<br/>or a usage error") --> Help("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>printHelp")
+    Help --> Line("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>usageLine<br/>compact synopsis")
+    Help --> Modes("<img src='barnacle:list.svg' width='20' alt=''/><br/>invocation patterns<br/>all · tool · alias · list · init")
+    Help --> Order("<img src='barnacle:list-ordered.svg' width='20' alt=''/><br/>alias list in survey rank order<br/>of the backend tool")
+    Order --> Mirror("<img src='barnacle:files.svg' width='20' alt=''/><br/><u>mirrors the cli.go registry,<br/>README, AGENTS, init.json</u>")
+    class Help goFile
+    class Line goFile
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
     click Mirror href "cli.go.md"
 ```
 

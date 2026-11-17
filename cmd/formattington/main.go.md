@@ -2,10 +2,12 @@
 
 ```mermaid
 flowchart LR
-    OS["os.Args[1:]"] --> Main["formattington.Main()"]
-    Main --> Code["process exit code"]
-    Main --> Impl["all logic lives in<br/>internal/formattington"]
+    OS("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>os.Args[1:]") --> Main("<img src='barnacle:play.svg' width='20' alt=''/><br/>formattington.Main()")
+    Main --> Code("<img src='barnacle:binary.svg' width='20' alt=''/><br/>process exit code")
+    Main --> Impl("<img src='barnacle:folder.svg' width='20' alt=''/><br/><u>all logic lives in<br/>internal/formattington</u>")
     click Impl href "../../internal/formattington/README.md"
+    class Impl folder
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
 ```
 
 `main.go` is the process boundary: it calls `formattington.Main(os.Args[1:])` and exits with the returned code. There is no logic worth testing here — everything testable lives in `internal/formattington/` and is covered by `go test ./internal/formattington`.

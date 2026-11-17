@@ -2,9 +2,16 @@
 
 ```mermaid
 flowchart TD
-    Release[fordaj/barnacle<br/>GitHub release] -->|update.sh| Bundle[tools/barnacle/v0.0.2.1.25/<br/>per-platform binaries + LICENSE]
-    Bundle -->|BARNACLE_BIN| Docs[scripts/docs.sh]
-    Docs --> Site[./site — git-ignored]
+    Release("<img src='barnacle:tag.svg' width='20' alt=''/><br/>fordaj/barnacle<br/>GitHub release") -->|update.sh| Bundle("<img src='barnacle:folder.svg' width='20' alt=''/><br/>tools/barnacle/v0.0.2.1.25/<br/>per-platform binaries + LICENSE")
+    Bundle -->|BARNACLE_BIN| Docs("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>scripts/docs.sh</u>")
+    Docs --> Site("<img src='barnacle:folder.svg' width='20' alt=''/><br/>./site — git-ignored")
+    class Release tagNode
+    class Bundle folder
+    class Docs shFile
+    class Site folder
+    classDef tagNode fill:#f6b8d4,stroke:#be185d,color:#500724
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
     click Docs href "../../scripts/docs.sh.md"
 ```
 

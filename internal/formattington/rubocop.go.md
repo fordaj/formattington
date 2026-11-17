@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".rb<br/>.rake<br/>.gemspec<br/>.ru<br/>covered files"] --> Reg["formattington rubocop<br/>cli.go registry entry"]
-    Reg --> Tool["rubocop<br/>PATH only"]
-    Tool --> Ops["Operations: Lint"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.rb<br/>.rake<br/>.gemspec<br/>.ru<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington rubocop<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>rubocop<br/>PATH only</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Lint</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 RuboCop is a **linter with ~100 layout cops** for Ruby (`.rb`, `.rake`, `.gemspec`, `.ru`), integrated like powershell/markdownlint rather than like a formatter. It never writes files unless the user explicitly passes fix flags.

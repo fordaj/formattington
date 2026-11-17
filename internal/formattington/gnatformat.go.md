@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".ads<br/>.adb<br/>covered files"] --> Reg["formattington gnatformat<br/>cli.go registry entry"]
-    Reg --> Tool["gnatformat<br/>PATH only"]
-    Tool --> Ops["Operations: Format, Check"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.ads<br/>.adb<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington gnatformat<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>gnatformat<br/>PATH only</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format, Check</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 GNATformat (AdaCore/GNATformat) formats Ada source files; it is a port of the Prettier engine implementing the GNAT Coding Style. It covers `.ads` (specs) and `.adb` (bodies).

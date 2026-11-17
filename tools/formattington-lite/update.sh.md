@@ -2,8 +2,14 @@
 
 ```mermaid
 flowchart LR
-    Gh["fordaj/formattington<br/>GitHub release"] --> Upd["update.sh<br/>gh · checksums · stage · swap"]
-    Upd --> Dir["tools/formattington-lite/v<version>/<platform>/<br/>per-platform formattington binary"]
+    Gh("<img src='barnacle:tag.svg' width='20' alt=''/><br/>fordaj/formattington<br/>GitHub release") --> Upd("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>update.sh<br/>gh · checksums · stage · swap")
+    Upd --> Dir("<img src='barnacle:folder.svg' width='20' alt=''/><br/>tools/formattington-lite/v<version>/<platform>/<br/>per-platform formattington binary")
+    class Gh tagNode
+    class Upd shFile
+    class Dir folder
+    classDef tagNode fill:#f6b8d4,stroke:#be185d,color:#500724
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
 ```
 
 [Formattington](https://github.com/fordaj/formattington) is this project. This bundle refreshes the **lite** release binaries — the binaries without the embedded formatter payload — from `fordaj/formattington` releases, the same way the other `tools/` bundles refresh their upstreams.

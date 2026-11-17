@@ -2,10 +2,17 @@
 
 ```mermaid
 flowchart TD
-    Upstream["GitHub releases<br/>fordaj/* · upstream projects"] --> Update["tools/<name>/update.sh<br/>gh · checksum verify · stage · swap"]
-    Update --> Pin["tools/<name>/v<version>/<platform>/<br/>pinned by *_VERSION_DIR in scripts/.common.env"]
-    Pin --> Scripts["scripts/<br/>build · release · docs · log · CI"]
-    Pin --> Logs["log() in scripts<br/>via LOGAMUFFIN_BIN"]
+    Upstream("<img src='barnacle:tag.svg' width='20' alt=''/><br/>GitHub releases<br/>fordaj/* · upstream projects") --> Update("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>tools/<name>/update.sh<br/>gh · checksum verify · stage · swap</u>")
+    Update --> Pin("<img src='barnacle:folder.svg' width='20' alt=''/><br/>tools/<name>/v<version>/<platform>/<br/>pinned by *_VERSION_DIR in scripts/.common.env")
+    Pin --> Scripts("<img src='barnacle:folder.svg' width='20' alt=''/><br/>scripts/<br/>build · release · docs · log · CI")
+    Pin --> Logs("<img src='barnacle:scroll-text.svg' width='20' alt=''/><br/>log() in scripts<br/>via LOGAMUFFIN_BIN")
+    class Upstream tagNode
+    class Update shFile
+    class Pin folder
+    class Scripts folder
+    classDef tagNode fill:#f6b8d4,stroke:#be185d,color:#500724
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
     click Update href "barnacle/update.sh.md"
 ```
 

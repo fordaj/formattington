@@ -2,12 +2,22 @@
 
 ```mermaid
 flowchart TD
-    Cmd["scripts/release.sh"] --> Version["version.sh<br/>versioner computes the next tag"]
-    Cmd --> Verify["verify the built binary<br/>reports that version"]
-    Cmd --> Build["cross-compile lite + full<br/>into dist/<platform>/"]
-    Build --> Smoke["smoke-test the host full binary"]
-    Smoke --> Package["package archives<br/>lite + full · NOTICE + LICENSES"]
-    Package --> Release["tag HEAD · push · gh release<br/>one archive per platform"]
+    Cmd("<img src='barnacle:terminal.svg' width='20' alt=''/><br/>scripts/release.sh") --> Version("<img src='barnacle:tag.svg' width='20' alt=''/><br/><u>version.sh<br/>versioner computes the next tag</u>")
+    Cmd --> Verify("<img src='barnacle:check.svg' width='20' alt=''/><br/>verify the built binary<br/>reports that version")
+    Cmd --> Build("<img src='barnacle:hammer.svg' width='20' alt=''/><br/>cross-compile lite + full<br/>into dist/<platform>/")
+    Build --> Smoke("<img src='barnacle:check.svg' width='20' alt=''/><br/>smoke-test the host full binary")
+    Smoke --> Package("<img src='barnacle:package.svg' width='20' alt=''/><br/>package archives<br/>lite + full · NOTICE + LICENSES")
+    Package --> Release("<img src='barnacle:tag.svg' width='20' alt=''/><br/>tag HEAD · push · gh release<br/>one archive per platform")
+    class Cmd shFile
+    class Version tagNode
+    class Verify checkNode
+    class Smoke checkNode
+    class Package boxNode
+    class Release tagNode
+    classDef shFile fill:#abe07a,stroke:#3f6212,color:#16280a
+    classDef tagNode fill:#f6b8d4,stroke:#be185d,color:#500724
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
+    classDef boxNode fill:#e8cf9d,stroke:#a16207,color:#33240a
     click Version href "version.sh.md"
 ```
 

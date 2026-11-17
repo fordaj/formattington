@@ -2,13 +2,17 @@
 
 ```mermaid
 flowchart TD
-    Repo["your repository<br/>many languages, one project"] --> Fmt[formattington]
-    Fmt --> All["formattington all<br/>every configured tool · concurrent or --series"]
-    Fmt --> One["formattington black<br/>one tool · args forwarded verbatim"]
-    Fmt --> Alias["formattington python<br/>language and file-type aliases"]
-    Fmt --> List["formattington list<br/>bundled vs PATH versions"]
-    Fmt --> Init["formattington init<br/>write .formattington.json from git ls-files"]
-    All --> Bins["PATH or bundled binaries<br/>never reimplemented"]
+    Repo("<img src='barnacle:folder.svg' width='20' alt=''/><br/>your repository<br/>many languages, one project") --> Fmt("<img src='barnacle:package.svg' width='20' alt=''/><br/>formattington")
+    Fmt --> All("<img src='barnacle:rocket.svg' width='20' alt=''/><br/><u>formattington all<br/>every configured tool · concurrent or --series</u>")
+    Fmt --> One("<img src='barnacle:play.svg' width='20' alt=''/><br/><u>formattington black<br/>one tool · args forwarded verbatim</u>")
+    Fmt --> Alias("<img src='barnacle:zap.svg' width='20' alt=''/><br/><u>formattington python<br/>language and file-type aliases</u>")
+    Fmt --> List("<img src='barnacle:list.svg' width='20' alt=''/><br/><u>formattington list<br/>bundled vs PATH versions</u>")
+    Fmt --> Init("<img src='barnacle:braces.svg' width='20' alt=''/><br/><u>formattington init<br/>write .formattington.json from git ls-files</u>")
+    All --> Bins("<img src='barnacle:binary.svg' width='20' alt=''/><br/>PATH or bundled binaries<br/>never reimplemented")
+    class Repo folder
+    class Init jsonFile
+    classDef folder fill:#f0c558,stroke:#8a6d1c,color:#332a05
+    classDef jsonFile fill:#cdb9f7,stroke:#6d28d9,color:#2e1065
     One --> Bins
     Alias --> Bins
     click All href "internal/formattington/cli.go.md"

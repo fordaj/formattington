@@ -2,12 +2,17 @@
 
 ```mermaid
 flowchart LR
-    Src[".swift<br/>covered files"] --> Reg["formattington swift-format<br/>cli.go registry entry"]
-    Reg --> Tool["swift-format<br/>PATH only"]
-    Tool --> Ops["Operations: Format, Lint / Check"]
+    Src("<img src='barnacle:file-code.svg' width='20' alt=''/><br/>.swift<br/>covered files") --> Reg("<img src='barnacle:file-code.svg' width='20' alt=''/><br/><u>formattington swift-format<br/>cli.go registry entry</u>")
+    Reg --> Tool("<img src='barnacle:terminal.svg' width='20' alt=''/><br/><u>swift-format<br/>PATH only</u>")
+    Tool --> Ops("<img src='barnacle:list-checks.svg' width='20' alt=''/><br/><u>Operations: Format, Lint / Check</u>")
     click Reg href "cli.go.md"
     click Tool href "tools.go.md"
     click Ops href "formatter.go.md"
+    class Src goFile
+    class Reg goFile
+    class Ops checkNode
+    classDef goFile fill:#8fd8ef,stroke:#0277a8,color:#08303d
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 swift-format is the official Swift formatter (swiftlang/swift-format), covering `.swift` files. It ships with Swift 6+ toolchains (Xcode 16+) and is PATH-only.

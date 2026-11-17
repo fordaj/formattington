@@ -2,9 +2,11 @@
 
 ```mermaid
 flowchart TD
-    Survey["survey the repository<br/>what already exists?"] --> Eliminate["eliminate before adding<br/>reuse · adapt · remove parallel paths"]
-    Eliminate --> Minimize["minimize moving parts<br/>proportional to actual requirements"]
-    Minimize --> Verify["verify behavior is preserved<br/>tests + review"]
+    Survey("<img src='barnacle:search.svg' width='20' alt=''/><br/>survey the repository<br/>what already exists?") --> Eliminate("<img src='barnacle:scissors.svg' width='20' alt=''/><br/>eliminate before adding<br/>reuse · adapt · remove parallel paths")
+    Eliminate --> Minimize("<img src='barnacle:minimize-2.svg' width='20' alt=''/><br/>minimize moving parts<br/>proportional to actual requirements")
+    Minimize --> Verify("<img src='barnacle:check.svg' width='20' alt=''/><br/>verify behavior is preserved<br/>tests + review")
+    class Verify checkNode
+    classDef checkNode fill:#9fe8c9,stroke:#0f766e,color:#052e22
 ```
 
 ## Mission
