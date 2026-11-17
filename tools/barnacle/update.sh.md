@@ -2,7 +2,7 @@
 
 ```mermaid
 flowchart TD
-    Release[fordaj/barnacle<br/>GitHub release] -->|update.sh| Bundle[tools/barnacle/v254.0.1.1.22/<br/>per-platform binaries + LICENSE]
+    Release[fordaj/barnacle<br/>GitHub release] -->|update.sh| Bundle[tools/barnacle/v0.0.2.1.25/<br/>per-platform binaries + LICENSE]
     Bundle -->|BARNACLE_BIN| Docs[scripts/docs.sh]
     Docs --> Site[./site — git-ignored]
     click Docs href "../../scripts/docs.sh.md"
@@ -15,7 +15,7 @@ flowchart TD
 ```text
 tools/barnacle/
   update.sh                     # refresh from fordaj/barnacle releases
-  v254.0.1.1.22/
+  v0.0.2.1.25/
     macos-arm64/barnacle
     macos-arm64/LICENSE           # upstream MIT text, retained unmodified
     macos-x86_64/barnacle
@@ -42,7 +42,7 @@ The refresh logic lives in [../update.sh.md](../update.sh.md) (the `tools/update
 4. Copies each archive's `LICENSE` (archive root or one level down, like the binary) into the platform directory.
 5. Swaps in the new version directory and deletes superseded ones, then smoke-tests the host binary (`barnacle --version`).
 
-Licenses: MIT — see `v254.0.1.1.22/<platform>/LICENSE`. Environment overrides: `BARNACLE_REPO`, `BARNACLE_TAG`. `--dry-run` lists assets without touching anything.
+Licenses: MIT — see `v0.0.2.1.25/<platform>/LICENSE`. Environment overrides: `BARNACLE_REPO`, `BARNACLE_TAG`. `--dry-run` lists assets without touching anything.
 
 ## How the repository uses it
 
